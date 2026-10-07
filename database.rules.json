@@ -1,0 +1,23 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+
+    "hello": {
+      ".read": "auth != null",
+      "counter": {
+        ".write": "auth != null",
+        ".validate": "newData.isNumber() && newData.val() >= 0"
+      },
+      "ping": {
+        ".write": "auth != null",
+        ".validate": "newData.child('by').val() === auth.uid"
+      },
+      "visitors": {
+        "$id": {
+          ".write": "auth != null && (newData.exists() ? newData.child('uid').val() === auth.uid : data.child('uid').val() === auth.uid)"
+        }
+      }
+    }
+  }
+}

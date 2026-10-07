@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Coop Check · Chickens vs Turkeys</title>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <style>
+    main { padding: 28px 0 60px; }
+    header { text-align: center; margin-bottom: 26px; }
+    header .comic-title { font-size: clamp(2.6rem, 8vw, 4.6rem); }
+    header p { margin: 1.1rem 0 0; color: #cfe0ff; font-size: var(--fs-md); }
+
+    .grid { display: grid; gap: 22px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+    .panel h2 { font-family: var(--font-comic); font-size: var(--fs-xl); letter-spacing: .04em; margin: 0 0 .6rem; color: var(--yolk); -webkit-text-stroke: 1px var(--ink); paint-order: stroke fill; text-shadow: 3px 3px 0 var(--ink); }
+    .panel.light h2 { color: var(--chicken); }
+
+    .checks { list-style: none; padding: 0; margin: 0; display: grid; gap: .6rem; }
+    .checks li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; background: rgba(0,0,0,.25); border: 3px solid var(--ink); border-radius: 12px; padding: .55rem .8rem; }
+    .checks .label { font-size: var(--fs-md); }
+
+    .counter-wrap { display: grid; place-items: center; gap: 1rem; padding: .4rem 0 .2rem; }
+    .egg {
+      width: 150px; height: 190px; border: var(--line-thick) solid var(--ink);
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      background: radial-gradient(circle at 35% 30%, #fff 0 18%, var(--shell) 40%, #f1ddb4 100%);
+      box-shadow: var(--pop-shadow);
+      display: grid; place-items: center;
+      font-family: var(--font-burst); font-size: 3.3rem; color: var(--ink);
+    }
+    .bubble { position: relative; }
+    .bubble .burst { position: absolute; top: -26px; right: -70px; font-size: 1.1rem; pointer-events: none; }
+
+    .ping-out { min-height: 3.2em; font-size: var(--fs-md); }
+    .ping-out b { color: var(--chicken); }
+
+    #setup { border-color: var(--ink); }
+    #setup ol { margin: .4rem 0 0; padding-left: 1.3rem; line-height: 1.6; font-size: var(--fs-md); }
+    #error-box { background: var(--turkey); color: var(--white); }
+    #error-box p { margin: .3rem 0 0; font-size: var(--fs-md); }
+
+    .devices { display: flex; gap: .5rem; flex-wrap: wrap; min-height: 2.5rem; }
+    .devices span { font-size: 1.8rem; animation: pop-in var(--t-med) var(--ease-pop) both; }
+
+    footer { text-align: center; margin-top: 30px; color: #9fb3dd; font-size: var(--fs-sm); }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <h1 class="comic-title slant">COOP CHECK!</h1>
+      <p>Phase 0 test: is the Firebase Realtime Database talking to this page?</p>
+    </header>
+
+    <!-- Shown when firebase.js still has PASTE_ placeholders -->
+    <section id="setup" class="panel light hidden" style="margin-bottom:22px">
+      <h2>Not hooked up yet</h2>
+      <ol>
+        <li>Open <span class="mono">js/core/firebase.js</span> on GitHub.</li>
+        <li>Replace every <span class="mono">PASTE_…</span> value with your Firebase web config.</li>
+        <li>Commit, wait ~1 minute, then refresh this page.</li>
+      </ol>
+    </section>
+
+    <!-- Shown when something goes wrong -->
+    <section id="error-box" class="panel hidden" style="margin-bottom:22px">
+      <h2>Uh-oh, egg on our face</h2>
+      <p id="error-text"></p>
+    </section>
+
+    <div class="grid">
+      <section class="panel">
+        <h2>Checklist</h2>
+        <ul class="checks">
+          <li><span class="label">Config pasted</span><span id="c-config" class="tag warn">…</span></li>
+          <li><span class="label">Signed in (anonymous)</span><span id="c-auth" class="tag warn">…</span></li>
+          <li><span class="label">Connected to database</span><span id="c-conn" class="tag warn">…</span></li>
+          <li><span class="label">Read + write allowed</span><span id="c-rw" class="tag warn">…</span></li>
+        </ul>
+        <p style="margin:.9rem 0 0;color:#cfe0ff;font-size:var(--fs-sm)">
+          Your player id: <span id="uid" class="mono">—</span><br>
+          Clock offset from server: <span id="offset" class="mono">—</span>
+        </p>
+      </section>
+
+      <section class="panel light">
+        <h2>Shared Egg Counter</h2>
+        <p style="margin:0 0 .4rem">Open this page on two devices. Tap on one and watch the other update.</p>
+        <div class="counter-wrap">
+          <div class="bubble">
+            <div id="egg" class="egg">0</div>
+            <div id="splat" class="burst hidden">BOK!</div>
+          </div>
+          <div class="row center">
+            <button id="tap" class="btn yellow big" disabled>TAP! 🥚</button>
+            <button id="reset" class="btn grey" disabled>Reset</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Ping the Coop</h2>
+        <p style="margin:0 0 .8rem;color:#cfe0ff">Sends a message to Firebase and times the round trip. Under 300&nbsp;ms is great for games.</p>
+        <div class="row">
+          <button id="ping" class="btn blue" disabled>Send ping</button>
+        </div>
+        <p id="ping-out" class="ping-out">No pings yet.</p>
+        <p style="margin:0;color:#cfe0ff">Latest ping from any device:</p>
+        <p id="last-ping" class="mono" style="margin:.2rem 0 0">—</p>
+      </section>
+
+      <section class="panel">
+        <h2>Devices online</h2>
+        <p style="margin:0 0 .8rem;color:#cfe0ff">One bird per open tab or phone. Close a tab and its bird should vanish within a few seconds.</p>
+        <div id="devices" class="devices"></div>
+        <p id="device-count" style="margin:.6rem 0 0;font-size:var(--fs-md)">0 online</p>
+      </section>
+    </div>
+
+    <footer>Chickens vs Turkeys · Phase 0 · <a href="../">back to start</a></footer>
+  </main>
+
+  <script type="module" src="hello.js"></script>
+  <script>
+    // If the Firebase code can't be downloaded (offline, school web filter), say so instead of hanging.
+    setTimeout(function () {
+      if (window.__cvtStarted) return;
+      document.getElementById('error-text').textContent =
+        "Couldn't download the Firebase code from gstatic.com. Check the internet connection, or ask IT whether the school filter blocks gstatic.com / firebaseio.com / firebasedatabase.app.";
+      document.getElementById('error-box').classList.remove('hidden');
+    }, 8000);
+  </script>
+</body>
+</html>

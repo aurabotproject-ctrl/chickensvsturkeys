@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Chickens vs Turkeys</title>
+  <link rel="stylesheet" href="css/tokens.css">
+  <style>
+    body { display: grid; place-items: center; min-height: 100vh; }
+    .hero { text-align: center; padding: 40px 16px; }
+    .hero .comic-title { font-size: var(--fs-hero); display: block; }
+    .vs { display: inline-grid; margin: .4rem 0; font-size: 1.6rem; background: var(--turkey); color: var(--white); padding: 1.2em 1.5em; }
+    .tagline { display: inline-block; margin-top: 1.4rem; background: var(--ink); color: var(--white); font-family: var(--font-comic); font-size: var(--fs-lg); letter-spacing: .12em; padding: .3em 1em; transform: rotate(-2deg); border-bottom: 5px solid var(--yolk); }
+    .actions { margin-top: 2.4rem; }
+    .note { margin-top: 2rem; color: #9fb3dd; font-size: var(--fs-sm); }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <span class="comic-title slant anim-pop">CHICKENS</span>
+    <span class="burst vs anim-wobble">VS</span>
+    <span class="comic-title red slant anim-pop" style="animation-delay:.12s">TURKEYS</span>
+    <div class="tagline">ANSWER. ATTACK. SURVIVE.</div>
+
+    <div class="actions row center">
+      <a class="btn purple big disabled" aria-disabled="true">I'm a Teacher</a>
+      <a class="btn big disabled" aria-disabled="true">Join Game</a>
+    </div>
+    <p class="note">Under construction · Phase 0 · <a href="hello/">Run the Coop Check (Firebase test)</a></p>
+  </div>
+</body>
+</html>
