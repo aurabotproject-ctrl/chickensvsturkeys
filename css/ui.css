@@ -19,13 +19,14 @@
 .textarea { min-height: 120px; resize: vertical; font-weight: 700; }
 .textarea.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85rem; }
 .select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%); background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 2.2em; }
-.field { display: grid; gap: .35rem; }
+.field { display: grid; gap: .35rem; align-content: start; }
 .field > span, .label { font-family: var(--font-comic); letter-spacing: .05em; font-size: 1.05rem; color: inherit; }
-.hint { font-size: var(--fs-sm); opacity: .75; font-weight: 700; }
+.hint { font-size: var(--fs-sm); opacity: .75; font-weight: 700; font-family: var(--font-body); letter-spacing: 0; }
+.panel.light a, .card a { color: var(--chicken); }
 .error-text { color: var(--turkey); font-weight: 900; font-size: var(--fs-sm); }
 
 /* Segmented choice (radio pills) */
-.seg { display: flex; flex-wrap: wrap; gap: .4rem; }
+.seg { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
 .seg input { position: absolute; opacity: 0; pointer-events: none; }
 .seg label { cursor: pointer; padding: .4em .9em; border: 3px solid var(--ink); border-radius: 999px; background: var(--white); color: var(--ink); font-weight: 900; box-shadow: var(--pop-shadow-sm); transition: transform var(--t-fast); }
 .seg input:checked + label { background: var(--yolk); transform: translateY(-2px); }
