@@ -18,15 +18,14 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAQYAD5FBKQIeT86ZJq0SD04OlMAUz9Uvc",
-  authDomain: "chickens-vs-turkeys.firebaseapp.com",
-  databaseURL: "https://chickens-vs-turkeys-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "chickens-vs-turkeys",
-  storageBucket: "chickens-vs-turkeys.firebasestorage.app",
-  messagingSenderId: "705277181435",
-  appId: "1:705277181435:web:28e41e14854700adc31f5e"
+  apiKey: 'PASTE_API_KEY',
+  authDomain: 'PASTE_PROJECT_ID.firebaseapp.com',
+  databaseURL: 'https://PASTE_PROJECT_ID-default-rtdb.asia-southeast1.firebasedatabase.app',
+  projectId: 'PASTE_PROJECT_ID',
+  storageBucket: 'PASTE_PROJECT_ID.appspot.com',
+  messagingSenderId: 'PASTE_SENDER_ID',
+  appId: 'PASTE_APP_ID',
 };
-
 
 /** true once the PASTE_ placeholders have been replaced */
 export const isConfigured = !JSON.stringify(firebaseConfig).includes('PASTE_');
