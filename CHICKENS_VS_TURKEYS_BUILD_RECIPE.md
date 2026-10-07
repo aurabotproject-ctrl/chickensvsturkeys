@@ -349,7 +349,7 @@ Editable data file so strands can be updated as the curriculum refresh rolls out
 
 ### 9.4 Confidence check (powers the blind-spot analytics)
 After picking an answer, the phone shows three quick chips (one tap, ~1 s): **🔥 Sure · 🤔 Think so · 🎲 Guessing**. Teacher setting: *every question / every 3rd question / off* (default: every question).
-To keep students honest there is a small **calibration bonus**: Sure + correct = +1 bonus point/egg; Sure + wrong = no egg that turn (on top of the normal lockout); Think so and Guessing carry no extra risk or reward.
+To keep students honest there is a small **calibration bonus**: Sure + correct = +1 bonus egg; Sure + wrong = −1 egg and a slightly longer lockout; Think so and Guessing carry no extra risk or reward.
 
 Each answer is classified:
 | | Correct | Wrong |
@@ -404,31 +404,31 @@ Name, accuracy, strand mini-bars, their blind-spot questions with the correct an
 Folder structure, `tokens.css` comic design system, Firebase config, a page that writes/reads a test value in Realtime DB.
 ✅ *Gate:* Page loads on GitHub Pages, value round-trips between two browser tabs.
 
-**Phase 1 — Design system + static screens (no logic)**
+**Phase 1 — Design system + static screens (no logic) ✔ built**
 Landing, teacher dashboard shell, question bank shell (incl. Build with Claude panel layout), student join screen, host lobby layout — all in comic style using the real art in `assets/images/`.
 ✅ *Gate:* All screens look right on a phone, a laptop, and the projector (1920×1080).
 
-**Phase 2 — Auth, create game, join by code/QR, live lobby**
+**Phase 2 — Auth, create game, join by code/QR, live lobby ✔ built**
 Google sign-in for teacher, create game → 6-char code + QR, students join anonymously, auto team balance, players appear live, kick/rename, security rules.
 ✅ *Gate:* Teacher on laptop + 3 phones: everyone joins by QR, names show on host, refresh/reconnect works.
 
-**Phase 3 — Question banks + Build with Claude**
+**Phase 3 — Question banks + Build with Claude ✔ built**
 Bank CRUD and editor (explanation + strand required), CSV import, `strands.json`, premade starter banks, **prompt builder** (form → generated prompt → copy), **paste-back parser** with validation preview and fix-up, bank picker in Create Game.
 ✅ *Gate:* (a) Generate a prompt for a topic, run it in Claude, paste the reply back, save a 20-question bank. (b) Do the same with a PDF attachment and a page range — every question has a page ref. (c) Import a CSV, edit a question, select the bank for a game.
 
-**Phase 4 — Quiz engine + answer logging**
+**Phase 4 — Quiz engine + answer logging ✔ built**
 Host-graded question delivery (no answer key on phones), shuffles, lockouts, streaks, **confidence chips + calibration bonus**, explanation shown after each answer, full answer log, per-player stats, host live feed (generic "answering" screen as the testing mode).
 ✅ *Gate:* 3+ phones answer; scores/streaks correct; confidence recorded; answer log in the database matches what happened.
 
-**Phase 5 — Dodge Egg v1 (rectangles/placeholders)**
+**Phase 5 — Dodge Egg v1 (rectangles/placeholders) ✔ built**
 Arena sim, joystick + aim pad controller, ammo from answers, throws, hits, knock-out/respawn, 60 s round, individual + team scoring, scoreboard.
 ✅ *Gate:* 3v3 on real phones; hits register fairly; no lag on projector; scoring adds up.
 
-**Phase 6 — Dodge Egg art + juice pass**
+**Phase 6 — Dodge Egg art + juice pass ✔ built**
 Drop in real art; layered birds, fake-3D animation, shadows, squash/stretch, particles, comic words, screen shake, crowd, SFX.
 ✅ *Gate:* "Wow" test — show it to a student.
 
-**Phase 7 — Game flow, rounds, results, random events**
+**Phase 7 — Game flow, rounds, results, random events ✔ built**
 Multi-round flow, between-round scoreboard, final podium, random events system, teacher controls (pause/skip/end), results archive written at game end.
 ✅ *Gate:* Full 3-round game start to finish; archive appears under Teacher → Results.
 
@@ -456,6 +456,14 @@ Music/SFX, mute, accessibility (colour-blind-safe team shapes/icons, big text op
 More modes, avatar unlocks, class leaderboards across games, progress over time per strand (compare reports), themed seasons (Halloween Turkeys!).
 
 ---
+
+### Build notes (Phases 1–7, Oct 2026)
+- Art is sliced into `assets/sprites/*.webp` (originals stay in `assets/images/`). `js/core/assets.js` lists every sprite name.
+- **Test bots:** the host lobby has "🤖 Add 4 test bots" so a teacher can try a full game without phones (bots never appear in results analytics).
+- Students sign in per browser *tab*, so you can test with several tabs on one computer.
+- Host keyboard: Space = pause, F = full screen. The bottom control bar fades until you hover it.
+- Throw = drag on the right pad and let go (a quick tap throws straight ahead). Gentle aim assist helps younger students.
+- Events available: Golden Egg Rush, Double Trouble, Shield Up, Egg Storm, Fog of Feathers, Fox Raid (+ automatic Clean Sweep). Team Swap is not used (it scrambles scoring).
 
 ## 13. Starter Prompts (paste after this file)
 

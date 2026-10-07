@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Game Screen · Chickens vs Turkeys</title>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/ui.css">
+  <link rel="stylesheet" href="host.css">
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+</head>
+<body>
+  <div id="boot" class="loading"><div class="spin-egg"></div><p>Setting up the arena…</p></div>
+
+  <!-- LOBBY -->
+  <section id="lobby" class="screen hidden">
+    <header class="lobby-head">
+      <img class="lobby-logo" src="../assets/sprites/logo.webp" alt="Chickens vs Turkeys">
+      <div class="join-box panel">
+        <div class="join-label">Join at</div>
+        <div class="join-url" id="join-url"></div>
+        <div class="join-label">with code</div>
+        <div class="join-code" id="join-code">······</div>
+      </div>
+      <div class="qr-box panel light"><div id="qr"></div><div class="join-label" style="color:var(--ink)">Scan to join</div></div>
+    </header>
+    <div class="teams">
+      <div class="team-col chicken">
+        <div class="team-head"><img src="../assets/sprites/chicken_idle.webp" alt=""><span>CHICKENS</span><b id="n-chicken">0</b></div>
+        <div class="roster" id="roster-chicken"></div>
+      </div>
+      <div class="team-col turkey">
+        <div class="team-head"><b id="n-turkey">0</b><span>TURKEYS</span><img src="../assets/sprites/turkey_idle.webp" alt=""></div>
+        <div class="roster" id="roster-turkey"></div>
+      </div>
+    </div>
+    <footer class="lobby-foot">
+      <div class="lobby-info" id="lobby-info"></div>
+      <div class="row">
+        <button class="btn sm grey" id="btn-bots" title="Adds computer players so you can test">🤖 Add 4 test bots</button>
+        <button class="btn sm purple" id="btn-shuffle">🔀 Shuffle teams</button>
+        <button class="btn sm grey" id="btn-full">⛶ Full screen</button>
+        <button class="btn big" id="btn-start" disabled>START!</button>
+      </div>
+    </footer>
+  </section>
+
+  <!-- GAME -->
+  <section id="game" class="screen hidden">
+    <div class="stage">
+      <div id="arena"></div>
+      <div class="hud-top">
+        <div class="team-panel chicken"><img src="../assets/sprites/panel_chicken.webp" alt=""><span id="score-chicken">0</span></div>
+        <div class="timer"><img src="../assets/sprites/timer.webp" alt=""><span id="timer">60</span><small id="round-label">ROUND 1</small></div>
+        <div class="team-panel turkey"><img src="../assets/sprites/panel_turkey.webp" alt=""><span id="score-turkey">0</span></div>
+      </div>
+      <div id="event-pill" class="event-pill hidden"></div>
+      <div class="hud-bottom">
+        <button class="icon-btn" id="c-pause" title="Pause"><img src="../assets/sprites/ico_pause.webp" alt="Pause"></button>
+        <button class="icon-btn" id="c-next" title="End round / next round"><img src="../assets/sprites/ico_next.webp" alt="Next"></button>
+        <button class="icon-btn" id="c-event" title="Random event"><img src="../assets/sprites/ico_dice.webp" alt="Random event"></button>
+        <button class="icon-btn" id="c-scores" title="Scores"><img src="../assets/sprites/ico_scores.webp" alt="Scores"></button>
+        <button class="icon-btn" id="c-sound" title="Sound"><img src="../assets/sprites/ico_sound.webp" alt="Sound"></button>
+        <button class="icon-btn" id="c-end" title="End game"><img src="../assets/sprites/ico_close.webp" alt="End game"></button>
+      </div>
+    </div>
+    <aside class="sidebar">
+      <div class="side-code">Join: <b id="side-code"></b></div>
+      <h3>Top Players</h3>
+      <ol class="standings" id="standings"></ol>
+      <h3>Team Scores</h3>
+      <div class="team-scores" id="team-scores"></div>
+      <div class="keep-throwing"><img src="../assets/sprites/word_splat.webp" alt=""></div>
+    </aside>
+  </section>
+
+  <div id="overlay" class="overlay hidden"></div>
+  <div id="banner" class="banner hidden"></div>
+
+  <script type="module" src="host.js"></script>
+</body>
+</html>

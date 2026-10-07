@@ -18,6 +18,73 @@
           ".write": "auth != null && (newData.exists() ? newData.child('uid').val() === auth.uid : data.child('uid').val() === auth.uid)"
         }
       }
+    },
+
+    "codes": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (data.exists() ? data.child('host').val() === auth.uid : newData.child('host').val() === auth.uid)"
+      }
+    },
+
+    "banks": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider !== 'anonymous'"
+      }
+    },
+
+    "results": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid && auth.token.firebase.sign_in_provider !== 'anonymous'"
+      }
+    },
+
+    "games": {
+      "$g": {
+        ".read": "auth != null && data.child('meta/hostUid').val() === auth.uid",
+        ".write": "auth != null && data.child('meta/hostUid').val() === auth.uid",
+
+        "meta": {
+          ".read": "auth != null",
+          ".write": "auth != null && auth.token.firebase.sign_in_provider !== 'anonymous' && (data.exists() ? data.child('hostUid').val() === auth.uid : newData.child('hostUid').val() === auth.uid)"
+        },
+        "state": { ".read": "auth != null" },
+        "teams": { ".read": "auth != null" },
+        "standings": { ".read": "auth != null" },
+
+        "players": {
+          ".read": "auth != null",
+          "$uid": {
+            "name": {
+              ".write": "auth != null && auth.uid === $uid && !root.child('games/' + $g + '/kicked/' + $uid).exists()",
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16"
+            },
+            "online": { ".write": "auth != null && auth.uid === $uid", ".validate": "newData.isBoolean()" },
+            "joinedAt": { ".write": "auth != null && auth.uid === $uid", ".validate": "newData.isNumber()" },
+            "av": { ".write": "auth != null && auth.uid === $uid", ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24" },
+            "team": { ".validate": "newData.val() === 'chicken' || newData.val() === 'turkey'" }
+          }
+        },
+
+        "kicked":  { "$uid": { ".read": "auth != null && auth.uid === $uid" } },
+        "pstate":  { "$uid": { ".read": "auth != null && auth.uid === $uid" } },
+        "current": { "$uid": { ".read": "auth != null && auth.uid === $uid" } },
+        "fb":      { "$uid": { ".read": "auth != null && auth.uid === $uid" } },
+
+        "sub": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('games/' + $g + '/players/' + $uid + '/team').exists()",
+            ".validate": "newData.hasChildren(['n', 'choice'])"
+          }
+        },
+        "inputs": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid && root.child('games/' + $g + '/players/' + $uid + '/team').exists()"
+          }
+        }
+      }
     }
   }
 }

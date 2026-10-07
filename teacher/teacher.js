@@ -1,0 +1,199 @@
+// Teacher HQ: sign-in, dashboard, question banks, create game, results.
+import {
+  isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
+} from '../js/core/firebase.js';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js';
+import { sprite, subjectIcon } from '../js/core/assets.js';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js';
+import { loadStrands, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js';
+import { renderBanks } from './banks-ui.js';
+
+const app = $('#app');
+export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
+
+let unsubs = [];
+
+async function boot() {
+  if (!isConfigured) { app.innerHTML = '<p class="loading">Firebase is not configured — see README.md.</p>'; return; }
+  try {
+    [ctx.strands, ctx.premade] = await Promise.all([loadStrands(), listPremade()]);
+  } catch (e) { console.error(e); }
+  watchUser((u) => {
+    unsubs.forEach((f) => f()); unsubs = [];
+    if (!isTeacher(u)) { ctx.user = null; renderSignIn(); return; }
+    ctx.user = u;
+    unsubs.push(watchMyBanks(u.uid, (list) => { ctx.mine = list; if (['banks', 'dashboard', 'create'].includes(ctx.view)) render(); }));
+    unsubs.push(onValue(ref(db, `results/${u.uid}`), (snap) => {
+      ctx.results = Object.entries(snap.val() || {}).map(([id, r]) => ({ id, ...r })).sort((a, b) => (b.finishedAt || 0) - (a.finishedAt || 0));
+      if (['results', 'dashboard'].includes(ctx.view)) render();
+    }));
+    const want = new URLSearchParams(location.search).get('view');
+    go(want || ctx.view || 'dashboard');
+  });
+}
+
+function renderSignIn() {
+  app.innerHTML = html`<div class="signin"><div class="box stack">
+    <img src="${sprite('logo')}" alt="Chickens vs Turkeys">
+    <div class="panel"><p style="margin-top:0">Teachers sign in with Google to make question banks and host games.<br>Students don't need an account — they join with a code.</p>
+    <button id="signin" class="btn big yellow">Sign in with Google</button>
+    <p id="err" class="error-text"></p></div>
+    <p><a href="../">← Back</a> · <a href="../play/">I'm a student</a></p></div></div>`;
+  $('#signin').onclick = async () => {
+    try { await signInTeacher(); } catch (e) { $('#err').textContent = explainError(e); }
+  };
+}
+
+const NAV = [
+  ['dashboard', '🏠', 'Dashboard'],
+  ['create', '🎮', 'Create Game'],
+  ['banks', '📚', 'Question Banks'],
+  ['results', '📊', 'Results'],
+];
+
+function shell() {
+  const u = ctx.user;
+  app.innerHTML = html`<div class="shell">
+    <aside class="side">
+      <img class="logo" src="${sprite('logo')}" alt="Chickens vs Turkeys">
+      <nav class="nav">${raw(NAV.map(([k, i, l]) => `<button data-go="${k}" class="${ctx.view === k || (ctx.view === 'edit' && k === 'banks') ? 'on' : ''}"><span class="ni">${i}</span><span class="nl">${l}</span></button>`).join(''))}</nav>
+      <div class="me">${raw(u.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : '')}<span>${u.displayName || u.email}<br><a href="#" id="signout">Sign out</a></span></div>
+    </aside>
+    <main class="main" id="main"></main></div>`;
+  $$('[data-go]').forEach((b) => { b.onclick = () => go(b.dataset.go); });
+  $('#signout').onclick = (e) => { e.preventDefault(); signOutUser(); };
+  return $('#main');
+}
+
+export function go(view, data) {
+  ctx.view = view; ctx.data = data;
+  const u = new URL(location.href); u.searchParams.set('view', view === 'edit' ? 'banks' : view); history.replaceState(null, '', u);
+  render();
+}
+
+function render() {
+  if (!ctx.user) return;
+  const main = shell();
+  ({ dashboard: renderDashboard, create: renderCreate, banks: renderBanks, edit: renderBanks, results: renderResults }[ctx.view] || renderDashboard)(main, ctx);
+}
+
+// ---------------- Dashboard ----------------
+function renderDashboard(main) {
+  const first = (ctx.user.displayName || 'Teacher').split(' ')[0];
+  main.innerHTML = html`<h1 class="page-title">Kia ora, ${first}!</h1>
+    <div class="big-actions">
+      <button class="btn grass" data-go="create">🎮 Create Game</button>
+      <button class="btn blue" data-go="banks">📚 Question Banks</button>
+      <button class="btn purple" data-go="results">📊 View Results</button>
+    </div>
+    <div class="dash-grid">
+      <section class="panel light"><h3>Recent games</h3><div id="recent" class="list"></div></section>
+      <section class="panel light"><h3>Your question banks</h3><div id="mybanks" class="list"></div></section>
+      <section class="panel"><h3 style="color:var(--yolk)">How students join</h3>
+        <p>Students go to <b class="mono">${new URL('../play/', location.href).href}</b> on any device, or scan the QR code on your game screen, then type the 6-letter code.</p>
+        <p class="hint">Tip: open the game screen on the projector, and keep this tab for yourself.</p></section>
+    </div>`;
+  $$('[data-go]', main).forEach((b) => { b.onclick = () => go(b.dataset.go); });
+  const recent = $('#recent');
+  recent.innerHTML = ctx.results.length ? ctx.results.slice(0, 4).map(resultRow).join('') : '<p class="empty">No games yet — create one!</p>';
+  wireResultRows(recent);
+  const mb = $('#mybanks');
+  mb.innerHTML = ctx.mine.length
+    ? ctx.mine.slice(0, 4).map((b) => html`<div class="list-row"><img class="icon" src="${subjectIcon(b.subject)}" alt=""><div class="grow"><div class="title">${b.title}</div><div class="sub">${b.questions.length} questions · ${b.subject}</div></div></div>`).join('')
+    : '<p class="empty">No banks yet. Try <b>Build with Claude</b> on the Question Banks page, or use a premade bank.</p>';
+}
+
+// ---------------- Create game ----------------
+const MODES = [
+  { id: 'dodge', name: 'Dodge Egg', img: 'chicken_throw', desc: 'Answer to earn eggs, then dodge and throw in a 1-minute arena battle.' },
+  { id: 'cannon', name: 'Egg Cannon', img: 'egg_bomb', desc: 'Artillery-style egg blasting at the enemy fort.', soon: true },
+  { id: 'farm', name: 'Egg Farm', img: 'egg_gold', desc: 'Grow the richest egg farm by answering questions.', soon: true },
+];
+
+function renderCreate(main) {
+  const s = ctx.createState ||= { mode: 'dodge', bankKey: '', settings: { ...DEFAULT_SETTINGS } };
+  const bankOpts = [
+    ...ctx.mine.map((b) => ({ key: `mine:${b.id}`, label: `${b.title} (${b.questions.length} Qs · yours)` })),
+    ...ctx.premade.map((b) => ({ key: `premade:${b.id}`, label: `${b.title} (${b.count} Qs · premade)` })),
+  ];
+  if (!s.bankKey && bankOpts.length) s.bankKey = bankOpts[0].key;
+  const seg = (name, opts) => `<div class="seg">${opts.map(([v, l]) => `<input type="radio" id="${name}-${v}" name="${name}" value="${v}" ${String(s.settings[name]) === String(v) ? 'checked' : ''}><label for="${name}-${v}">${l}</label>`).join('')}</div>`;
+  main.innerHTML = html`<h1 class="page-title">Create a Game</h1>
+    <section class="panel light"><h3>1. Pick a game</h3>
+      <div class="mode-grid">${raw(MODES.map((m) => `<div class="card mode-card ${m.soon ? 'soon' : ''} ${s.mode === m.id ? 'on' : ''}" data-mode="${m.id}"><img src="${sprite(m.img)}" alt=""><div class="title">${m.name}</div><div class="hint">${m.desc}</div></div>`).join(''))}</div>
+    </section>
+    <section class="panel light" style="margin-top:18px"><h3>2. Pick a question bank</h3>
+      ${raw(bankOpts.length ? `<select class="select" id="bank">${bankOpts.map((o) => `<option value="${esc(o.key)}" ${o.key === s.bankKey ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>` : '<p class="empty">No banks yet.</p>')}
+      <p class="hint">Make your own on the <a href="#" id="tobanks">Question Banks</a> page.</p>
+    </section>
+    <section class="panel light" style="margin-top:18px"><h3>3. Settings</h3>
+      <div class="settings-grid">
+        <div class="field"><span>Rounds</span>${raw(seg('rounds', [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']]))}</div>
+        <div class="field"><span>Round length</span>${raw(seg('roundSeconds', [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}</div>
+        <div class="field"><span>Confidence check</span>${raw(seg('confidence', [['every', 'Every question'], ['third', 'Every 3rd'], ['off', 'Off']]))}<span class="hint">Students tap 🔥 Sure / 🤔 Think so / 🎲 Guessing — powers the blind-spot report.</span></div>
+        <div class="field"><span>When hit by an egg</span>${raw(seg('koMode', [['respawn', 'Back in 5 s'], ['out', 'Out for the round']]))}</div>
+        <div class="field"><span>Random events</span>${raw(seg('events', [['auto', 'Automatic'], ['manual', 'I\'ll trigger them'], ['off', 'Off']]))}</div>
+      </div>
+      <div class="launch"><button id="launch" class="btn big" ${raw(bankOpts.length ? '' : 'disabled')}>🚀 Launch Game</button></div>
+    </section>`;
+  $$('.mode-card', main).forEach((c) => {
+    c.onclick = () => { if (c.classList.contains('soon')) { toast('That game is coming in a later phase!', 'warn'); return; } s.mode = c.dataset.mode; renderCreate(main); };
+  });
+  $('#tobanks').onclick = (e) => { e.preventDefault(); go('banks'); };
+  $('#bank')?.addEventListener('change', (e) => { s.bankKey = e.target.value; });
+  $$('.seg input', main).forEach((i) => i.addEventListener('change', () => { s.settings[i.name] = isNaN(+i.value) ? i.value : +i.value; }));
+  $('#launch').onclick = async (e) => {
+    const btn = e.currentTarget; btn.disabled = true; btn.textContent = 'Launching…';
+    try {
+      const bank = await loadBankByKey(ctx.user.uid, s.bankKey);
+      if (!bank.questions.length) throw new Error('That bank has no questions.');
+      const { gameId } = await createGame(ctx.user, { bankKey: s.bankKey, bank, mode: s.mode, settings: s.settings });
+      location.href = `../host/?g=${encodeURIComponent(gameId)}`;
+    } catch (err) {
+      console.error(err); toast(explainError(err), 'bad', 6000);
+      btn.disabled = false; btn.textContent = '🚀 Launch Game';
+    }
+  };
+}
+
+// ---------------- Results ----------------
+function resultRow(r) {
+  const d = r.finishedAt ? new Date(r.finishedAt) : null;
+  const winner = r.winner === 'tie' ? 'Tie' : r.winner === 'chicken' ? '🐔 Chickens won' : r.winner === 'turkey' ? '🦃 Turkeys won' : '';
+  return html`<div class="list-row card" data-result="${r.id}" style="cursor:pointer">
+    <img class="icon" src="${subjectIcon(r.bankSubject)}" alt="">
+    <div class="grow"><div class="title">${r.bankTitle || 'Game'}</div>
+    <div class="sub">${d ? d.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' }) : ''} · ${Object.keys(r.players || {}).length} players · ${winner}</div></div>
+    <span class="badge yolk">${r.accuracy ?? '–'}%</span></div>`;
+}
+function wireResultRows(root) {
+  $$('[data-result]', root).forEach((row) => { row.onclick = () => showResult(ctx.results.find((r) => r.id === row.dataset.result)); });
+}
+
+function renderResults(main) {
+  main.innerHTML = html`<h1 class="page-title">Results</h1>
+    <p style="color:#cfe0ff">Every finished game is saved here. The full printable <b>Master Teacher Diagnostic</b> (strand mastery, blind spots, question analysis) arrives in Phase 8 — for now you get the summary.</p>
+    <div class="list" id="rlist"></div>`;
+  const list = $('#rlist');
+  list.innerHTML = ctx.results.length ? ctx.results.map(resultRow).join('') : '<div class="panel light"><p class="empty">No finished games yet.</p></div>';
+  wireResultRows(list);
+}
+
+function showResult(r) {
+  if (!r) return;
+  const players = Object.entries(r.players || {}).map(([uid, p]) => ({ uid, ...p })).filter((p) => !p.bot)
+    .sort((a, b) => (b.score || 0) - (a.score || 0));
+  const rows = players.map((p) => {
+    const acc = p.answered ? Math.round((p.correct / p.answered) * 100) : 0;
+    return html`<tr><td>${p.name}</td><td>${p.team === 'chicken' ? '🐔' : '🦃'}</td><td>${p.score || 0}</td><td>${p.correct || 0}/${p.answered || 0}</td><td>${acc}%</td><td>${p.blindSpots || 0}</td></tr>`;
+  }).join('');
+  modal({
+    title: r.bankTitle || 'Game result', wide: true,
+    body: html`<p><b>🐔 Chickens ${r.teams?.chicken ?? 0}</b> vs <b>🦃 Turkeys ${r.teams?.turkey ?? 0}</b> · class accuracy <b>${r.accuracy ?? 0}%</b></p>
+      <table class="table"><thead><tr><th>Student</th><th>Team</th><th>KO points</th><th>Correct</th><th>Accuracy</th><th>Blind spots</th></tr></thead><tbody>${raw(rows || '<tr><td colspan="6">No students</td></tr>')}</tbody></table>
+      <p class="hint">Blind spot = answered 🔥 Sure but got it wrong.</p>`,
+    buttons: [{ label: 'Close', value: null }],
+  });
+}
+
+boot();

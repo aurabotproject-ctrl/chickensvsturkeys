@@ -1,0 +1,13 @@
+{
+  "_note": "Strand names used for the Master Teacher Diagnostic. Check against the current NZ Curriculum and edit freely — every bank's questions must use one of the strands listed for its subject.",
+  "Mathematics & Statistics": ["Number", "Algebra", "Measurement", "Geometry", "Statistics", "Probability"],
+  "English": ["Reading", "Writing", "Oral Language (Listening & Speaking)"],
+  "Reading Comprehension": ["Literal Comprehension", "Inference", "Vocabulary", "Author's Purpose & Structure"],
+  "Science": ["Nature of Science", "Living World", "Material World", "Physical World", "Planet Earth and Beyond"],
+  "Social Sciences": ["Identity & Culture", "Place & Environment", "Continuity & Change", "Economic World"],
+  "Health & PE": ["Personal Health & Physical Development", "Movement Concepts & Motor Skills", "Relationships with Other People", "Healthy Communities & Environments"],
+  "Technology": ["Technological Practice", "Technological Knowledge", "Nature of Technology", "Computational Thinking"],
+  "The Arts": ["Dance", "Drama", "Music – Sound Arts", "Visual Arts"],
+  "Te Reo Māori": ["Kupu (Vocabulary)", "Reo (Language Structures)", "Tikanga & Culture"],
+  "General Knowledge": ["General"]
+}

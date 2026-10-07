@@ -1,0 +1,109 @@
+/* =========================================================
+   CHICKENS vs TURKEYS — shared UI components
+   (link after tokens.css)
+   ========================================================= */
+
+/* ---------- Form controls ---------- */
+.input, .select, .textarea {
+  width: 100%;
+  font: 800 var(--fs-md)/1.3 var(--font-body);
+  color: var(--ink);
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 12px;
+  padding: .6em .8em;
+  box-shadow: inset 0 3px 0 rgba(0,0,0,.08);
+  outline: none;
+}
+.input:focus, .select:focus, .textarea:focus { border-color: var(--chicken); box-shadow: 0 0 0 4px rgba(30,111,224,.35); }
+.textarea { min-height: 120px; resize: vertical; font-weight: 700; }
+.textarea.mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .85rem; }
+.select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--ink) 50%), linear-gradient(135deg, var(--ink) 50%, transparent 50%); background-position: calc(100% - 20px) 55%, calc(100% - 14px) 55%; background-size: 6px 6px; background-repeat: no-repeat; padding-right: 2.2em; }
+.field { display: grid; gap: .35rem; }
+.field > span, .label { font-family: var(--font-comic); letter-spacing: .05em; font-size: 1.05rem; color: inherit; }
+.hint { font-size: var(--fs-sm); opacity: .75; font-weight: 700; }
+.error-text { color: var(--turkey); font-weight: 900; font-size: var(--fs-sm); }
+
+/* Segmented choice (radio pills) */
+.seg { display: flex; flex-wrap: wrap; gap: .4rem; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { cursor: pointer; padding: .4em .9em; border: 3px solid var(--ink); border-radius: 999px; background: var(--white); color: var(--ink); font-weight: 900; box-shadow: var(--pop-shadow-sm); transition: transform var(--t-fast); }
+.seg input:checked + label { background: var(--yolk); transform: translateY(-2px); }
+.seg input:focus-visible + label { outline: 3px solid var(--chicken); }
+
+/* ---------- Chips ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: .45rem; }
+.chip { cursor: pointer; padding: .3em .9em; border-radius: 999px; border: 3px solid var(--ink); background: var(--white); color: var(--ink); font-weight: 900; font-size: var(--fs-sm); }
+.chip.on { background: var(--chicken); color: var(--white); }
+
+/* ---------- Cards / lists ---------- */
+.card {
+  background: var(--white); color: var(--ink);
+  border: 3px solid var(--ink); border-radius: 14px; box-shadow: var(--pop-shadow-sm);
+  padding: .9rem 1rem;
+}
+.list { display: grid; gap: .7rem; }
+.list-row { display: flex; align-items: center; gap: .9rem; }
+.list-row .grow { flex: 1; min-width: 0; }
+.list-row img.icon { width: 52px; height: 52px; border-radius: 12px; flex: none; }
+.list-row .title { font-family: var(--font-comic); font-size: 1.35rem; letter-spacing: .04em; line-height: 1; }
+.list-row .sub { font-size: var(--fs-sm); opacity: .7; }
+.badge { display: inline-block; font-size: .75rem; font-weight: 900; padding: .1em .6em; border-radius: 999px; background: var(--navy-700); color: var(--white); border: 2px solid var(--ink); }
+.badge.yolk { background: var(--yolk); color: var(--ink); }
+.badge.green { background: var(--grass); color: var(--ink); }
+.badge.red { background: var(--turkey); }
+
+.btn.sm { font-size: 1.05rem; padding: .35em .8em .45em; box-shadow: inset 0 -4px 0 var(--btn-edge), var(--pop-shadow-sm); }
+.btn.icon-only { padding: .35em .55em; }
+
+/* ---------- Tables ---------- */
+.table { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--white); color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; overflow: hidden; }
+.table th, .table td { padding: .55rem .7rem; text-align: left; border-bottom: 2px solid #e6e1d6; }
+.table th { background: var(--navy-800); color: var(--white); font-family: var(--font-comic); letter-spacing: .05em; font-weight: 400; }
+.table tr:last-child td { border-bottom: 0; }
+
+/* ---------- Modal ---------- */
+.modal-back { position: fixed; inset: 0; z-index: 100; background: rgba(6,18,46,.72); display: grid; place-items: center; padding: 16px; backdrop-filter: blur(3px); }
+.modal { width: min(520px, 100%); max-height: calc(100vh - 32px); overflow: auto; }
+.modal.wide { width: min(980px, 100%); }
+.modal-title { font-family: var(--font-comic); font-size: 2rem; letter-spacing: .04em; margin: 0 0 .8rem; color: var(--chicken); }
+.modal-x { position: absolute; top: 10px; right: 12px; border: 0; background: transparent; font-size: 1.4rem; cursor: pointer; color: var(--ink); }
+.modal-actions { margin-top: 1.2rem; justify-content: flex-end; }
+.modal-msg { font-size: var(--fs-md); margin: .2rem 0; }
+
+/* ---------- Toasts ---------- */
+.toasts { position: fixed; z-index: 200; left: 50%; bottom: 22px; transform: translateX(-50%); display: grid; gap: .5rem; width: min(440px, calc(100% - 32px)); pointer-events: none; }
+.toast { pointer-events: auto; background: var(--navy-800); color: var(--white); border: 3px solid var(--ink); border-radius: 12px; padding: .7rem 1rem; box-shadow: var(--pop-shadow-sm); font-weight: 900; transition: opacity .3s, transform .3s; }
+.toast.ok { background: var(--grass); color: var(--ink); }
+.toast.bad { background: var(--turkey); }
+.toast.warn { background: var(--yolk); color: var(--ink); }
+.toast.out { opacity: 0; transform: translateY(10px); }
+
+/* ---------- Loading ---------- */
+.loading { display: grid; place-items: center; gap: 1rem; min-height: 50vh; text-align: center; }
+.spin-egg { width: 64px; height: 80px; border: 4px solid var(--ink); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: var(--shell); animation: wobble .6s ease-in-out infinite; }
+
+/* ---------- Teacher app shell ---------- */
+.shell { display: grid; grid-template-columns: 250px 1fr; min-height: 100vh; }
+.side { background: var(--navy-900); border-right: 4px solid var(--ink); padding: 18px 14px; display: flex; flex-direction: column; gap: 1rem; position: sticky; top: 0; height: 100vh; }
+.side .logo { width: 100%; max-width: 210px; margin: 0 auto; display: block; filter: drop-shadow(3px 3px 0 var(--ink)); }
+.nav { display: grid; gap: .35rem; }
+.nav button { all: unset; cursor: pointer; display: flex; align-items: center; gap: .7rem; padding: .6rem .8rem; border-radius: 12px; font-weight: 900; color: #cfe0ff; }
+.nav button:hover { background: rgba(255,255,255,.08); }
+.nav button.on { background: var(--chicken); color: var(--white); box-shadow: var(--pop-shadow-sm); border: 3px solid var(--ink); }
+.nav .ni { width: 26px; text-align: center; font-size: 1.2rem; }
+.side .me { margin-top: auto; display: flex; align-items: center; gap: .6rem; font-size: var(--fs-sm); color: #cfe0ff; }
+.side .me img { width: 38px; height: 38px; border-radius: 50%; border: 3px solid var(--ink); }
+.main { padding: 26px clamp(16px, 3vw, 40px) 60px; min-width: 0; }
+.page-title { font-family: var(--font-comic); font-size: clamp(2rem, 4vw, 3rem); letter-spacing: .04em; margin: 0 0 1rem; color: var(--white); text-shadow: 3px 3px 0 var(--ink); }
+.section-title { font-family: var(--font-comic); font-size: 1.6rem; letter-spacing: .04em; margin: 0 0 .7rem; }
+
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; }
+  .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .side .logo { width: 110px; margin: 0; }
+  .nav { grid-auto-flow: column; overflow-x: auto; flex: 1; }
+  .nav button .nl { display: none; }
+  .side .me { margin: 0; }
+  .side .me span { display: none; }
+}

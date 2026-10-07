@@ -1,0 +1,283 @@
+{
+ "cvtBank": 1,
+ "title": "Aotearoa Animals",
+ "subject": "Science",
+ "yearLevels": [
+  4,
+  5,
+  6
+ ],
+ "source": "Native and introduced animals of New Zealand",
+ "strands": [
+  "Living World",
+  "Nature of Science"
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "type": "mc",
+   "q": "Which New Zealand bird is the heaviest parrot in the world and cannot fly?",
+   "options": [
+    "Kererū",
+    "Kea",
+    "Kākā",
+    "Kākāpō"
+   ],
+   "correct": 3,
+   "explanation": "The kākāpō is a big, flightless, night-time parrot. It is the heaviest parrot in the world.",
+   "strand": "Living World",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q2",
+   "type": "mc",
+   "q": "Which cheeky parrot lives in the mountains of the South Island?",
+   "options": [
+    "Kea",
+    "Tūī",
+    "Kākāpō",
+    "Pūkeko"
+   ],
+   "correct": 0,
+   "explanation": "Kea are alpine parrots, famous for being curious and cheeky.",
+   "strand": "Living World",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q3",
+   "type": "tf",
+   "q": "True or false: kiwi are nocturnal, which means they are mostly active at night.",
+   "options": [
+    "True",
+    "False"
+   ],
+   "correct": 0,
+   "explanation": "Kiwi sleep in burrows during the day and come out at night to feed.",
+   "strand": "Living World",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q4",
+   "type": "mc",
+   "q": "What kind of animal is a wētā?",
+   "options": [
+    "A spider",
+    "An insect",
+    "A crab",
+    "A lizard"
+   ],
+   "correct": 1,
+   "explanation": "Wētā are insects: they have six legs and three body parts.",
+   "strand": "Living World",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q5",
+   "type": "mc",
+   "q": "Tuatara are best described as…",
+   "options": [
+    "A baby dinosaur",
+    "A type of lizard",
+    "An amphibian, like a frog",
+    "The last living members of an ancient reptile group"
+   ],
+   "correct": 3,
+   "explanation": "Tuatara look like lizards but belong to their own very old group of reptiles.",
+   "strand": "Living World",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q6",
+   "type": "mc",
+   "q": "Which bird has a white tuft of feathers at its throat?",
+   "options": [
+    "Kererū",
+    "Tūī",
+    "Pūkeko",
+    "Pīwakawaka"
+   ],
+   "correct": 1,
+   "explanation": "Tūī have a white tuft of feathers at the throat, often called a poi.",
+   "strand": "Living World",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q7",
+   "type": "mc",
+   "q": "What does the pīwakawaka (fantail) mostly eat?",
+   "options": [
+    "Fish",
+    "Insects",
+    "Seeds",
+    "Nectar only"
+   ],
+   "correct": 1,
+   "explanation": "Fantails flit and fan their tails to catch small flying insects.",
+   "strand": "Living World",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q8",
+   "type": "mc",
+   "q": "What were moa?",
+   "options": [
+    "A type of seabird",
+    "Small flying parrots",
+    "Large native lizards",
+    "Giant flightless birds that are now extinct"
+   ],
+   "correct": 3,
+   "explanation": "Moa were huge flightless birds. They became extinct a few hundred years ago.",
+   "strand": "Living World",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q9",
+   "type": "mc",
+   "q": "Which animals are New Zealand's only native land mammals?",
+   "options": [
+    "Bats (pekapeka)",
+    "Possums",
+    "Hedgehogs",
+    "Stoats"
+   ],
+   "correct": 0,
+   "explanation": "Pekapeka (bats) are our only native land mammals. Possums, stoats and hedgehogs were brought here.",
+   "strand": "Living World",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q10",
+   "type": "mc",
+   "q": "Why are stoats a big problem for New Zealand birds?",
+   "options": [
+    "They hunt native birds and eat their eggs",
+    "They eat all the grass",
+    "They make rivers dirty",
+    "They spread plant seeds"
+   ],
+   "correct": 0,
+   "explanation": "Stoats are predators. Many of our birds did not evolve to escape them.",
+   "strand": "Living World",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q11",
+   "type": "mc",
+   "q": "How does the kererū help native forests?",
+   "options": [
+    "It eats harmful bacteria",
+    "It digs burrows for kiwi",
+    "It pollinates grass",
+    "It spreads the seeds of large fruits"
+   ],
+   "correct": 3,
+   "explanation": "Kererū can swallow big fruits whole and spread their seeds far away, helping new trees grow.",
+   "strand": "Living World",
+   "difficulty": 3,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q12",
+   "type": "mc",
+   "q": "What is the yellow-eyed penguin called in te reo Māori?",
+   "options": [
+    "Kororā",
+    "Hoiho",
+    "Kea",
+    "Tūī"
+   ],
+   "correct": 1,
+   "explanation": "The yellow-eyed penguin is the hoiho. The little penguin is the kororā.",
+   "strand": "Living World",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q13",
+   "type": "mc",
+   "q": "A living thing that makes its own food from sunlight is called a…",
+   "options": [
+    "Decomposer",
+    "Consumer",
+    "Predator",
+    "Producer"
+   ],
+   "correct": 3,
+   "explanation": "Plants are producers: they use sunlight to make their own food.",
+   "strand": "Living World",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q14",
+   "type": "mc",
+   "q": "A scientist counts the kiwi in a forest every year. What is she doing?",
+   "options": [
+    "Collecting data to look for changes",
+    "Building a model volcano",
+    "Guessing without evidence",
+    "Changing the forest"
+   ],
+   "correct": 0,
+   "explanation": "Scientists collect data over time so they can notice patterns and changes.",
+   "strand": "Nature of Science",
+   "difficulty": 3,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q15",
+   "type": "tf",
+   "q": "True or false: possums are native to New Zealand.",
+   "options": [
+    "True",
+    "False"
+   ],
+   "correct": 1,
+   "explanation": "Possums were brought from Australia in the 1800s and now damage our forests.",
+   "strand": "Living World",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  }
+ ]
+}

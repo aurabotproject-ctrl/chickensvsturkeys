@@ -1,0 +1,288 @@
+{
+ "cvtBank": 1,
+ "title": "Kiwi Know-How",
+ "subject": "Social Sciences",
+ "yearLevels": [
+  5,
+  6,
+  7,
+  8
+ ],
+ "source": "New Zealand places, people and history",
+ "strands": [
+  "Place & Environment",
+  "Continuity & Change",
+  "Identity & Culture",
+  "Economic World"
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "type": "mc",
+   "q": "What is the capital city of New Zealand?",
+   "options": [
+    "Hamilton",
+    "Auckland",
+    "Wellington",
+    "Christchurch"
+   ],
+   "correct": 2,
+   "explanation": "Wellington is the capital, where Parliament meets. Auckland is our biggest city.",
+   "strand": "Place & Environment",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q2",
+   "type": "mc",
+   "q": "What is the highest mountain in New Zealand?",
+   "options": [
+    "Mount Taranaki",
+    "Mount Tongariro",
+    "Aoraki / Mount Cook",
+    "Mount Ruapehu"
+   ],
+   "correct": 2,
+   "explanation": "Aoraki / Mount Cook in the Southern Alps is the highest at about 3,724 m.",
+   "strand": "Place & Environment",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q3",
+   "type": "mc",
+   "q": "In which year was Te Tiriti o Waitangi first signed?",
+   "options": [
+    "1769",
+    "1893",
+    "1840",
+    "1907"
+   ],
+   "correct": 2,
+   "explanation": "Te Tiriti o Waitangi was first signed on 6 February 1840 at Waitangi.",
+   "strand": "Continuity & Change",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q4",
+   "type": "mc",
+   "q": "What is New Zealand's longest river?",
+   "options": [
+    "Clutha River",
+    "Waimakariri River",
+    "Waikato River",
+    "Whanganui River"
+   ],
+   "correct": 2,
+   "explanation": "The Waikato River is the longest, at about 425 km.",
+   "strand": "Place & Environment",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q5",
+   "type": "mc",
+   "q": "What is the North Island called in te reo Māori?",
+   "options": [
+    "Te Ika-a-Māui",
+    "Rakiura",
+    "Te Waipounamu",
+    "Wharekauri"
+   ],
+   "correct": 0,
+   "explanation": "Te Ika-a-Māui means \"the fish of Māui\", from the story of Māui fishing up the land.",
+   "strand": "Identity & Culture",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q6",
+   "type": "mc",
+   "q": "Rakiura is the te reo Māori name for…",
+   "options": [
+    "The Chatham Islands",
+    "The South Island",
+    "Great Barrier Island",
+    "Stewart Island"
+   ],
+   "correct": 3,
+   "explanation": "Rakiura is Stewart Island, at the bottom of the South Island.",
+   "strand": "Place & Environment",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q7",
+   "type": "mc",
+   "q": "In 1893 New Zealand became the first self-governing country to…",
+   "options": [
+    "Let women vote in national elections",
+    "Build a railway",
+    "Win a rugby world cup",
+    "Use paper money"
+   ],
+   "correct": 0,
+   "explanation": "In 1893 women in New Zealand won the right to vote in national elections — a world first.",
+   "strand": "Continuity & Change",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q8",
+   "type": "mc",
+   "q": "Who led the campaign for women to vote in New Zealand?",
+   "options": [
+    "Kate Sheppard",
+    "Ernest Rutherford",
+    "Jean Batten",
+    "Edmund Hillary"
+   ],
+   "correct": 0,
+   "explanation": "Kate Sheppard led the petition that helped women win the vote in 1893. She is on the $10 note.",
+   "strand": "Continuity & Change",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q9",
+   "type": "mc",
+   "q": "What does Matariki celebrate?",
+   "options": [
+    "The Māori New Year, when a star cluster rises",
+    "Captain Cook's arrival",
+    "The first day of summer",
+    "The end of the school year"
+   ],
+   "correct": 0,
+   "explanation": "Matariki is the Māori New Year, marked by the rising of the Matariki star cluster in winter.",
+   "strand": "Identity & Culture",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q10",
+   "type": "mc",
+   "q": "Which of these is an official language of New Zealand?",
+   "options": [
+    "Latin",
+    "Spanish",
+    "New Zealand Sign Language",
+    "French"
+   ],
+   "correct": 2,
+   "explanation": "Te reo Māori and New Zealand Sign Language are official languages by law.",
+   "strand": "Identity & Culture",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q11",
+   "type": "mc",
+   "q": "What is the sea between New Zealand and Australia called?",
+   "options": [
+    "The Red Sea",
+    "The Ross Sea",
+    "The Tasman Sea",
+    "The Coral Sea"
+   ],
+   "correct": 2,
+   "explanation": "The Tasman Sea separates New Zealand and Australia.",
+   "strand": "Place & Environment",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q12",
+   "type": "mc",
+   "q": "With Tenzing Norgay, who was first to climb Mount Everest in 1953?",
+   "options": [
+    "Richard Pearse",
+    "Sir Peter Blake",
+    "Sir Edmund Hillary",
+    "Kate Sheppard"
+   ],
+   "correct": 2,
+   "explanation": "Sir Edmund Hillary from Auckland and Tenzing Norgay reached the top of Everest in 1953.",
+   "strand": "Continuity & Change",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q13",
+   "type": "mc",
+   "q": "What money do we use in New Zealand?",
+   "options": [
+    "The New Zealand dollar",
+    "The euro",
+    "The Australian dollar",
+    "The pound"
+   ],
+   "correct": 0,
+   "explanation": "New Zealand uses the New Zealand dollar (NZD).",
+   "strand": "Economic World",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q14",
+   "type": "tf",
+   "q": "True or false: Waitangi Day is on 6 February.",
+   "options": [
+    "True",
+    "False"
+   ],
+   "correct": 0,
+   "explanation": "Waitangi Day remembers the first signing of Te Tiriti o Waitangi on 6 February 1840.",
+   "strand": "Continuity & Change",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q15",
+   "type": "mc",
+   "q": "Which is New Zealand's biggest city by population?",
+   "options": [
+    "Christchurch",
+    "Wellington",
+    "Dunedin",
+    "Auckland"
+   ],
+   "correct": 3,
+   "explanation": "Tāmaki Makaurau Auckland has the most people of any NZ city.",
+   "strand": "Place & Environment",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  }
+ ]
+}

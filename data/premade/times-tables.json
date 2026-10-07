@@ -1,0 +1,375 @@
+{
+ "cvtBank": 1,
+ "title": "Times Tables Showdown",
+ "subject": "Mathematics & Statistics",
+ "yearLevels": [
+  4,
+  5,
+  6
+ ],
+ "source": "Times tables and division facts to 12 × 12",
+ "strands": [
+  "Number",
+  "Algebra"
+ ],
+ "questions": [
+  {
+   "id": "q1",
+   "type": "mc",
+   "q": "What is 7 × 8?",
+   "options": [
+    "48",
+    "54",
+    "56",
+    "63"
+   ],
+   "correct": 2,
+   "explanation": "7 × 8 = 56. A trick: 5, 6, 7, 8 → 56 = 7 × 8.",
+   "strand": "Number",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q2",
+   "type": "mc",
+   "q": "What is 6 × 9?",
+   "options": [
+    "56",
+    "45",
+    "63",
+    "54"
+   ],
+   "correct": 3,
+   "explanation": "6 × 9 = 54. Nine sixes is one less six than ten sixes: 60 − 6 = 54.",
+   "strand": "Number",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q3",
+   "type": "mc",
+   "q": "What is 12 × 4?",
+   "options": [
+    "44",
+    "48",
+    "36",
+    "52"
+   ],
+   "correct": 1,
+   "explanation": "12 × 4 is double 12 (24), then double again (48).",
+   "strand": "Number",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q4",
+   "type": "mc",
+   "q": "What is 8 × 8?",
+   "options": [
+    "48",
+    "72",
+    "64",
+    "56"
+   ],
+   "correct": 2,
+   "explanation": "8 × 8 = 64, a square number.",
+   "strand": "Number",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q5",
+   "type": "mc",
+   "q": "What is 9 × 7?",
+   "options": [
+    "72",
+    "63",
+    "56",
+    "67"
+   ],
+   "correct": 1,
+   "explanation": "9 × 7 = 63. Ten sevens is 70, take away one seven: 70 − 7 = 63.",
+   "strand": "Number",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q6",
+   "type": "mc",
+   "q": "What is 11 × 6?",
+   "options": [
+    "56",
+    "76",
+    "66",
+    "61"
+   ],
+   "correct": 2,
+   "explanation": "11 × 6 = 66: ten sixes (60) plus one more six.",
+   "strand": "Number",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q7",
+   "type": "mc",
+   "q": "What is 3 × 12?",
+   "options": [
+    "32",
+    "38",
+    "24",
+    "36"
+   ],
+   "correct": 3,
+   "explanation": "3 × 12 = 36: three groups of 12 is 12 + 12 + 12.",
+   "strand": "Number",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q8",
+   "type": "mc",
+   "q": "What is 56 ÷ 8?",
+   "options": [
+    "9",
+    "7",
+    "8",
+    "6"
+   ],
+   "correct": 1,
+   "explanation": "Division undoes multiplication: 7 × 8 = 56, so 56 ÷ 8 = 7.",
+   "strand": "Number",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q9",
+   "type": "mc",
+   "q": "What is 81 ÷ 9?",
+   "options": [
+    "8",
+    "7",
+    "9",
+    "11"
+   ],
+   "correct": 2,
+   "explanation": "9 × 9 = 81, so 81 ÷ 9 = 9.",
+   "strand": "Number",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q10",
+   "type": "mc",
+   "q": "What is 72 ÷ 6?",
+   "options": [
+    "11",
+    "9",
+    "13",
+    "12"
+   ],
+   "correct": 3,
+   "explanation": "6 × 12 = 72, so 72 ÷ 6 = 12.",
+   "strand": "Number",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q11",
+   "type": "mc",
+   "q": "6 × □ = 42. What number goes in the box?",
+   "options": [
+    "36",
+    "7",
+    "6",
+    "8"
+   ],
+   "correct": 1,
+   "explanation": "Think: what times 6 makes 42? 6 × 7 = 42.",
+   "strand": "Algebra",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q12",
+   "type": "mc",
+   "q": "□ × 9 = 108. What number goes in the box?",
+   "options": [
+    "99",
+    "11",
+    "13",
+    "12"
+   ],
+   "correct": 3,
+   "explanation": "9 × 12 = 108, so the box is 12.",
+   "strand": "Algebra",
+   "difficulty": 3,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q13",
+   "type": "mc",
+   "q": "Which of these is NOT a multiple of 4?",
+   "options": [
+    "32",
+    "28",
+    "26",
+    "24"
+   ],
+   "correct": 2,
+   "explanation": "Multiples of 4 go 4, 8, 12 … 24, 28, 32. 26 is not in the 4 times table.",
+   "strand": "Number",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q14",
+   "type": "mc",
+   "q": "7 × 6 is the same as…",
+   "options": [
+    "7 + 6",
+    "7 × 7 − 1",
+    "6 × 7",
+    "76"
+   ],
+   "correct": 2,
+   "explanation": "Multiplication can be done in any order (it is commutative): 7 × 6 = 6 × 7 = 42.",
+   "strand": "Algebra",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q15",
+   "type": "mc",
+   "q": "A box holds 8 eggs. How many eggs are in 9 boxes?",
+   "options": [
+    "64",
+    "17",
+    "81",
+    "72"
+   ],
+   "correct": 3,
+   "explanation": "9 groups of 8 is 9 × 8 = 72.",
+   "strand": "Number",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q16",
+   "type": "mc",
+   "q": "Chickens lay 5 eggs each. 12 chickens lay how many eggs?",
+   "options": [
+    "60",
+    "55",
+    "17",
+    "65"
+   ],
+   "correct": 0,
+   "explanation": "12 groups of 5 is 12 × 5 = 60.",
+   "strand": "Number",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q17",
+   "type": "mc",
+   "q": "What is 4 × 25?",
+   "options": [
+    "100",
+    "75",
+    "90",
+    "125"
+   ],
+   "correct": 0,
+   "explanation": "Four 25s make 100 — like four 25-cent coins make a dollar.",
+   "strand": "Number",
+   "difficulty": 2,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q18",
+   "type": "mc",
+   "q": "If 8 × 7 = 56, what is 80 × 7?",
+   "options": [
+    "567",
+    "560",
+    "5600",
+    "56"
+   ],
+   "correct": 1,
+   "explanation": "80 is ten times 8, so the answer is ten times 56: 560.",
+   "strand": "Number",
+   "difficulty": 3,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q19",
+   "type": "tf",
+   "q": "True or false: any number multiplied by 0 equals 0.",
+   "options": [
+    "True",
+    "False"
+   ],
+   "correct": 0,
+   "explanation": "Zero groups of anything is nothing, so any number × 0 = 0.",
+   "strand": "Number",
+   "difficulty": 1,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  },
+  {
+   "id": "q20",
+   "type": "mc",
+   "q": "What is 15 × 4?",
+   "options": [
+    "54",
+    "60",
+    "64",
+    "45"
+   ],
+   "correct": 1,
+   "explanation": "15 × 4 is 10 × 4 (40) plus 5 × 4 (20) = 60.",
+   "strand": "Number",
+   "difficulty": 3,
+   "page": null,
+   "seconds": 20,
+   "tags": []
+  }
+ ]
+}

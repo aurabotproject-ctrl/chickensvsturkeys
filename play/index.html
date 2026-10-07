@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en" data-auth="student">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1f4b">
+  <title>Join · Chickens vs Turkeys</title>
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/ui.css">
+  <link rel="stylesheet" href="play.css">
+</head>
+<body>
+  <!-- JOIN -->
+  <section id="join" class="screen">
+    <img class="join-logo anim-pop" src="../assets/sprites/logo.webp" alt="Chickens vs Turkeys">
+    <form id="join-form" class="panel light join-form" autocomplete="off">
+      <label class="field"><span>Game code</span><input class="input code-input" id="code" maxlength="6" inputmode="text" autocapitalize="characters" placeholder="ABC123" required></label>
+      <label class="field"><span>Your name</span><input class="input" id="name" maxlength="14" placeholder="First name" required></label>
+      <button class="btn big" type="submit" id="join-btn">JOIN!</button>
+      <p class="error-text" id="join-err"></p>
+    </form>
+  </section>
+
+  <!-- WAITING / TEAM / AVATAR -->
+  <section id="wait" class="screen hidden"></section>
+
+  <!-- PLAYING -->
+  <section id="play" class="screen hidden">
+    <header class="ph">
+      <img id="me-av" class="me-av" src="" alt="">
+      <div class="me-info"><b id="me-name"></b><small id="me-team"></small></div>
+      <div class="me-stat" title="KO points"><span>💥</span><b id="me-score">0</b></div>
+      <div class="me-stat timer-chip"><span>⏱</span><b id="me-timer">--</b></div>
+    </header>
+    <nav class="tabs">
+      <button id="tab-answer" class="tab on">❓ ANSWER</button>
+      <button id="tab-fight" class="tab">🥚 FIGHT <span class="egg-count" id="egg-count">0</span></button>
+    </nav>
+    <div class="egg-bar" id="egg-bar"></div>
+
+    <div id="view-answer" class="view">
+      <div class="question panel light" id="question">Get ready…</div>
+      <div class="answers" id="answers"></div>
+      <div class="conf hidden" id="conf">
+        <p>How sure are you?</p>
+        <div class="conf-btns">
+          <button data-conf="sure">🔥<b>Sure</b></button>
+          <button data-conf="think">🤔<b>Think so</b></button>
+          <button data-conf="guess">🎲<b>Guessing</b></button>
+        </div>
+      </div>
+      <div class="fb hidden" id="fb"></div>
+    </div>
+
+    <div id="view-fight" class="view hidden">
+      <div class="pad" id="pad">
+        <div class="pad-half move"><div class="pad-hint">MOVE<br><small>drag here</small></div><img class="stick-base" id="stick-base" src="../assets/sprites/joystick.webp" alt=""><div class="stick-knob" id="stick-knob"></div></div>
+        <div class="pad-half aim"><div class="pad-hint">AIM &amp; THROW<br><small>drag, then let go</small></div><img class="aim-base" id="aim-base" src="../assets/sprites/aimpad.webp" alt=""><div class="aim-arrow" id="aim-arrow"></div></div>
+      </div>
+      <div class="ko hidden" id="ko"></div>
+    </div>
+  </section>
+
+  <div id="overlay" class="overlay hidden"></div>
+  <script type="module" src="play.js"></script>
+</body>
+</html>

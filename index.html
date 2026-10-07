@@ -4,29 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Chickens vs Turkeys</title>
+  <meta name="description" content="Answer. Attack. Survive. A comic-book classroom quiz battle.">
   <link rel="stylesheet" href="css/tokens.css">
   <style>
-    body { display: grid; place-items: center; min-height: 100vh; }
-    .hero { text-align: center; padding: 40px 16px; }
-    .hero .comic-title { font-size: var(--fs-hero); display: block; }
-    .vs { display: inline-grid; margin: .4rem 0; font-size: 1.6rem; background: var(--turkey); color: var(--white); padding: 1.2em 1.5em; }
-    .tagline { display: inline-block; margin-top: 1.4rem; background: var(--ink); color: var(--white); font-family: var(--font-comic); font-size: var(--fs-lg); letter-spacing: .12em; padding: .3em 1em; transform: rotate(-2deg); border-bottom: 5px solid var(--yolk); }
-    .actions { margin-top: 2.4rem; }
-    .note { margin-top: 2rem; color: #9fb3dd; font-size: var(--fs-sm); }
+    body { min-height: 100vh; display: grid; place-items: center; background: linear-gradient(rgba(6,18,46,.35), rgba(6,18,46,.8)), url('assets/sprites/keyart.webp') center/cover fixed; }
+    .hero { text-align: center; padding: 30px 16px; display: grid; justify-items: center; gap: 18px; }
+    .hero img { width: min(640px, 92vw); filter: drop-shadow(6px 6px 0 var(--ink)); animation: pop-in 700ms var(--ease-pop) both; }
+    .actions { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
+    .actions .btn { min-width: 250px; }
+    .note { color: #e5eeff; font-size: var(--fs-sm); text-shadow: 1px 1px 0 var(--ink); }
   </style>
 </head>
 <body>
   <div class="hero">
-    <span class="comic-title slant anim-pop">CHICKENS</span>
-    <span class="burst vs anim-wobble">VS</span>
-    <span class="comic-title red slant anim-pop" style="animation-delay:.12s">TURKEYS</span>
-    <div class="tagline">ANSWER. ATTACK. SURVIVE.</div>
-
-    <div class="actions row center">
-      <a class="btn purple big disabled" aria-disabled="true">I'm a Teacher</a>
-      <a class="btn big disabled" aria-disabled="true">Join Game</a>
+    <img src="assets/sprites/logo.webp" alt="Chickens vs Turkeys — Answer. Attack. Survive.">
+    <div class="actions">
+      <a class="btn big" href="play/">🎮 Join a Game</a>
+      <a class="btn big purple" href="teacher/">🍎 I'm a Teacher</a>
     </div>
-    <p class="note">Under construction · Phase 0 · <a href="hello/">Run the Coop Check (Firebase test)</a></p>
+    <p class="note">Students: you just need the 6-letter code from the big screen. · <a href="hello/">Connection check</a></p>
   </div>
 </body>
 </html>
