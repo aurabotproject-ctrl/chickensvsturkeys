@@ -23,6 +23,8 @@ Everything is **comic-book styled**: thick black outlines, halftone dots, big bu
 
 Plus **Random Events** the teacher can trigger (or auto-trigger) in any mode.
 
+And for the teacher: **Build with Claude** question banks (copy a prompt → paste the reply back, works with PDFs/ebooks and page ranges) and a printable **Master Teacher Diagnostic** after every game — strand mastery, student accuracy, and confidence-vs-competence blind spots.
+
 ---
 
 ## 2. Working Agreement (rules for Claude in every phase)
@@ -75,6 +77,11 @@ Plus **Random Events** the teacher can trigger (or auto-trigger) in any mode.
 /js/core/teams.js           auto-balance, team colours
 /js/core/fx.js              screen shake, squash/stretch, comic word pops, particles
 /js/quiz/banks.js           CRUD, CSV import, premade banks
+/js/quiz/promptBuilder.js   Build with Claude: prompt template + paste-back parser/validator
+/js/report/report.js        Master Teacher Print Diagnostic (analytics + rendering)
+/css/print.css              A4 @media print styles
+/teacher/report.html        report page (opens from final screen or Teacher → Results)
+/data/strands.json          NZ Curriculum strand lists per learning area
 /js/quiz/engine.js          question selection, validation, streaks
 /js/modes/dodge/host.js     arena sim + rendering
 /js/modes/dodge/player.js   phone controller
@@ -112,16 +119,47 @@ Plus **Random Events** the teacher can trigger (or auto-trigger) in any mode.
 /games/{gameId}/inputs/{uid}            {mx,my,ax,ay,fire,seq}                 (phone writes ~12Hz, host reads)
 /games/{gameId}/ammo/{uid}              {eggs, streak}                         (host writes)
 /games/{gameId}/events/{eventId}        {type, startedAt, duration}
+/games/{gameId}/current/{uid}           {qid, options[], shownAt}              (host writes the question to each phone — NO answer key)
+/games/{gameId}/submissions/{uid}       {qid, choice, conf, ms}                (phone writes its answer + confidence)
+/games/{gameId}/answers/{uid}/{n}       {qid, choice, correct, conf, ms, round, at}   (host grades + logs every answer)
+/results/{teacherUid}/{gameId}          archived summary + full answer log + bank snapshot, for the print diagnostic
 ```
-**Question schema**
+**Bank + question schema** (this is also exactly what the Claude prompt builder returns — see §9)
 ```json
-{ "q": "What is 12 × 6?", "options": ["54","60","66","72"], "correct": 3,
-  "image": null, "seconds": 20, "tags": ["maths","year5"] }
+{
+  "cvtBank": 1,
+  "title": "Volcanoes of Aotearoa",
+  "subject": "Science",
+  "yearLevels": [5, 6],
+  "source": "Topic: volcanoes in New Zealand",
+  "strands": ["Planet Earth and Beyond", "Nature of Science"],
+  "questions": [
+    {
+      "id": "q1",
+      "type": "mc",
+      "q": "Which city is built on a field of about 50 volcanoes?",
+      "options": ["Wellington", "Auckland", "Christchurch", "Dunedin"],
+      "correct": 1,
+      "explanation": "Auckland sits on the Auckland Volcanic Field, which has around 50 volcanoes such as Rangitoto.",
+      "strand": "Planet Earth and Beyond",
+      "difficulty": 1,
+      "page": null,
+      "seconds": 20,
+      "tags": ["volcanoes", "nz"]
+    }
+  ]
+}
 ```
-Support: multiple choice (2–4 options), true/false. (Later: type-in answer.)
+- `type`: `"mc"` (4 options) or `"tf"` (options exactly `["True","False"]`). (Later: type-in answer.)
+- `correct`: index into `options` (0-based). **Never sent to student phones** — the host grades.
+- `explanation`: 1–2 kid-friendly sentences; shown on the phone after answering and in the print diagnostic.
+- `strand`: must be one of the bank's `strands` (used for strand mastery analytics).
+- `difficulty`: 1 = recall, 2 = understanding, 3 = apply/reason.
+- `page`: page reference when the bank was built from an attachment, otherwise `null`.
 
 ### Rules of thumb
-- Students may only write to **their own** `/players/{uid}` (limited fields) and `/inputs/{uid}`.
+- Students may only write to **their own** `/players/{uid}` (limited fields), `/inputs/{uid}` and `/submissions/{uid}`.
+- Only the host writes `/current`, `/answers` and `/results`. Phones never receive the answer key, so dev-tools cheating can't reveal answers.
 - Only the host (`meta/hostUid`) writes `state`, `teams`, `ammo`.
 - Game code lookup is public-read, host-write.
 - Games auto-expire (host "End Game" deletes; optional cleanup later).
@@ -144,7 +182,8 @@ Support: multiple choice (2–4 options), true/false. (Later: type-in answer.)
 ### Teacher dashboard (`/teacher`)
 Sidebar: Dashboard, My Classes, Question Banks, Games, Results, Settings. Big buttons: **Create Game**, **Question Banks**, **View Results**. Matches the concept sheet.
 - Create Game flow: pick mode → pick bank(s) → rounds/time → **Launch** → opens `/host` with code.
-- Question Bank: search, subject/year filter chips (Maths, English, Science, History, Geography, NZ Curriculum), **New Question**, **CSV import**, **Duplicate premade → edit**.
+- Question Bank: search, subject/year filter chips (Maths, English, Science, History, Geography, NZ Curriculum), **New Question**, **CSV import**, **Build with Claude** (§9.1), **Duplicate premade → edit**.
+- Results: list of past games → open the **Master Teacher Print Diagnostic** (§10).
 
 ### Host screen (`/host`) — the main interface (16:9, projector friendly)
 1. **Lobby:** huge join code, QR code, two team columns (Chickens left, Turkeys right) filling with avatar+name as students join, "Players are joining…", Start button, rename/kick.
@@ -212,55 +251,174 @@ Examples: **Golden Egg Rush** (×2 points 20 s) · **Fox Raid** (a fox chases th
 ---
 
 ## 9. Question System Details
-- Premade banks (JSON in `/data/premade/`): I'll provide a starter set; **NZ Curriculum** tags, Years 3–8, subjects: Maths, English, Science, History (NZ), Geography, General Knowledge, Reading Comprehension.
-- **CSV import** columns: `question,optionA,optionB,optionC,optionD,correct(A-D),seconds`.
-- Shuffle question order and answer order per student.
+- Premade banks (JSON in `/data/premade/`, same schema as §5): a starter set tagged to the **NZ Curriculum**, Years 3–8: Maths, English, Science, Social Sciences/NZ History, Geography, General Knowledge, Reading Comprehension.
+- **Three ways to make a bank:** (1) type questions in the editor, (2) **CSV import**, (3) **Build with Claude** (prompt builder → paste back, below).
+- **CSV import** columns: `question,optionA,optionB,optionC,optionD,correct(A-D),explanation,strand,difficulty,seconds`.
+- Shuffle question order and answer order per student (the host remaps the correct index after shuffling).
 - Avoid repeats until the bank is exhausted, then reshuffle.
-- **Later phase (optional):** "Generate questions with AI" via a Firebase Cloud Function so no API key lives in the browser.
+- Every question **must** have an `explanation` and a `strand` before it can be saved — the editor flags missing ones in red. These drive the print diagnostic (§9.4).
+
+### 9.1 "Build with Claude" — prompt builder (no API key needed)
+On the Question Banks screen a **Build with Claude** button opens a two-step panel:
+
+**Step 1 — Make the prompt.** A form with:
+| Field | Notes |
+|---|---|
+| Source | Toggle: **Topic** (text box) or **Attached file** (PDF, ebook, worksheet, etc.) |
+| Pages / sections to focus on | Shown when "Attached file" is chosen, e.g. `pages 12–30` or `chapters 3–4`. Blank = whole file |
+| Subject / learning area | Dropdown (drives the strand list) |
+| Year level / age | e.g. `Year 5–6 (ages 9–11)` |
+| Number of questions | 5–50 (larger banks: run the prompt twice) |
+| Difficulty mix | Easy / Balanced / Challenging (default Balanced) |
+| Question types | Multiple choice only, or mix in True/False |
+| Extra focus (optional) | e.g. learning intention, key vocabulary, a misconception to target |
+
+The app fills these into the template below and shows a big **Copy prompt** button with the instruction: *"Paste this into a new Claude chat. If you chose Attached file, attach the file to that chat too."*
+The raw template is also shown underneath so a teacher can copy it and replace the `[BRACKETS]` by hand.
+
+**Step 2 — Paste the reply.** A large text box: *"Paste Claude's whole reply here."* → **Check questions**:
+- Parser finds the JSON even if wrapped in ```json fences or surrounded by chatter; fixes smart quotes and trailing commas.
+- Validates every question (4 options for mc, True/False for tf, `correct` in range, explanation + strand present, strand in the list, text lengths).
+- Shows a preview: valid questions in green; invalid ones in red with the reason and an inline **Fix** editor; duplicates flagged.
+- **Save as bank** (title/subject/year prefilled from the JSON, editable).
+
+### 9.2 The prompt template (exact text the app generates)
+```
+You are an expert New Zealand primary/intermediate teacher writing quiz questions for a fast classroom game called "Chickens vs Turkeys". Students answer on phones in about 20 seconds per question.
+
+SOURCE: [TOPIC]
+(If SOURCE says "ATTACHMENT": use ONLY the attached file. Focus on [PAGES]. Do not use facts that are not in those pages. If you cannot read the attachment, say so and stop.)
+SUBJECT / LEARNING AREA: [SUBJECT]
+YEAR LEVEL / AGE: [YEAR LEVEL]
+NUMBER OF QUESTIONS: [NUMBER]
+DIFFICULTY MIX: [DIFFICULTY]  (Balanced = about 30% recall, 50% understanding, 20% apply/reason)
+QUESTION TYPES: [TYPES]
+EXTRA FOCUS: [FOCUS]
+
+RULES
+1. Each question has exactly ONE clearly correct answer. No "all/none of the above", no trick wording, no negatives like "Which is NOT…" unless essential.
+2. Multiple choice ("mc") has exactly 4 options. True/False ("tf") options are exactly ["True","False"].
+3. Wrong options (distractors) must be believable and based on common misconceptions for this age group.
+4. Keep the question under 140 characters and each option under 60 characters (they appear on phone buttons).
+5. Vary the position of the correct answer across questions.
+6. "explanation": 1–2 short sentences a [YEAR LEVEL] student understands, saying WHY the answer is right.
+7. "strand": choose the best-fitting strand from this list ONLY: [STRAND LIST]
+8. "difficulty": 1 = recall, 2 = understanding, 3 = apply/reason.
+9. "page": the page number the question comes from when using an attachment, otherwise null.
+10. Use New Zealand English spelling. Use te reo Māori words with correct macrons where appropriate. Be culturally respectful.
+11. Age-appropriate content only.
+
+OUTPUT
+Reply with ONLY one JSON code block, nothing before or after it, in exactly this format:
+{
+  "cvtBank": 1,
+  "title": "short title",
+  "subject": "[SUBJECT]",
+  "yearLevels": [numbers],
+  "source": "topic, or file name + pages used",
+  "strands": [the strands you used],
+  "questions": [
+    {
+      "id": "q1",
+      "type": "mc",
+      "q": "question text",
+      "options": ["A", "B", "C", "D"],
+      "correct": 0,
+      "explanation": "why the answer is right",
+      "strand": "one strand from the list",
+      "difficulty": 1,
+      "page": null,
+      "seconds": 20,
+      "tags": ["keyword"]
+    }
+  ]
+}
+"correct" is the 0-based index of the right option. Number ids q1, q2, q3…
+```
+- With an attachment, the teacher types **ATTACHMENT** as the topic (the form does this automatically) and attaches the file in the Claude chat.
+- `[STRAND LIST]` is filled from `/data/strands.json` for the chosen learning area.
+
+### 9.3 NZ Curriculum strands (`/data/strands.json`)
+Editable data file so strands can be updated as the curriculum refresh rolls out — **check these against the current NZ Curriculum before Phase 3** and edit freely. Starting defaults:
+- **Mathematics & Statistics:** Number, Algebra, Measurement, Geometry, Statistics, Probability
+- **English:** Reading, Writing, Oral Language (Listening & Speaking)
+- **Science:** Nature of Science, Living World, Material World, Physical World, Planet Earth and Beyond
+- **Social Sciences (incl. Aotearoa NZ's histories):** Identity & Culture, Place & Environment, Continuity & Change, Economic World
+- **Health & PE**, **Technology**, **The Arts**, **Te Reo Māori / Learning Languages**: added as needed
+- **General Knowledge:** General (no strand analytics)
+
+### 9.4 Confidence check (powers the blind-spot analytics)
+After picking an answer, the phone shows three quick chips (one tap, ~1 s): **🔥 Sure · 🤔 Think so · 🎲 Guessing**. Teacher setting: *every question / every 3rd question / off* (default: every question).
+To keep students honest there is a small **calibration bonus**: Sure + correct = +1 bonus point/egg; Sure + wrong = no egg that turn (on top of the normal lockout); Think so and Guessing carry no extra risk or reward.
+
+Each answer is classified:
+| | Correct | Wrong |
+|---|---|---|
+| **Sure** | ✅ Mastered | ⚠️ **Blind spot** (confidently wrong, a misconception) |
+| **Think so** | 🟡 Fragile (right but unsure) | 🔶 Developing |
+| **Guessing** | 🎲 Lucky guess | ⬜ Knows they don't know |
+
+### 9.5 Answer logging (all game modes)
+The shared quiz engine logs every answer the same way whatever the mode (Dodge Egg, Egg Cannon, Egg Farm):
+`{qid, choice, correct, conf, ms (time to answer), round, at}` under `/games/{gameId}/answers/{uid}`. When the game ends the host writes an archive to `/results/{teacherUid}/{gameId}` (players, bank snapshot, full answer log, final scores) so the report can be reopened and reprinted later from **Teacher → Results**. Teachers can delete archived results; only first names/nicknames are stored.
 
 ---
 
-## 10. Art Pipeline
+## 10. Master Teacher Print Diagnostic
+Whatever game was played, the final summary screen has a **📋 Teacher Report** button (teacher only, never on the projector by accident; it opens in a new tab). It shows the diagnostic on screen and prints a clean **A4** report via `@media print` (A4 landscape for the matrices, portrait for question cards; black-and-white friendly: every colour also has a symbol/pattern; page breaks never split a row; header on every page with class, date, bank title, mode).
+
+**Page 1 — Class Overview**
+- Class accuracy %, questions asked, students, average time to answer.
+- **Strand mastery bars:** class % correct per strand with level label: ✅ Mastered (≥80%) · 🟡 Developing (50–79%) · 🔴 Needs support (<50%).
+- **Confidence vs competence chart:** class totals for the six categories in §9.4, with the blind-spot rate highlighted.
+- **Top 3 teaching priorities** (auto-generated): the strands/questions with the lowest accuracy or highest blind-spot rate.
+
+**Page 2 — Student × Strand Matrix**
+Rows = students (alphabetical), columns = strands, cells = % correct with symbol shading. Extra columns: overall accuracy, answered, average confidence, **blind spots (count)**, lucky guesses, calibration (how well confidence matched results). Bottom row = class average per strand. Students with 3+ blind spots get a ⚠️ marker.
+
+**Pages 3+ — Question Analysis** (one card per question, 3–4 per page)
+- Question text, strand, difficulty, page ref (if any).
+- Every option with the **% of students who chose it**, the correct answer ✔ marked.
+- **Explanation**.
+- % correct, blind-spot %, **most common wrong answer** (likely misconception) and which students chose it.
+
+**Optional — Student Slips** (one per student, 4 per A4 page with cut lines)
+Name, accuracy, strand mini-bars, their blind-spot questions with the correct answer and explanation — to hand back for reflection.
+
+**Controls:** Print report · Choose sections · Sort matrix (name / accuracy / blind spots) · Hide names (use initials) · Export CSV of the raw answer log.
+
+---
+
+## 11. Art Pipeline
 
 - Art comes from the separate **IMAGE_PROMPTS.md** file (ChatGPT). I upload results into the chat; Claude slices/cleans them (green-screen removal), names them, and wires them into the manifest.
-- **Asset manifest names** (the code expects these; placeholders drawn if missing):
-```
-assets/ui/logo.png            assets/ui/ui-kit.png (sliced)    assets/ui/burst-words.png
-assets/ui/key-art.jpg         assets/ui/event-banners.png
-assets/dodge/arena.jpg        assets/dodge/chicken-parts.png   assets/dodge/turkey-parts.png
-assets/dodge/eggs-fx.png
-assets/cannon/chicken-side.png  assets/cannon/turkey-side.png
-assets/cannon/parallax-sky.png  parallax-far.png  parallax-mid.png  parallax-ground.png
-assets/cannon/fort-blocks.png
-assets/farm/ground.jpg        assets/farm/buildings.png
-assets/avatars/avatars.png
-assets/ui/icons-subjects.png
-```
+- **Raw art is already in the repo** at `assets/images/` (generated Oct 2026): `logo, key-art, ui-kit, eggs-fx, chicken-parts, turkey-parts, cannon-characters, cannon-parallax, fort-blocks, farm-buildings, farm-ground, avatars, icons-subjects, event-banners, results-art` (all `.png`). The Dodge arena background (`dodge-arena`) is still to be generated.
+- When a phase needs a sheet, Claude removes the green background, slices it into `assets/<mode>/...` frames + an atlas JSON, and registers them in `/js/core/assets.js`. Originals in `assets/images/` stay untouched. Missing art = coloured placeholder, never a crash.
 - Sprite sheets are cut into frames using a small JSON atlas that Claude generates after seeing each image.
 
 ---
 
-## 11. Build Phases (each ends with a TEST GATE)
+## 12. Build Phases (each ends with a TEST GATE)
 
-**Phase 0 — Repo + Firebase hello world**
+**Phase 0 — Repo + Firebase hello world** ✔ done
 Folder structure, `tokens.css` comic design system, Firebase config, a page that writes/reads a test value in Realtime DB.
 ✅ *Gate:* Page loads on GitHub Pages, value round-trips between two browser tabs.
 
 **Phase 1 — Design system + static screens (no logic)**
-Landing, teacher dashboard shell, question bank shell, student join screen, host lobby layout — all in comic style with placeholder art.
+Landing, teacher dashboard shell, question bank shell (incl. Build with Claude panel layout), student join screen, host lobby layout — all in comic style using the real art in `assets/images/`.
 ✅ *Gate:* All screens look right on a phone, a laptop, and the projector (1920×1080).
 
 **Phase 2 — Auth, create game, join by code/QR, live lobby**
 Google sign-in for teacher, create game → 6-char code + QR, students join anonymously, auto team balance, players appear live, kick/rename, security rules.
 ✅ *Gate:* Teacher on laptop + 3 phones: everyone joins by QR, names show on host, refresh/reconnect works.
 
-**Phase 3 — Question banks**
-CRUD, CSV import, premade starter banks, bank picker in Create Game.
-✅ *Gate:* Import a CSV of 20 questions, edit one, select it for a game.
+**Phase 3 — Question banks + Build with Claude**
+Bank CRUD and editor (explanation + strand required), CSV import, `strands.json`, premade starter banks, **prompt builder** (form → generated prompt → copy), **paste-back parser** with validation preview and fix-up, bank picker in Create Game.
+✅ *Gate:* (a) Generate a prompt for a topic, run it in Claude, paste the reply back, save a 20-question bank. (b) Do the same with a PDF attachment and a page range — every question has a page ref. (c) Import a CSV, edit a question, select the bank for a game.
 
-**Phase 4 — Quiz engine**
-Question delivery to phones, answer validation, lockouts, streaks, per-player stats, host live feed (generic "answering" screen as the testing mode).
-✅ *Gate:* 3+ phones answer; scores/streaks correct; timing synced.
+**Phase 4 — Quiz engine + answer logging**
+Host-graded question delivery (no answer key on phones), shuffles, lockouts, streaks, **confidence chips + calibration bonus**, explanation shown after each answer, full answer log, per-player stats, host live feed (generic "answering" screen as the testing mode).
+✅ *Gate:* 3+ phones answer; scores/streaks correct; confidence recorded; answer log in the database matches what happened.
 
 **Phase 5 — Dodge Egg v1 (rectangles/placeholders)**
 Arena sim, joystick + aim pad controller, ammo from answers, throws, hits, knock-out/respawn, 60 s round, individual + team scoring, scoreboard.
@@ -271,31 +429,35 @@ Drop in real art; layered birds, fake-3D animation, shadows, squash/stretch, par
 ✅ *Gate:* "Wow" test — show it to a student.
 
 **Phase 7 — Game flow, rounds, results, random events**
-Multi-round flow, between-round scoreboard, final podium, random events system, teacher controls (pause/skip/end).
-✅ *Gate:* Full 3-round game start to finish.
+Multi-round flow, between-round scoreboard, final podium, random events system, teacher controls (pause/skip/end), results archive written at game end.
+✅ *Gate:* Full 3-round game start to finish; archive appears under Teacher → Results.
 
-**Phase 8 — Egg Cannon v1 (placeholders)**
+**Phase 8 — Master Teacher Print Diagnostic**
+Teacher Report from the final screen and from Teacher → Results: class overview, strand mastery, confidence-vs-competence, student × strand matrix, question analysis cards, student slips, A4 `@media print` styles, CSV export.
+✅ *Gate:* After a real test game, print to PDF: every page is A4, readable in black and white, numbers match the answer log, blind spots are correct.
+
+**Phase 9 — Egg Cannon v1 (placeholders)**
 Side-scroll world, forts, Matter.js, 5-question phase, angle + power bar, volley playback, attribution + scoring.
-✅ *Gate:* Full round with 4+ players, scores credited correctly.
+✅ *Gate:* Full round with 4+ players, scores credited correctly; report still works for this mode.
 
-**Phase 9 — Egg Cannon art + juice**
+**Phase 10 — Egg Cannon art + juice**
 Parallax, cannon animation, destruction particles, camera work, special eggs.
 
-**Phase 10 — Egg Farm v1**
+**Phase 11 — Egg Farm v1**
 Phone farm game loop, upgrades, quiz bonuses, score sync, host race board + team meters.
-✅ *Gate:* 10-minute game, scores sync, no cheating via dev tools beyond sanity limits.
+✅ *Gate:* 10-minute game, scores sync, no cheating via dev tools beyond sanity limits; report still works for this mode.
 
-**Phase 11 — Egg Farm art + juice**
+**Phase 12 — Egg Farm art + juice**
 
-**Phase 12 — Polish & classroom hardening**
-Music/SFX, mute, accessibility (colour-blind-safe team shapes/icons, big text option), name filter, teacher results/reports (per student accuracy), performance test on school devices, error states, tutorial/"how to play" overlays.
+**Phase 13 — Polish & classroom hardening**
+Music/SFX, mute, accessibility (colour-blind-safe team shapes/icons, big text option), name filter, performance test on school devices, error states, tutorial/"how to play" overlays.
 
-**Phase 13 — Extras (optional)**
-More modes, AI question generation, avatar unlocks, class leaderboards across games, themed seasons (Halloween Turkeys!).
+**Phase 14 — Extras (optional)**
+More modes, avatar unlocks, class leaderboards across games, progress over time per strand (compare reports), themed seasons (Halloween Turkeys!).
 
 ---
 
-## 12. Starter Prompts (paste after this file)
+## 13. Starter Prompts (paste after this file)
 
 **Phase 0:**
 > We are starting **Phase 0**. Walk me through creating the Firebase project step by step (I'll use the web console), then give me the full files for the repo skeleton, `tokens.css`, `firebase.js` and a hello-world page that proves Realtime Database works. I'm deploying through the GitHub web UI to GitHub Pages.
@@ -311,7 +473,7 @@ More modes, AI question generation, avatar unlocks, class leaderboards across ga
 
 ---
 
-## 13. Classroom Reality Checks
+## 14. Classroom Reality Checks
 - Test with **real phones on school Wi-Fi** before showing students.
 - Keep a **"Lite mode"** switch (fewer particles, no screen shake) for older Chromebooks.
 - Teacher should always be able to **end/skip/pause** instantly.
