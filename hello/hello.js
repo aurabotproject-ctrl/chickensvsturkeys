@@ -102,8 +102,10 @@ async function start() {
   onValue(ref(db, '.info/connected'), async (snap) => {
     if (snap.val() !== true) return;
     try {
-      await onDisconnect(me).remove();
+      // Write first, THEN register the auto-remove: the rules only allow removing
+      // an entry that already exists and belongs to you.
       await set(me, { uid: user.uid, at: serverTimestamp(), bird: birds[Math.floor(Math.random() * birds.length)] });
+      await onDisconnect(me).remove();
     } catch (err) { showError(err); }
   });
   onValue(visitorsRef, (snap) => {
