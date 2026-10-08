@@ -18,7 +18,7 @@ const rnd = (a, b) => a + Math.random() * (b - a);
 
 const SPRITES = ['farm_ground', 'chicken_idle', 'chicken_run', 'turkey_idle', 'turkey_run', 'fm_statue',
   'fm_coop_c1', 'fm_coop_c2', 'fm_coop_c3', 'fm_coop_c4', 'fm_coop_c5', 'fm_coop_t1', 'fm_coop_t2', 'fm_coop_t3', 'fm_coop_t4', 'fm_coop_t5',
-  'fm_van', 'fm_truck', 'fm_conveyor', 'fm_sorter', 'fm_packer', 'fm_silo', 'fm_trough', 'fm_tractor', 'fm_hopper', 'fm_tower', 'fm_scarecrow',
+  'fm_van', 'fm_truck', 'fm_semi', 'fm_conveyor', 'fm_sorter', 'fm_packer', 'fm_silo', 'fm_trough', 'fm_tractor', 'fm_hopper', 'fm_tower', 'fm_scarecrow',
   'fm_bag', 'fm_goldegg', 'fox', 'egg', 'puff', 'sparkle', 'feathers', 'word_bok', 'word_gobble', 'word_pow'];
 
 export class FarmScene {
@@ -257,8 +257,8 @@ export class FarmScene {
       }
       const lv = tr.level || 1; const info = TRUCK_LV[lv];
       if (tr.spr.texture !== this.tex[info.sprite]) tr.spr.texture = this.tex[info.sprite];
-      const w = [0, 120, 150, 175, 190][lv];
-      tr.spr.scale.set(w / tr.spr.texture.width); tr.spr.tint = lv === 4 ? 0xffd34d : lv === 3 ? 0xffb0a0 : 0xffffff;
+      const w = [0, 120, 150, 190, 205][lv];
+      tr.spr.scale.set(w / tr.spr.texture.width); tr.spr.tint = lv === 4 ? 0xffd34d : 0xffffff;
       if (tr.wait > 0) { tr.wait -= dt; tr.spr.visible = false; continue; }
       tr.spr.visible = true;
       tr.x += dt * (150 + lv * 25);

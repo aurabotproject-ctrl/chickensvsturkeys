@@ -23,8 +23,8 @@ export const TRUCK_LV = [
   null,
   { name: 'Delivery Van', cap: 5, sprite: 'fm_van' },
   { name: 'Big Rig', cap: 20, sprite: 'fm_truck' },
-  { name: 'Mega Rig', cap: 80, sprite: 'fm_truck' },
-  { name: 'Golden Rig', cap: 300, sprite: 'fm_truck' },
+  { name: 'Mega Rig', cap: 80, sprite: 'fm_semi' },
+  { name: 'Golden Rig', cap: 300, sprite: 'fm_semi' },
 ];
 export const MACHINE_LV = [
   { name: 'Hand Packing', mult: 1, sprite: null },
