@@ -443,11 +443,11 @@ Side-scroll world, forts, Matter.js, 5-question phase, angle + power bar, volley
 **Phase 10 — Egg Cannon art + juice ✔ built**
 Parallax, cannon animation, destruction particles, camera work, special eggs.
 
-**Phase 11 — Egg Farm v1**
+**Phase 11 — Egg Farm v1 ✔ built**
 Phone farm game loop, upgrades, quiz bonuses, score sync, host race board + team meters.
 ✅ *Gate:* 10-minute game, scores sync, no cheating via dev tools beyond sanity limits; report still works for this mode.
 
-**Phase 12 — Egg Farm art + juice**
+**Phase 12 — Egg Farm art + juice ✔ built**
 
 **Phase 13 — Polish & classroom hardening**
 Music/SFX, mute, accessibility (colour-blind-safe team shapes/icons, big text option), name filter, performance test on school devices, error states, tutorial/"how to play" overlays.
@@ -465,6 +465,7 @@ More modes, avatar unlocks, class leaderboards across games, progress over time 
 - Throw = drag on the right pad and let go (a quick tap throws straight ahead). Gentle aim assist helps younger students.
 - **Teacher Report** (`teacher/report.html?r=…`): opens from Results or the 📊 View Results button on the winners screen. Toolbar: print/save PDF, choose sections, sort, initials-only, CSV export. Overview + matrix print A4 landscape; question cards + student slips print A4 portrait.
 - **Egg Cannon flow per round:** answer phase (5 questions each, ends when everyone's done or time runs out) → 45 s battle (drag the dial to set angle, tap FIRE as the power bar sweeps) → round ends when all eggs are fired and the dust settles. 3 fort designs (Twin Towers, Castle Keep, Hay Fortress) rotate randomly; scarecrow dummies/pumpkin/barrel/TNT = 1 point, bullseye = 2. Wind changes each round. Fox Raid is skipped in this mode.
+- **Egg Farm:** one round of 5 / 8 / 12 minutes. The host runs every farm's economy (phones only send taps, purchases and answers), so it can't be hacked from a phone. Correct answer = cash bonus (≈40 s of income, doubled every 3-answer streak) + 1–3 golden eggs + ⚡×3 boost for 20 s (stacks to 60 s). Upgrades: +1 bird, Coop (5 levels, needs cash + golden eggs, raises bird capacity), Egg Machine (×1.5/×2.25/×3.4), Truck (×2/×4). Score = total money earned. Farm events: Golden Egg Rush (×2 for everyone), Double Trouble (+2 golden eggs), Shield Up → catch-up ×3 for the team behind, Fox Raid (the leading team must answer a question correctly within 15 s or lose 20% of their cash). Economy numbers live in `js/modes/farm/economy.js`.
 - Events available: Golden Egg Rush, Double Trouble, Shield Up, Egg Storm, Fog of Feathers, Fox Raid (+ automatic Clean Sweep). Team Swap is not used (it scrambles scoring).
 
 ## 13. Starter Prompts (paste after this file)

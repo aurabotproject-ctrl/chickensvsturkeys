@@ -17,6 +17,7 @@ import { DodgeArena } from '../js/modes/dodge/arena.js';
 import { makeBot, botTick } from '../js/modes/dodge/bots.js';
 import { CannonArena } from '../js/modes/cannon/arena.js';
 import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js';
 import { EVENTS, randomEvent } from '../js/events/events.js';
 
 const gameId = params.get('g');
@@ -36,7 +37,9 @@ const BATTLE_MS = 45000;  // Egg Cannon: battle length
 const roundAnswered = new Map();
 let settledSince = 0;
 const isCannon = () => meta?.mode === 'cannon';
-const UNIT = () => (isCannon() ? 'pts' : 'KO');
+const isFarm = () => meta?.mode === 'farm';
+const showScore = (n) => (isFarm() ? fmt(n) : Math.round(n));
+const UNIT = () => (isCannon() ? 'pts' : isFarm() ? '' : 'KO');
 
 // ---------------- boot ----------------
 async function boot() {
@@ -107,7 +110,7 @@ function assignTeam(uid) {
 
 function joinMidGame(uid) {
   const p = players.get(uid);
-  arena.addPlayer({ uid, name: p.name, team: p.team });
+  arena.addPlayer({ uid, name: p.name, team: p.team, av: p.av });
   dirty.add(uid);
   if (S.phase === 'playing' && !isCannon()) dealNext(uid);
   if (S.phase === 'answer' && isCannon() && (roundAnswered.get(uid) || 0) < QUOTA) dealNext(uid);
@@ -124,7 +127,7 @@ function setupLobby() {
     $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   } catch { $('#qr').textContent = 'QR unavailable'; }
   const st = meta.settings;
-  $('#lobby-info').innerHTML = html`<b>${meta.bankTitle}</b> · ${meta.questionCount} questions · ${st.rounds} round${st.rounds > 1 ? 's' : ''} × ${st.roundSeconds}s · ${isCannon() ? 'Egg Cannon' : 'Dodge Egg'}`;
+  $('#lobby-info').innerHTML = html`<b>${meta.bankTitle}</b> · ${meta.questionCount} questions · ${isFarm() ? `${Math.round(st.roundSeconds / 60)} minutes` : `${st.rounds} round${st.rounds > 1 ? 's' : ''} × ${st.roundSeconds}s`} · ${isCannon() ? 'Egg Cannon' : isFarm() ? 'Egg Farm' : 'Dodge Egg'}`;
   $('#btn-bots').onclick = () => { for (let i = 0; i < 4; i++) addBot(); drawRoster(); };
   $('#btn-shuffle').onclick = shuffleTeams;
   $('#btn-full').onclick = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
@@ -205,7 +208,9 @@ async function startGame() {
   $('#lobby').classList.add('hidden');
   $('#game').classList.remove('hidden');
   if (!arena) {
-    arena = isCannon()
+    arena = isFarm()
+      ? new FarmBoard($('#arena'), { onChange: (p) => dirty.add(p.uid) })
+      : isCannon()
       ? new CannonArena($('#arena'), {
         onTarget: ({ shooter }) => { if (shooter) dirty.add(shooter.uid); bumpScores(); },
         onEggsChanged: (p) => dirty.add(p.uid),
@@ -216,15 +221,17 @@ async function startGame() {
         onSweep: (winner) => { bonus[winner] += 5; showBanner('sweep'); setEvent('sweep', 0); bumpScores(); },
         onEggsChanged: (p) => dirty.add(p.uid),
       });
+    if (isFarm()) arena.now = serverNow;
     try { await arena.init(); } catch (e) { console.error(e); toast('The arena failed to load: ' + e.message, 'bad', 8000); }
-    arena.app.ticker.add(() => {
+    if (isFarm()) setInterval(() => { if (S.phase === 'playing') { for (const uid of arena.players.keys()) dirty.add(uid); bumpScores(); } }, 1000);
+    else arena.app.ticker.add(() => {
       if (S.phase !== 'playing' || S.paused) return;
       const dt = Math.min(arena.app.ticker.deltaMS / 1000, 0.05);
       if (isCannon()) { for (const b of bots.values()) cannonBotTick(arena, b, dt); return; }
       for (const b of bots.values()) botTick(arena, b, dt, { onAnswer: (bot, ok) => { const p = players.get(bot.uid); if (p) { p.answered = (p.answered || 0) + 1; p.correct = (p.correct || 0) + (ok ? 1 : 0); } } });
     });
   }
-  for (const [uid, p] of players) if (p.team) arena.addPlayer({ uid, name: p.name, team: p.team, bot: p.bot });
+  for (const [uid, p] of players) if (p.team) arena.addPlayer({ uid, name: p.name, team: p.team, bot: p.bot, av: p.av });
   await update(G('meta'), { status: 'playing' });
   S.round = 0;
   startRound();
@@ -239,9 +246,10 @@ async function startRound() {
   for (const uid of arena.players.keys()) dirty.add(uid);
   $('#round-label').textContent = `ROUND ${S.round} / ${meta.settings.rounds}`;
   const ms = meta.settings.roundSeconds * 1000;
-  $('#timer').textContent = meta.settings.roundSeconds;
+  $('#timer').textContent = meta.settings.roundSeconds >= 60 ? `${Math.floor(meta.settings.roundSeconds / 60)}:${String(meta.settings.roundSeconds % 60).padStart(2, '0')}` : meta.settings.roundSeconds;
   await countdown();
   if (isCannon()) { startAnswerPhase(); return; }
+  if (isFarm()) arena.startBattle();
   S.phase = 'playing';
   S.endsAt = serverNow() + ms;
   scheduleEvents(ms);
@@ -257,7 +265,8 @@ async function startRound() {
 function scheduleEvents(ms) {
   autoEvents = [];
   if (meta.settings.events !== 'auto') return;
-  const n = ms >= 75000 ? 2 : 1;
+  const n = isFarm() ? Math.max(2, Math.round(ms / 110000)) : ms >= 75000 ? 2 : 1;
+  if (n > 2) { for (let i = 0; i < n; i++) autoEvents.push(S.endsAt - ms * ((n - i) / (n + 1) + rand(-0.04, 0.04))); autoEvents.sort((a, b) => a - b); return; }
   for (let i = 0; i < n; i++) autoEvents.push(S.endsAt - ms * (n === 1 ? rand(0.35, 0.65) : i === 0 ? rand(0.6, 0.75) : rand(0.25, 0.4)));
 }
 
@@ -318,8 +327,9 @@ function loop() {
   const left = Math.max(0, S.endsAt - serverNow());
   const secs = Math.ceil(left / 1000);
   const t = $('#timer');
-  if (t.textContent !== String(secs)) {
-    t.textContent = secs;
+  const label = secs >= 60 ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` : String(secs);
+  if (t.textContent !== label) {
+    t.textContent = label;
     t.classList.toggle('hurry', secs <= 10);
     if (secs <= 5 && secs > 0) sfx.tick();
   }
@@ -376,11 +386,11 @@ function showRoundOverlay(standings) {
   ov.innerHTML = html`<div class="round-box">
     <h1 class="comic-title slant">ROUND ${S.round} COMPLETE!</h1>
     <div class="round-teams">
-      <div class="round-team chicken"><img src="${sprite(ts.chicken >= ts.turkey ? 'chicken_win' : 'chicken_dizzy')}" alt=""><div class="big">${ts.chicken}</div><div class="lbl">CHICKENS</div></div>
+      <div class="round-team chicken"><img src="${sprite(ts.chicken >= ts.turkey ? 'chicken_win' : 'chicken_dizzy')}" alt=""><div class="big">${showScore(ts.chicken)}</div><div class="lbl">CHICKENS</div></div>
       <div class="vs-burst burst">VS</div>
-      <div class="round-team turkey"><img src="${sprite(ts.turkey >= ts.chicken ? 'turkey_win' : 'turkey_dizzy')}" alt=""><div class="big">${ts.turkey}</div><div class="lbl">TURKEYS</div></div>
+      <div class="round-team turkey"><img src="${sprite(ts.turkey >= ts.chicken ? 'turkey_win' : 'turkey_dizzy')}" alt=""><div class="big">${showScore(ts.turkey)}</div><div class="lbl">TURKEYS</div></div>
     </div>
-    <div class="top5">${raw(standings.slice(0, 5).map((p, i) => html`<div class="who"><img src="${avatar(p.av)}" alt=""><b>${i + 1}. ${p.name}</b><span>${p.score} ${UNIT()}</span></div>`).join(''))}</div>
+    <div class="top5">${raw(standings.slice(0, 5).map((p, i) => html`<div class="who"><img src="${avatar(p.av)}" alt=""><b>${i + 1}. ${p.name}</b><span>${showScore(p.score)} ${UNIT()}</span></div>`).join(''))}</div>
     <div class="next-row"><button class="btn big" id="ov-next">NEXT ROUND ▶</button><span id="ov-auto"></span></div></div>`;
   let n = 25;
   const tick = () => {
@@ -413,9 +423,9 @@ async function finalScreen() {
   ov.innerHTML = html`<div class="final">
     <img class="burst-bg" src="${sprite(winner === 'chicken' ? 'burst_blue' : winner === 'turkey' ? 'burst_red' : 'burst_gold')}" alt="">
     <img class="win-banner" src="${sprite(winner === 'chicken' ? 'win_chicken' : winner === 'turkey' ? 'win_turkey' : 'win_tie')}" alt="${winner} wins">
-    <div class="final-scores"><div style="background:var(--chicken)">🐔 ${ts.chicken}</div><div style="background:var(--turkey)">🦃 ${ts.turkey}</div></div>
+    <div class="final-scores"><div style="background:var(--chicken)">🐔 ${showScore(ts.chicken)}</div><div style="background:var(--turkey)">🦃 ${showScore(ts.turkey)}</div></div>
     <div class="podium-wrap"><img class="podium" src="${sprite('podium')}" alt="">
-      ${raw(top.map((p, i) => html`<div class="podium-spot p${i + 1}" style="animation-delay:${0.3 + (2 - i) * 0.35}s"><img class="av" src="${avatar(p.av)}" alt=""><img class="medal" src="${sprite(['medal_gold', 'medal_silver', 'medal_bronze'][i])}" alt=""><b>${p.name}</b><span>${p.score} ${UNIT()}</span></div>`).join(''))}
+      ${raw(top.map((p, i) => html`<div class="podium-spot p${i + 1}" style="animation-delay:${0.3 + (2 - i) * 0.35}s"><img class="av" src="${avatar(p.av)}" alt=""><img class="medal" src="${sprite(['medal_gold', 'medal_silver', 'medal_bronze'][i])}" alt=""><b>${p.name}</b><span>${showScore(p.score)} ${UNIT()}</span></div>`).join(''))}
     </div>
     <div class="final-btns">
       <button class="img-btn" id="f-again" title="Play again"><img src="${sprite('btn_playagain')}" alt="Play again"></button>
@@ -461,9 +471,14 @@ function handleSub(uid, sub) {
   if (!sub || S.phase !== (isCannon() ? 'answer' : 'playing') || !arena?.players.has(uid)) return;
   const r = engine.grade(uid, sub, { round: S.round });
   if (!r) return;
-  const before = arena.players.get(uid).eggs;
-  const changed = arena.addEggs(uid, r.feedback.eggs);
-  r.feedback.full = r.feedback.eggs > 0 && changed < r.feedback.eggs && before + changed >= 8;
+  if (isFarm()) {
+    r.feedback.farm = arena.reward(uid, { correct: r.entry.correct, conf: r.entry.conf, streak: r.feedback.streak });
+    r.feedback.eggs = 0; r.feedback.bonus = []; r.feedback.lockMs = r.entry.correct ? 900 : 2500;
+  } else {
+    const before = arena.players.get(uid).eggs;
+    const changed = arena.addEggs(uid, r.feedback.eggs);
+    r.feedback.full = r.feedback.eggs > 0 && changed < r.feedback.eggs && before + changed >= 8;
+  }
   const p = players.get(uid); if (p) { p.correct = engine.stats(uid).correct; p.answered = engine.stats(uid).answered; }
   dirty.add(uid);
   const { entry } = r;
@@ -482,6 +497,7 @@ function dealNext(uid) {
 
 function handleInput(uid, inp) {
   if (!inp || !arena) return;
+  if (isFarm()) { if (S.phase === 'playing' && !S.paused) arena.handleInput(uid, inp); return; }
   if (isCannon()) {
     if (inp.angle != null && S.phase === 'playing') arena.setAim(uid, +inp.angle);
     const n = +inp.throws || 0;
@@ -519,7 +535,7 @@ function bumpScores() {
   const ts = teamScores();
   for (const team of ['chicken', 'turkey']) {
     const el = $(`#score-${team}`);
-    if (ts[team] !== lastTeams[team]) { el.textContent = ts[team]; el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    if (showScore(ts[team]) !== showScore(lastTeams[team])) { el.textContent = showScore(ts[team]); el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
   }
   lastTeams = ts;
 }
@@ -527,12 +543,12 @@ function bumpScores() {
 let lastStandings = '';
 function drawStandings() {
   const st = computeStandings().slice(0, 8);
-  const key = st.map((p) => p.uid + p.score).join();
+  const key = st.map((p) => p.uid + showScore(p.score)).join();
   if (key === lastStandings) return;
   lastStandings = key;
-  $('#standings').innerHTML = st.map((p, i) => html`<li class="${p.team}"><span class="rk">${i + 1}</span><img src="${avatar(Number.isInteger(p.av) ? p.av : AVATARS[p.team][0])}" alt=""><span class="nm">${p.name}</span><span class="sc">${p.score}</span></li>`).join('');
+  $('#standings').innerHTML = st.map((p, i) => html`<li class="${p.team}"><span class="rk">${i + 1}</span><img src="${avatar(Number.isInteger(p.av) ? p.av : AVATARS[p.team][0])}" alt=""><span class="nm">${p.name}</span><span class="sc">${showScore(p.score)}</span></li>`).join('');
   const ts = teamScores();
-  $('#team-scores').innerHTML = `<div class="chicken"><span>🐔 Chickens</span><b>${ts.chicken}</b></div><div class="turkey"><span>🦃 Turkeys</span><b>${ts.turkey}</b></div>`;
+  $('#team-scores').innerHTML = `<div class="chicken"><span>🐔 Chickens</span><b>${showScore(ts.chicken)}</b></div><div class="turkey"><span>🦃 Turkeys</span><b>${showScore(ts.turkey)}</b></div>`;
   bumpScores();
 }
 
@@ -545,6 +561,10 @@ function flush(force = false) {
     const p = arena.players.get(uid); const info = players.get(uid);
     if (!p || !info || info.bot) continue;
     const st = engine.stats(uid);
+    if (isFarm()) {
+      updates[`pstate/${uid}`] = { ...arena.stateFor(uid), correct: st.correct, answered: st.answered, streak: st.streak, ...(standings ? { rank: standings.findIndex((s) => s.uid === uid) + 1, of: standings.length } : {}) };
+      continue;
+    }
     updates[`pstate/${uid}`] = {
       eggs: p.eggs, score: p.score, ko: !!p.ko, koLeft: p.ko && p.koT < 999 ? Math.ceil(p.koT) : 0, shield: p.shieldT > 0, rq: roundAnswered.get(uid) || 0,
       correct: st.correct, answered: st.answered, streak: st.streak,
@@ -558,7 +578,7 @@ function flush(force = false) {
     }
   }
   dirty.clear();
-  updates.teams = teamScores();
+  const tsc = teamScores(); updates.teams = { chicken: Math.floor(tsc.chicken), turkey: Math.floor(tsc.turkey) };
   update(G(), updates).catch(console.error);
 }
 // KO countdowns change every second — keep phones in sync.
@@ -625,7 +645,7 @@ $('#c-scores').onclick = () => {
   const st = computeStandings();
   modal({
     title: 'Scores', wide: true,
-    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>${isCannon() ? 'Target points' : 'KO points'}</th><th>Correct</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${p.team === 'chicken' ? '🐔' : '🦃'}</td><td>${p.score}</td><td>${p.bot ? '—' : `${engine.stats(p.uid).correct}/${engine.stats(p.uid).answered}`}</td></tr>`).join('')}</tbody></table>`,
+    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>${isCannon() ? 'Target points' : isFarm() ? 'Money earned' : 'KO points'}</th><th>Correct</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${p.team === 'chicken' ? '🐔' : '🦃'}</td><td>${showScore(p.score)}</td><td>${p.bot ? '—' : `${engine.stats(p.uid).correct}/${engine.stats(p.uid).answered}`}</td></tr>`).join('')}</tbody></table>`,
     buttons: [{ label: 'Close', value: null }],
   });
 };
@@ -652,15 +672,15 @@ async function archive(winner, ts) {
   let correct = 0; let answered = 0;
   for (const [uid, p] of players) {
     const ap = arena.players.get(uid);
-    if (p.bot) { pl[uid] = { name: p.name, team: p.team, av: p.av ?? 0, score: ap?.score || 0, bot: true }; continue; }
+    if (p.bot) { pl[uid] = { name: p.name, team: p.team, av: p.av ?? 0, score: Math.floor(ap?.score || 0), bot: true }; continue; }
     const st = engine.stats(uid);
     correct += st.correct; answered += st.answered;
     const blindSpots = (answers[uid] || []).filter((a) => a.conf === 'sure' && !a.correct).length;
-    pl[uid] = { name: p.name, team: p.team, av: Number.isInteger(p.av) ? p.av : 0, score: ap?.score || 0, correct: st.correct, answered: st.answered, blindSpots };
+    pl[uid] = { name: p.name, team: p.team, av: Number.isInteger(p.av) ? p.av : 0, score: Math.floor(ap?.score || 0), correct: st.correct, answered: st.answered, blindSpots };
   }
   await set(ref(db, `results/${user.uid}/${gameId}-${playIndex}`), {
     gameId, mode: meta.mode, bankKey: meta.bankKey, bankTitle: meta.bankTitle, bankSubject: meta.bankSubject,
-    settings: meta.settings, finishedAt: Date.now(), rounds: S.round, teams: ts, bonus, winner,
+    settings: meta.settings, finishedAt: Date.now(), rounds: S.round, teams: { chicken: Math.floor(ts.chicken), turkey: Math.floor(ts.turkey) }, bonus, winner,
     accuracy: answered ? Math.round((correct / answered) * 100) : 0,
     players: pl,
     bank: { title: bank.title, subject: bank.subject, strands: bank.strands, questions: bank.questions.map((q) => ({ ...q, page: q.page ?? '' })) },

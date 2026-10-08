@@ -147,3 +147,48 @@ html, body { height: 100%; overflow: hidden; }
 
 body.mode-cannon #game { grid-template-columns: 1fr; }
 body.mode-cannon .sidebar { display: none; }
+
+/* ---------- Egg Farm race board ---------- */
+body.mode-farm .stage { background: linear-gradient(rgba(10,40,10,.35), rgba(6,18,46,.55)), url('../assets/sprites/farm_ground.webp') center/cover; }
+body.mode-farm .timer span { font-size: clamp(22px, 2.6vw, 48px); }
+.farm-board { position: absolute; inset: 0; padding: 19vh 1.4vw 2vh; display: grid; grid-template-rows: auto 1fr auto; gap: 1.2vh; }
+.fb-tug { height: 2.4vh; display: flex; border: 4px solid var(--ink); border-radius: 999px; overflow: hidden; box-shadow: var(--pop-shadow-sm); background: #fff; }
+.fb-tug i { display: block; height: 100%; transition: width .8s ease; }
+.fb-tug .c { background: repeating-linear-gradient(90deg, var(--chicken) 0 20px, #2c7cf0 20px 40px); width: 50%; }
+.fb-tug .t { background: repeating-linear-gradient(90deg, var(--turkey) 0 20px, #ef5537 20px 40px); width: 50%; }
+.fb-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.4vw; min-height: 0; }
+.fb-col { display: grid; grid-template-rows: auto 1fr; min-height: 0; border: 5px solid var(--ink); border-radius: 20px; overflow: hidden; box-shadow: var(--pop-shadow); }
+.fb-col.chicken { background: rgba(30,111,224,.82); }
+.fb-col.turkey { background: rgba(224,64,42,.82); }
+.fb-head { display: flex; align-items: center; gap: .8vw; padding: .6vh 1vw; background: rgba(0,0,0,.28); border-bottom: 4px solid var(--ink); }
+.fb-head img { height: 6vh; filter: drop-shadow(2px 2px 0 var(--ink)); }
+.fb-head span { font-family: var(--font-comic); font-size: clamp(20px, 2.2vw, 40px); letter-spacing: .06em; color: #fff; text-shadow: 3px 3px 0 var(--ink); flex: 1; }
+.fb-rate { font-family: var(--font-burst); font-size: clamp(14px, 1.4vw, 26px); background: var(--yolk); color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; padding: 0 .6em; }
+.fb-list { display: grid; align-content: start; gap: .7vh; padding: 1vh .8vw; overflow: hidden; }
+.fb-card { display: grid; grid-template-columns: 2.4em 3.2em 1fr 5.4em auto; align-items: center; gap: .6vw; background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 14px; padding: .4vh .6vw; font-size: clamp(12px, 1.05vw, 20px); box-shadow: 3px 3px 0 var(--ink); position: relative; }
+.fb-card .rk { width: 2em; height: 2em; display: grid; place-items: center; border-radius: 50%; background: #e6ecf7; border: 2px solid var(--ink); font-weight: 900; }
+.fb-list .fb-card:nth-child(1) .rk { background: #ffcf3a; } .fb-list .fb-card:nth-child(2) .rk { background: #d9dee8; } .fb-list .fb-card:nth-child(3) .rk { background: #d58a4a; }
+.fb-card .av { width: 3em; height: 3em; border-radius: 50%; }
+.fb-card .nm { min-width: 0; line-height: 1.1; }
+.fb-card .nm b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 1.1em; }
+.fb-card .nm small { opacity: .7; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.fb-card .coop { height: 3.4em; width: 5.4em; object-fit: contain; }
+.fb-card .money { text-align: right; line-height: 1.05; }
+.fb-card .money b { font-family: var(--font-burst); font-size: 1.5em; color: #2a8a14; display: block; }
+.fb-card .money small { font-weight: 900; opacity: .75; }
+.fb-card.boost { background: linear-gradient(90deg, #fff 60%, #fff3c2); box-shadow: 3px 3px 0 var(--ink), 0 0 0 3px var(--yolk); }
+.fb-card.boost::after { content: '⚡'; position: absolute; left: -10px; top: -10px; font-size: 1.4em; animation: wobble .6s ease-in-out infinite; }
+.fb-feed { display: grid; grid-template-columns: repeat(4, 1fr); gap: .8vw; min-height: 6vh; margin-bottom: 7vh; }
+.fb-item { display: flex; align-items: center; gap: .5vw; background: rgba(6,18,46,.85); color: #fff; border: 3px solid var(--ink); border-radius: 14px; padding: .5vh .7vw; font-size: clamp(11px, .95vw, 18px); font-weight: 800; }
+.fb-item img { height: 4.5vh; width: 4.5vh; object-fit: contain; flex: none; }
+.fb-item.chicken { border-left: 8px solid var(--chicken); } .fb-item.turkey { border-left: 8px solid var(--turkey); }
+.fb-item.new { animation: pop-in 500ms var(--ease-pop) both; }
+.fb-fox { position: absolute; bottom: 12vh; height: 16vh; z-index: 5; pointer-events: none; filter: drop-shadow(6px 6px 0 rgba(0,0,0,.4)); }
+.fb-fox.run-chicken { animation: fox-run-l 15s linear forwards; }
+.fb-fox.run-turkey { animation: fox-run-r 15s linear forwards; transform: scaleX(-1); }
+@keyframes fox-run-l { 0% { left: -20vw; } 15%, 85% { left: 20vw; } 30% { left: 5vw; } 50% { left: 30vw; } 70% { left: 8vw; } 100% { left: -25vw; } }
+@keyframes fox-run-r { 0% { left: 110vw; } 15%, 85% { left: 55vw; } 30% { left: 70vw; } 50% { left: 48vw; } 70% { left: 66vw; } 100% { left: 115vw; } }
+
+body.mode-farm .team-panel span { font-size: clamp(20px, 2.6vw, 46px); }
+body.mode-farm .team-panel.chicken span { left: 60%; }
+body.mode-farm .team-panel.turkey span { left: 62%; }

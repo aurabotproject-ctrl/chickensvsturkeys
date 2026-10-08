@@ -11,8 +11,16 @@ export const EVENTS = {
 };
 
 /** Events that can be picked at random (Clean Sweep happens on its own). */
+/** Phone messages for Egg Farm (effects work differently there). */
+export const FARM_PHONE = {
+  golden: 'Every farm earns DOUBLE for 20 seconds! 🥇',
+  double: 'Everyone gets +2 golden eggs! 🥚🥚',
+  shield: 'Catch-up time! The team that\'s behind earns ×3 for 15 seconds! 🚀',
+  fox: 'A fox is raiding the leading team! Answer a question correctly to protect your cash! 🦊',
+};
+
 export const RANDOM_POOL = ['golden', 'double', 'shield', 'storm', 'fog', 'fox'];
 export const randomEvent = (exclude, mode = 'dodge') => {
-  const pool = RANDOM_POOL.filter((e) => e !== exclude && !(mode === 'cannon' && e === 'fox'));
+  const pool = RANDOM_POOL.filter((e) => e !== exclude && !(mode === 'cannon' && e === 'fox') && !(mode === 'farm' && (e === 'storm' || e === 'fog')));
   return pool[Math.floor(Math.random() * pool.length)];
 };

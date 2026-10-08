@@ -8,7 +8,8 @@ import { $, $$, html, raw, esc, params } from '../js/core/ui.js';
 import { sprite, avatar, AVATARS, TEAM } from '../js/core/assets.js';
 import { lookupCode, cleanCode } from '../js/core/games.js';
 import { sfx } from '../js/core/sfx.js';
-import { EVENTS } from '../js/events/events.js';
+import { EVENTS, FARM_PHONE } from '../js/events/events.js';
+import { COOP, MACHINE, TRUCK, nextCosts, fmt, tapValue, BOOST_MULT } from '../js/modes/farm/economy.js';
 
 let uid; let gameId;
 const D = { me: null, state: {}, ps: {}, cur: null, fb: null, teams: {}, standings: [] };
@@ -16,7 +17,9 @@ const L = { answeredN: 0, picked: null, shownAt: 0, lockUntil: 0, fbShownN: 0, t
 const G = (p) => ref(db, `games/${gameId}/${p}`);
 const SAVE_KEY = 'cvt-player';
 const isCannon = () => D.state.mode === 'cannon';
-const UNIT = () => (isCannon() ? 'target points' : 'KO points');
+const isFarm = () => D.state.mode === 'farm';
+const UNIT = () => (isCannon() ? 'target points' : isFarm() ? 'earned' : 'KO points');
+const SCORE = (n) => (isFarm() ? fmt(n) : (n || 0));
 
 // ---------------- join ----------------
 async function boot() {
@@ -151,9 +154,14 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isFarm()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
+  if (isFarm() !== document.body.classList.contains('mode-farm')) {
+    document.body.classList.toggle('mode-farm', isFarm());
+    $('#tab-answer').firstChild.textContent = isFarm() ? '❓ QUIZ ⚡' : '❓ ANSWER';
+    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : '🥚 FIGHT ';
+  }
   if (phase === 'playing' || phase === 'answer') {
     if (s.paused) { ov.className = 'overlay'; ov.innerHTML = '<div class="box"><h1 class="comic-title">PAUSED</h1><p>Eyes on the teacher!</p></div>'; } else if (ov.innerHTML.includes('PAUSED')) ov.className = 'overlay hidden';
   }
@@ -164,7 +172,7 @@ function onState() {
     if (E) {
       const t = document.createElement('div');
       t.className = 'event-toast';
-      t.innerHTML = `<img src="${sprite(E.banner)}" alt="${esc(E.name)}"><p>${esc(E.phone)}</p>`;
+      t.innerHTML = `<img src="${sprite(E.banner)}" alt="${esc(E.name)}"><p>${esc(isFarm() ? FARM_PHONE[ev.type] || E.phone : E.phone)}</p>`;
       document.body.appendChild(t); sfx.event();
       navigator.vibrate?.(200);
       setTimeout(() => t.remove(), 3500);
@@ -179,9 +187,9 @@ function showRoundEnd() {
   ov.innerHTML = html`<div class="box">
     <h1 class="comic-title slant">ROUND ${D.state.round} OVER!</h1>
     ${raw(ps.rank ? `<div>You're</div><div class="rank">#${ps.rank}</div><div>out of ${ps.of}</div>` : '')}
-    <div class="scores"><div style="background:var(--chicken)">🐔 ${D.teams.chicken ?? 0}</div><div style="background:var(--turkey)">🦃 ${D.teams.turkey ?? 0}</div></div>
-    <p>💥 ${ps.score || 0} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} correct</p>
-    <img src="${sprite((isCannon() ? 'c_' : '') + me.team + '_idle')}" alt="" style="width:120px">
+    <div class="scores"><div style="background:var(--chicken)">🐔 ${SCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">🦃 ${SCORE(D.teams.turkey)}</div></div>
+    <p>💥 ${SCORE(ps.score)} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} correct</p>
+    <img src="${sprite(isFarm() ? `fm_coop_${me.team === 'chicken' ? 'c' : 't'}${ps.coop || 1}` : (isCannon() ? 'c_' : '') + me.team + '_idle')}" alt="" style="width:${isFarm() ? 200 : 120}px">
     <p>Next round soon — watch the big screen!</p></div>`;
 }
 
@@ -194,14 +202,18 @@ function showFinal() {
     <img src="${sprite(tie || won ? me.team + '_win' : me.team + '_dizzy')}" alt="" style="width:150px">
     <h2 class="comic-title">${tie ? 'IT\'S A DRAW!' : won ? 'YOUR TEAM WON!' : 'SO CLOSE!'}</h2>
     ${raw(ps.rank ? `<div class="rank">#${ps.rank}</div><div>out of ${ps.of} players</div>` : '')}
-    <div class="scores"><div style="background:var(--chicken)">🐔 ${D.teams.chicken ?? 0}</div><div style="background:var(--turkey)">🦃 ${D.teams.turkey ?? 0}</div></div>
-    <p>💥 ${ps.score || 0} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} questions right</p></div>`;
+    <div class="scores"><div style="background:var(--chicken)">🐔 ${SCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">🦃 ${SCORE(D.teams.turkey)}</div></div>
+    <p>💥 ${SCORE(ps.score)} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} questions right</p></div>`;
   if (won || tie) sfx.win();
 }
 
 function onPstate() {
   const ps = D.ps;
-  $('#me-score').textContent = ps.score || 0;
+  $('#me-score').textContent = SCORE(ps.score);
+  if (isFarm()) {
+    L.farmAdj = 0; drawFarm();
+    if (ps.fox === 'danger' && !L.foxPrompted) { L.foxPrompted = true; setTab('answer'); navigator.vibrate?.([100, 50, 100]); } else if (!ps.fox) L.foxPrompted = false;
+  }
   const eggs = ps.eggs || 0;
   $('#egg-count').textContent = eggs;
   $('#egg-bar').innerHTML = Array.from({ length: 8 }, (_, i) => (i < eggs ? `<img src="${sprite(D.me?.team === 'turkey' ? 'egg_red' : 'egg_blue')}" alt="">` : '<span class="empty"></span>')).join('');
@@ -231,7 +243,7 @@ function tickTimer() {
   if (s.phase === 'playing' || s.phase === 'answer') {
     const left = s.paused ? s.remaining : s.endsAt - serverNow();
     const secs = Math.max(0, Math.ceil(left / 1000));
-    el.textContent = secs;
+    el.textContent = secs >= 60 ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` : secs;
     el.parentElement.classList.toggle('hurry', secs <= 10);
   } else el.textContent = '--';
   if (L.lockUntil && Date.now() >= L.lockUntil) { L.lockUntil = 0; hideFeedback(); }
@@ -250,7 +262,9 @@ function setTab(t) {
   $('#tab-answer').classList.toggle('on', t === 'answer');
   $('#tab-fight').classList.toggle('on', t === 'fight');
   $('#view-answer').classList.toggle('hidden', t !== 'answer');
-  $('#view-fight').classList.toggle('hidden', t !== 'fight');
+  $('#view-fight').classList.toggle('hidden', t !== 'fight' || isFarm());
+  $('#view-farm').classList.toggle('hidden', t !== 'fight' || !isFarm());
+  if (isFarm() && t === 'fight') drawFarm(true);
   if (t === 'fight') $('#tab-fight').classList.remove('nudge');
   sfx.click();
 }
@@ -311,8 +325,10 @@ function drawFeedback() {
   box.className = `fb ${f.correct ? 'right' : 'wrong'}`;
   const lock = f.lockMs || 1500;
   const readMs = f.correct ? lock : Math.max(lock, 2600);
+  const fg = f.farm;
+  const gain = fg ? `<div class="farm-gain"><span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
   box.innerHTML = f.correct
-    ? html`<div class="big">CORRECT!</div><div class="gain">+${Math.max(0, f.eggs)} 🥚</div><div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
+    ? html`<div class="big">CORRECT!</div>${raw(gain)}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
     : html`<div class="big">NOPE!</div><div class="ans-was">Answer: <b>${f.rightText}</b></div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div><div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`;
   L.lockUntil = Date.now() + readMs;
   if (f.correct) { sfx.correct(); navigator.vibrate?.(40); } else { sfx.wrong(); navigator.vibrate?.([60, 40, 60]); }
@@ -474,3 +490,101 @@ function startMeter() {
   });
   drawDial();
 })();
+
+// ---------------- Egg Farm ----------------
+const FM = { taps: 0, sentTaps: 0, buySeq: 0, birdsShown: -1, coopShown: '', sendT: null };
+const coopName = (lvl) => COOP[lvl - 1]?.name || '';
+function farmCash() {
+  const ps = D.ps;
+  if (!ps.t) return ps.cash || 0;
+  const dt = Math.max(0, Math.min(5000, serverNow() - ps.t)) / 1000;
+  return (ps.cash || 0) + (ps.rate || 0) * dt + (L.farmAdj || 0);
+}
+function sendFarm() {
+  clearTimeout(FM.sendT);
+  FM.sendT = setTimeout(() => {
+    update(G(`inputs/${uid}`), { taps: FM.taps, buySeq: FM.buySeq, buy: FM.buy || '' }).catch(() => {});
+  }, 120);
+}
+function drawFarm(force = false) {
+  if (!isFarm() || $('#view-farm').classList.contains('hidden')) return;
+  const ps = D.ps; const team = D.me?.team || 'chicken';
+  const cash = farmCash();
+  $('#fm-cash').textContent = fmt(cash);
+  const boosting = ps.boostUntil > serverNow();
+  $('#fm-rate').textContent = `+${fmt(ps.rate || 0)}/s${boosting ? ` ⚡×${BOOST_MULT}` : ''}${ps.golden ? ' 🥇×2' : ''}${ps.catchup ? ' 🚀×3' : ''}`;
+  $('#fm-cash').parentElement.classList.toggle('boost', boosting);
+  $('#fm-gold').textContent = ps.gold || 0;
+  // alert strip
+  const al = $('#fm-alert');
+  if (ps.fox === 'danger') { al.className = 'fm-alert danger'; al.innerHTML = '🦊 FOX RAID! Answer a question correctly NOW to protect your cash!'; } else if (ps.fox === 'safe') { al.className = 'fm-alert safe'; al.textContent = '🛡️ Your farm is safe from the fox!'; } else if (boosting) { al.className = 'fm-alert boost'; al.textContent = `⚡ BOOST ×${BOOST_MULT} — ${Math.ceil((ps.boostUntil - serverNow()) / 1000)}s left`; } else { al.className = 'fm-alert hidden'; }
+  // buildings
+  const coopSrc = sprite(`fm_coop_${team === 'chicken' ? 'c' : 't'}${ps.coop || 1}`);
+  const coop = $('#fm-coop');
+  if (FM.coopShown !== coopSrc) { coop.src = coopSrc; coop.classList.remove('pop'); void coop.offsetWidth; if (FM.coopShown) coop.classList.add('pop'); FM.coopShown = coopSrc; coop.style.width = `${50 + (ps.coop || 1) * 6}%`; }
+  const m = MACHINE[ps.machine || 0]; const mi = $('#fm-machine');
+  mi.classList.toggle('hidden', !m?.sprite); if (m?.sprite && !mi.src.includes(m.sprite)) mi.src = sprite(m.sprite);
+  const tr = TRUCK[ps.truck || 0]; const ti = $('#fm-truck');
+  ti.classList.toggle('hidden', !tr?.sprite); if (tr?.sprite && !ti.src.includes(tr.sprite)) ti.src = sprite(tr.sprite);
+  // birds
+  const show = Math.min(ps.birds || 3, 14);
+  if (show !== FM.birdsShown || force) {
+    FM.birdsShown = show;
+    const box = $('#fm-birds');
+    while (box.children.length < show) {
+      const b = document.createElement('div'); b.className = 'fm-bird';
+      b.innerHTML = `<img src="${sprite(`${team}_idle`)}" alt="">`;
+      b.style.left = `${20 + Math.random() * 60}%`; b.style.top = `${55 + Math.random() * 30}%`;
+      b.querySelector('img').style.animationDelay = `${Math.random()}s`;
+      box.appendChild(b);
+    }
+    while (box.children.length > show) box.lastChild.remove();
+  }
+  // shop
+  const costs = nextCosts(ps.birds ? ps : { birds: 3, coop: 1, machine: 0, truck: 0 });
+  const items = [
+    ['birds', `${team}_idle`, '+1 Bird', `${ps.birds || 3}/${COOP[(ps.coop || 1) - 1].cap}`, costs.birds, costs.birds ? '' : 'Coop full!'],
+    ['coop', `fm_coop_${team === 'chicken' ? 'c' : 't'}${Math.min(5, (ps.coop || 1) + 1)}`, costs.coop ? coopName((ps.coop || 1) + 1) : 'Coop', `Lv ${ps.coop || 1}`, costs.coop, 'MAX'],
+    ['machine', MACHINE[Math.min(3, (ps.machine || 0) + 1)].sprite, costs.machine ? MACHINE[(ps.machine || 0) + 1].name : 'Machine', `×${MACHINE[ps.machine || 0].mult}`, costs.machine, 'MAX'],
+    ['truck', TRUCK[Math.min(2, (ps.truck || 0) + 1)].sprite, costs.truck ? TRUCK[(ps.truck || 0) + 1].name : 'Truck', `×${TRUCK[ps.truck || 0].mult}`, costs.truck, 'MAX'],
+  ];
+  const html2 = items.map(([k, icon, title, sub, c, blocked]) => {
+    const can = c && cash >= c.cash && (ps.gold || 0) >= c.gold;
+    const price = c ? `${fmt(c.cash)}${c.gold ? ` +${c.gold}🥇` : ''}` : blocked;
+    return `<button class="fm-buy ${!c ? 'max' : can ? 'can' : 'no'}" data-buy="${k}" ${c ? '' : 'disabled'}><img src="${sprite(icon)}" alt=""><b>${esc(title)}</b><small>${esc(sub)}</small><span class="price">${esc(price)}</span></button>`;
+  }).join('');
+  if (FM.shopHtml !== html2) { FM.shopHtml = html2; $('#fm-shop').innerHTML = html2; }
+}
+setInterval(() => { if (isFarm() && D.state.phase === 'playing') drawFarm(); }, 250);
+setInterval(() => { // birds wander
+  if (!isFarm()) return;
+  for (const b of $$('.fm-bird')) {
+    if (Math.random() < 0.5) continue;
+    const nl = 12 + Math.random() * 76;
+    b.classList.toggle('flip', nl < parseFloat(b.style.left));
+    b.style.left = `${nl}%`; b.style.top = `${52 + Math.random() * 38}%`;
+  }
+}, 1500);
+
+$('#fm-scene').addEventListener('pointerdown', (e) => {
+  if (e.target.closest('#fm-crate') || D.state.phase !== 'playing' || D.state.paused) return;
+  FM.taps += 1;
+  const val = tapValue(D.ps.birds ? D.ps : { birds: 3, machine: 0, truck: 0 }) * (D.ps.boostUntil > serverNow() ? BOOST_MULT : 1);
+  L.farmAdj = (L.farmAdj || 0) + val;
+  const r = $('#fm-scene').getBoundingClientRect();
+  const f = document.createElement('div'); f.className = 'fm-float';
+  f.textContent = `+${fmt(val)}`; f.style.left = `${e.clientX - r.left}px`; f.style.top = `${e.clientY - r.top - 20}px`;
+  $('#fm-scene').appendChild(f); setTimeout(() => f.remove(), 900);
+  if (FM.taps % 4 === 0) sfx.egg();
+  sendFarm();
+});
+$('#fm-crate').addEventListener('click', () => { sfx.click(); setTab('answer'); });
+$('#fm-shop').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-buy]'); if (!b || b.disabled || D.state.phase !== 'playing') return;
+  if (!b.classList.contains('can')) { sfx.wrong(); b.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 200 }); return; }
+  const k = b.dataset.buy; const c = nextCosts(D.ps)[k];
+  FM.buySeq += 1; FM.buy = k;
+  if (c) L.farmAdj = (L.farmAdj || 0) - c.cash;
+  sfx.join(); navigator.vibrate?.(30);
+  update(G(`inputs/${uid}`), { taps: FM.taps, buySeq: FM.buySeq, buy: k }).catch(() => {});
+});

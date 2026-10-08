@@ -65,4 +65,7 @@ After any game: **Teacher HQ → Results → click a game**, or **View Results**
 ## Egg Cannon (Phases 9–10)
 Create Game → **Egg Cannon**. Each round: students answer 5 questions (each right answer loads 1 egg), then everyone aims with the dial and taps **FIRE** while the power bar swings. Knock over or smash the other team's scarecrows, pumpkins, barrels, TNT and bullseyes for points.
 
-**Next:** Phase 11 — Egg Farm.
+## Egg Farm (Phases 11–12)
+Create Game → **Egg Farm** → pick 5, 8 or 12 minutes. Each student grows their own farm on their phone: tap the farm to collect eggs, buy birds, coops, machines and trucks, and open the **❓ Quiz** tab (or tap the mystery crate) — every right answer pays cash, golden eggs (needed for bigger coops) and a ⚡×3 boost. The big screen shows a live race board for both teams. Most money earned wins.
+
+**Next:** Phase 13 — polish & classroom hardening.
