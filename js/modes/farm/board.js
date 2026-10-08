@@ -1,23 +1,19 @@
 // =========================================================
 // EGG FARM — host side. Runs every student's farm economy (so
-// nobody can cheat from their phone) and draws the live race
-// board on the projector. Each phone is its own little farm.
+// nobody can cheat from a phone) and draws the live race board
+// on the projector.
 // =========================================================
 import { sprite, avatar, AVATARS } from '../../core/assets.js';
 import { esc } from '../../core/ui.js';
-import { sfx } from '../../core/sfx.js';
-import {
-  COOP, MACHINE, TRUCK, newFarm, nextCosts, baseRate, birdCost, fmt, answerReward, tapValue,
-  BOOST_MULT, BOOST_SECS, BOOST_MAX, TAPS_PER_SEC,
-} from './economy.js';
+import * as E from './economy.js';
 
-const coopSprite = (team, lvl) => `fm_coop_${team === 'chicken' ? 'c' : 't'}${lvl}`;
+const coopSprite = (team, lvl) => `fm_coop_${team === 'chicken' ? 'c' : 't'}${Math.max(1, lvl)}`;
+const article = (w) => (/^[AEIOU]/i.test(w) ? 'an' : 'a');
 
 export class FarmBoard {
-  constructor(el, { onChange, onFeed } = {}) {
+  constructor(el, { onChange } = {}) {
     this.el = el;
     this.onChange = onChange || (() => {});
-    this.onFeed = onFeed || (() => {});
     this.players = new Map();
     this.running = false; this.paused = false;
     this.effects = { golden: 0, catchup: 0, catchupTeam: null, fox: null };
@@ -48,138 +44,127 @@ export class FarmBoard {
   // ---------- players ----------
   addPlayer({ uid, name, team, bot = false, av }) {
     if (this.players.has(uid)) { const p = this.players.get(uid); p.name = name; p.av = av ?? p.av; return p; }
-    const p = { uid, name, team, bot, av, score: 0, farm: newFarm(), tapT: 0, tapCredit: TAPS_PER_SEC, lastTaps: null, lastBuy: null, think: 2 + Math.random() * 4 };
+    const p = { uid, name, team, bot, av, farm: E.newFarm(), think: 2 + Math.random() * 4, last: {}, balloonAt: 0 };
     p.score = p.farm.earned;
     this.players.set(uid, p);
     return p;
   }
-  removePlayer(uid) { this.players.delete(uid); const c = this.cards.get(uid); c?.remove(); this.cards.delete(uid); }
+  removePlayer(uid) { this.players.delete(uid); this.cards.get(uid)?.remove(); this.cards.delete(uid); }
   setTeam(uid, team) { const p = this.players.get(uid); if (p) { p.team = team; this.cards.get(uid)?.remove(); this.cards.delete(uid); } }
 
-  rate(p) {
-    const now = this.now();
-    let m = baseRate(p.farm);
-    if (p.farm.boostUntil > now) m *= BOOST_MULT;
+  mult(p) {
+    let m = 1;
+    if (p.farm.boostUntil > this.now()) m *= E.BOOST_MULT;
     if (this.effects.golden > 0) m *= 2;
     if (this.effects.catchup > 0 && this.effects.catchupTeam === p.team) m *= 3;
     return m;
   }
+  rate(p) { return E.baseIncome(p.farm) * this.mult(p); }
 
-  /** Small object the phone needs to draw the farm. */
+  /** Everything the phone needs to draw the farm. */
   stateFor(uid) {
     const p = this.players.get(uid); if (!p) return null;
-    const f = p.farm;
+    const f = p.farm; const fx = this.effects.fox;
     return {
-      cash: Math.floor(f.cash), earned: Math.floor(f.earned), gold: f.gold, rate: +this.rate(p).toFixed(2), base: +baseRate(f).toFixed(2),
-      birds: f.birds, coop: f.coop, machine: f.machine, truck: f.truck, boostUntil: f.boostUntil, t: this.now(), score: Math.floor(f.earned),
+      cash: Math.floor(f.cash), earned: Math.floor(f.earned), score: Math.floor(f.earned), gold: f.gold,
+      chickens: f.chickens, cap: E.capacity(f), charge: +f.charge.toFixed(2), chargeMax: E.chargeMax(f), refill: +E.chargeRefill(f).toFixed(2),
+      lay: +E.layRate(f).toFixed(2), ship: E.shipCap(f), value: +E.eggValue(f).toFixed(2),
+      rate: +this.rate(p).toFixed(2), mult: this.mult(p),
+      coops: [...f.coops], trucks: [...f.trucks], machine: f.machine, research: { ...f.research },
+      coopBuys: f.coopBuys, truckBuys: f.truckBuys, boostUntil: f.boostUntil, hatched: f.hatched, t: this.now(),
       golden: this.effects.golden > 0 ? 1 : 0, catchup: this.effects.catchup > 0 && this.effects.catchupTeam === p.team ? 1 : 0,
-      fox: this.effects.fox && this.effects.fox.team === p.team ? (this.effects.fox.safe.has(uid) ? 'safe' : 'danger') : '',
+      fox: fx && fx.team === p.team ? (fx.safe.has(uid) ? 'safe' : 'danger') : '',
     };
   }
 
   // ---------- actions from phones ----------
-  /** inp: { buy, buySeq, taps } */
+  /** inp: { hatch, buySeq, buy, rsSeq, rs, balloonSeq, balloon, foxSeq, foxAte } */
   handleInput(uid, inp) {
     const p = this.players.get(uid); if (!p || !this.running || this.paused) return;
-    const taps = +inp.taps || 0;
-    if (p.lastTaps === null) p.lastTaps = taps;
-    else if (taps > p.lastTaps) {
-      const n = Math.min(taps - p.lastTaps, Math.floor(p.tapCredit));
-      p.lastTaps = taps;
-      if (n > 0) { p.tapCredit -= n; this.earn(p, tapValue(p.farm) * n * (p.farm.boostUntil > this.now() ? BOOST_MULT : 1)); }
+    const L = p.last; const f = p.farm;
+    const seen = (k) => { const v = +inp[k] || 0; if (L[k] === undefined) { L[k] = v; return 0; } const d = v - L[k]; if (d > 0) L[k] = v; return Math.max(0, d); };
+    const h = seen('hatch'); if (h) { E.hatch(f, h); this.onChange(p); }
+    if (seen('buySeq')) { const c = E.buy(f, inp.buy); if (c && inp.buy !== 'truck') this.announce(p, inp.buy, c); this.onChange(p); }
+    if (seen('rsSeq')) { if (E.research(f, inp.rs)) this.feedItem(p, `researched <b>${esc(E.RESEARCH[inp.rs]?.name || '')}</b> 🔬`, E.RESEARCH[inp.rs]?.icon); this.onChange(p); }
+    if (seen('balloonSeq') && this.now() - p.balloonAt > 6000) {
+      p.balloonAt = this.now();
+      if (inp.balloon === 'gold') f.gold += 1;
+      else { const c = Math.max(30, E.baseIncome(f) * 20); f.cash += c; f.earned += c; }
+      this.onChange(p);
     }
-    const seq = +inp.buySeq || 0;
-    if (p.lastBuy === null) p.lastBuy = 0;
-    if (seq > p.lastBuy) { p.lastBuy = seq; this.buy(p, inp.buy); }
+    if (seen('foxSeq') && inp.foxAte) { f.chickens = Math.max(0, f.chickens - Math.round(f.chickens * E.foxSteal(f) * 0.5)); this.onChange(p); }
   }
 
-  buy(p, what) {
-    const f = p.farm; const c = nextCosts(f)[what];
-    if (!c || f.cash < c.cash || f.gold < c.gold) return false;
-    f.cash -= c.cash; f.gold -= c.gold;
-    if (what === 'birds') f.birds += 1;
-    else {
-      f[what] += 1;
-      const nm = what === 'coop' ? COOP[f.coop - 1].name : what === 'machine' ? MACHINE[f.machine].name : TRUCK[f.truck].name;
-      this.feedItem(p, `built ${/^[AEIOU]/i.test(nm) ? 'an' : 'a'} <b>${esc(nm)}</b>!`, what === 'coop' ? coopSprite(p.team, f.coop) : what === 'machine' ? MACHINE[f.machine].sprite : TRUCK[f.truck].sprite);
-      if (!p.bot) sfx.join();
-    }
-    this.onChange(p);
-    return true;
+  announce(p, kind, c) {
+    if (kind === 'coop' && c.level >= 2) this.feedItem(p, `built ${article(c.name)} <b>${esc(c.name)}</b>!`, coopSprite(p.team, c.level));
+    if (kind === 'machine') this.feedItem(p, `built ${article(c.name)} <b>${esc(c.name)}</b>!`, E.MACHINE_LV[p.farm.machine].sprite);
   }
 
-  /** Called by the host when a quiz answer is graded. Returns what the phone should show. */
+  /** Called by the host when a quiz answer is graded. */
   reward(uid, { correct, conf, streak }) {
     const p = this.players.get(uid); if (!p) return null;
-    const f = p.farm; const now = this.now();
     if (this.effects.fox && this.effects.fox.team === p.team && correct) this.effects.fox.safe.add(uid);
-    if (!correct) { this.onChange(p); return { cash: 0, gold: 0, boost: 0 }; }
-    let cash = answerReward(f);
-    let gold = 1;
-    if (conf === 'sure') gold += 1;
-    if (streak && streak % 3 === 0) { gold += 1; cash *= 2; this.feedItem(p, `is on a <b>${streak}-answer streak</b>! 🔥`, 'fm_bolt'); }
-    this.earn(p, cash);
-    f.gold += gold;
-    f.boostUntil = Math.min(now + BOOST_MAX * 1000, Math.max(f.boostUntil, now) + BOOST_SECS * 1000);
+    if (!correct) { this.onChange(p); return { chicks: 0, cash: 0, gold: 0, boost: 0 }; }
+    const r = E.answerReward(p.farm, { conf, streak }, this.now());
+    if (streak && streak % 3 === 0) this.feedItem(p, `is on a <b>${streak}-answer streak</b>! 🔥`, 'fm_bolt');
     this.onChange(p);
-    return { cash: Math.round(cash), gold, boost: Math.round((f.boostUntil - now) / 1000) };
+    return r;
   }
-
-  earn(p, amount) { p.farm.cash += amount; p.farm.earned += amount; p.score = p.farm.earned; }
 
   // ---------- loop ----------
   tick(dt) {
-    const E = this.effects;
-    if (E.golden > 0) E.golden -= dt;
-    if (E.catchup > 0) E.catchup -= dt;
-    if (E.fox) { E.fox.t -= dt; if (E.fox.t <= 0) this.endFox(); }
+    const fx = this.effects;
+    if (fx.golden > 0) fx.golden -= dt;
+    if (fx.catchup > 0) fx.catchup -= dt;
+    if (fx.fox) { fx.fox.t -= dt; if (fx.fox.t <= 0) this.endFox(); }
     for (const p of this.players.values()) {
-      this.earn(p, this.rate(p) * dt);
-      p.tapCredit = Math.min(TAPS_PER_SEC * 2, p.tapCredit + TAPS_PER_SEC * dt);
+      E.step(p.farm, dt, this.mult(p));
+      p.score = p.farm.earned;
       if (p.bot) this.botTick(p, dt);
     }
   }
 
   botTick(p, dt) {
+    const f = p.farm;
+    E.hatch(f, E.HATCH_RATE * dt * 0.7);
     p.think -= dt;
     if (p.think > 0) return;
-    p.think = 3 + Math.random() * 5;
-    const correct = Math.random() < 0.7;
+    p.think = 5 + Math.random() * 7;
+    const correct = Math.random() < 0.65;
     p.answered = (p.answered || 0) + 1; p.correct = (p.correct || 0) + (correct ? 1 : 0);
     p.botStreak = correct ? (p.botStreak || 0) + 1 : 0;
     this.reward(p.uid, { correct, conf: Math.random() < 0.4 ? 'sure' : 'think', streak: p.botStreak });
-    this.earn(p, tapValue(p.farm) * 10);
+    for (const k of Object.keys(E.RESEARCH)) if (E.research(f, k)) break;
     for (let i = 0; i < 4; i++) {
-      const c = nextCosts(p.farm);
-      const opts = Object.entries(c).filter(([, v]) => v && v.cash <= p.farm.cash && v.gold <= p.farm.gold).sort((a, b) => a[1].cash - b[1].cash);
-      if (!opts.length) break;
-      this.buy(p, opts[0][0]);
+      const order = E.layRate(f) > E.shipCap(f) ? ['truck', 'coop', 'machine'] : f.chickens >= E.capacity(f) * 0.9 ? ['coop', 'truck', 'machine'] : ['machine', 'coop', 'truck'];
+      let done = false;
+      for (const k of order) { const c = E.buy(f, k); if (c) { this.announce(p, k, c); done = true; break; } }
+      if (!done) break;
     }
   }
 
   startRound() {
-    for (const p of this.players.values()) { p.farm = newFarm(); p.score = p.farm.earned; p.lastTaps = null; p.lastBuy = null; }
+    for (const p of this.players.values()) { p.farm = E.newFarm(); p.score = p.farm.earned; p.last = {}; }
     this.effects = { golden: 0, catchup: 0, catchupTeam: null, fox: null };
     this.feed = []; this.renderFeed();
     this.el.querySelector('#fb-fox')?.classList.add('hidden');
   }
   startBattle() { this.running = true; this.paused = false; this.last = performance.now(); }
   stopRound() { this.running = false; if (this.effects.fox) this.endFox(); }
-  resetScores() { for (const p of this.players.values()) { p.farm = newFarm(); p.score = p.farm.earned; } }
+  resetScores() { for (const p of this.players.values()) { p.farm = E.newFarm(); p.score = p.farm.earned; } }
   celebrate() {}
   addEggs() { return 0; }
 
   // ---------- events ----------
   startEvent(type, losingTeam) {
-    const E = this.effects;
-    if (type === 'golden') E.golden = 20;
-    else if (type === 'double') for (const p of this.players.values()) { p.farm.gold += 2; this.onChange(p); }
-    else if (type === 'shield') { E.catchup = 15; E.catchupTeam = losingTeam || (Math.random() < 0.5 ? 'chicken' : 'turkey'); }
+    const fx = this.effects;
+    if (type === 'golden') fx.golden = 20;
+    else if (type === 'double') for (const p of this.players.values()) p.farm.gold += 2;
+    else if (type === 'shield') { fx.catchup = 15; fx.catchupTeam = losingTeam || (Math.random() < 0.5 ? 'chicken' : 'turkey'); }
     else if (type === 'fox') {
       const leading = losingTeam === 'chicken' ? 'turkey' : losingTeam === 'turkey' ? 'chicken' : (Math.random() < 0.5 ? 'chicken' : 'turkey');
-      E.fox = { team: leading, t: 15, safe: new Set() };
-      const fox = this.el.querySelector('#fb-fox');
-      fox.className = `fb-fox run-${leading}`;
+      fx.fox = { team: leading, t: 15, safe: new Set() };
+      this.el.querySelector('#fb-fox').className = `fb-fox run-${leading}`;
     }
     for (const p of this.players.values()) this.onChange(p);
   }
@@ -191,11 +176,11 @@ export class FarmBoard {
     for (const p of this.players.values()) {
       if (p.team !== fx.team) continue;
       const safe = fx.safe.has(p.uid) || (p.bot && Math.random() < 0.6);
-      if (!safe) { const l = Math.floor(p.farm.cash * 0.2); p.farm.cash -= l; lost += l; caught += 1; }
+      if (!safe) { const l = Math.floor(p.farm.cash * E.foxSteal(p.farm)); p.farm.cash -= l; lost += l; caught += 1; }
       this.onChange(p);
     }
     this.el.querySelector('#fb-fox')?.classList.add('hidden');
-    this.feedItem({ team: fx.team, name: 'The fox' }, caught ? `stole <b>${fmt(lost)}</b> from ${caught} ${fx.team} farm${caught === 1 ? '' : 's'}!` : 'went home hungry — every farm was protected! 🛡️', 'fox');
+    this.feedItem({ team: fx.team, name: 'The fox' }, caught ? `stole <b>${E.fmt(lost)}</b> from ${caught} ${fx.team} farm${caught === 1 ? '' : 's'}!` : 'went home hungry — every farm was protected! 🛡️', 'fox');
   }
 
   // ---------- drawing ----------
@@ -203,7 +188,6 @@ export class FarmBoard {
     this.feed.unshift({ html: `<b>${esc(p.name)}</b> ${htmlText}`, team: p.team, icon, at: Date.now() });
     this.feed = this.feed.slice(0, 4);
     this.renderFeed();
-    this.onFeed(this.feed[0]);
   }
   renderFeed() {
     const el = this.el.querySelector('#fb-feed'); if (!el) return;
@@ -219,7 +203,8 @@ export class FarmBoard {
       const box = this.lists[team];
       const first = new Map([...box.children].map((c) => [c.dataset.uid, c.getBoundingClientRect().top]));
       list.forEach((p, i) => {
-        totals[team] += p.farm.earned; rates[team] += this.rate(p);
+        const f = p.farm;
+        totals[team] += f.earned; rates[team] += this.rate(p);
         let card = this.cards.get(p.uid);
         if (!card || card.parentElement !== box) {
           card?.remove();
@@ -228,24 +213,26 @@ export class FarmBoard {
           this.cards.set(p.uid, card);
         }
         if (box.children[i] !== card) box.insertBefore(card, box.children[i] || null);
-        const boosting = p.farm.boostUntil > now;
+        const boosting = f.boostUntil > now;
         card.classList.toggle('boost', boosting);
-        card.querySelector('.rk').textContent = i + 1;
+        card.classList.toggle('leader', i === 0);
+        card.querySelector('.rk').textContent = i === 0 ? '👑' : i + 1;
         const avSrc = avatar(Number.isInteger(p.av) ? p.av : AVATARS[team][0]);
         const avEl = card.querySelector('.av'); if (avEl.getAttribute('src') !== avSrc) avEl.src = avSrc;
         card.querySelector('.nm b').textContent = (p.bot ? '🤖 ' : '') + p.name;
-        card.querySelector('.nm small').textContent = `${p.farm.birds} birds · ${COOP[p.farm.coop - 1].name}${boosting ? ' · ⚡BOOST' : ''}`;
-        const cs = sprite(coopSprite(team, p.farm.coop)); const cEl = card.querySelector('.coop'); if (cEl.getAttribute('src') !== cs) { cEl.src = cs; cEl.classList.remove('anim-pop'); void cEl.offsetWidth; cEl.classList.add('anim-pop'); }
-        card.querySelector('.money b').textContent = fmt(p.farm.earned);
-        card.querySelector('.money small').textContent = `+${fmt(this.rate(p))}/s`;
+        const top = Math.max(...f.coops);
+        card.querySelector('.nm small').textContent = `🐔 ${E.fmtN(f.chickens)} · ${f.coops.filter(Boolean).length} coops${boosting ? ' · ⚡BOOST' : ''}`;
+        const cs = sprite(coopSprite(team, top)); const cEl = card.querySelector('.coop');
+        if (cEl.getAttribute('src') !== cs) { cEl.src = cs; cEl.classList.remove('anim-pop'); void cEl.offsetWidth; cEl.classList.add('anim-pop'); }
+        card.querySelector('.money b').textContent = E.fmt(f.earned);
+        card.querySelector('.money small').textContent = `+${E.fmt(this.rate(p))}/s`;
       });
-      // FLIP: slide cards to their new spots
       for (const c of box.children) {
         const before = first.get(c.dataset.uid); if (before === undefined) continue;
         const dy = before - c.getBoundingClientRect().top;
-        if (Math.abs(dy) > 2) { c.animate([{ transform: `translateY(${dy}px)` }, { transform: 'translateY(0)' }], { duration: 450, easing: 'cubic-bezier(.34,1.56,.64,1)' }); }
+        if (Math.abs(dy) > 2) c.animate([{ transform: `translateY(${dy}px)` }, { transform: 'translateY(0)' }], { duration: 450, easing: 'cubic-bezier(.34,1.56,.64,1)' });
       }
-      const r = this.el.querySelector(`#fb-rate-${team}`); if (r) r.textContent = `+${fmt(rates[team])}/s`;
+      const r = this.el.querySelector(`#fb-rate-${team}`); if (r) r.textContent = `+${E.fmt(rates[team])}/s`;
     }
     const sum = totals.chicken + totals.turkey || 1;
     const tug = this.el.querySelector('.fb-tug');
@@ -256,4 +243,4 @@ export class FarmBoard {
   destroy() { clearInterval(this.timer); clearInterval(this.renderTimer); }
 }
 
-export { fmt, birdCost };
+export const fmt = E.fmt;

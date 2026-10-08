@@ -120,52 +120,78 @@ body.mode-cannon .tabs, body.mode-cannon #ko { display: none !important; }
 
 /* ---------- Egg Farm ---------- */
 body.mode-farm .egg-bar, body.mode-farm .egg-count { display: none; }
-.fm-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.fm-cash { background: #fff; color: var(--ink); border: 4px solid var(--ink); border-radius: 16px; padding: 2px 14px 4px; box-shadow: var(--pop-shadow-sm); line-height: 1; }
-.fm-cash b { font-family: var(--font-burst); font-size: 2.2rem; color: #2a8a14; display: block; }
-.fm-cash small { font-weight: 900; font-size: .85rem; }
+#view-farm { gap: 6px; }
+.fm-top { display: flex; align-items: center; gap: 6px; }
+.fm-cash { background: #fff; color: var(--ink); border: 4px solid var(--ink); border-radius: 14px; padding: 1px 12px 3px; box-shadow: var(--pop-shadow-sm); line-height: 1; margin-right: auto; }
+.fm-cash b { font-family: var(--font-burst); font-size: 1.9rem; color: #2a8a14; display: block; }
+.fm-cash small { font-weight: 900; font-size: .8rem; }
 .fm-cash.boost small { color: #b25b00; }
-.fm-gold { display: flex; align-items: center; gap: 4px; background: var(--navy-700); border: 3px solid var(--ink); border-radius: 999px; padding: 2px 12px 2px 4px; }
-.fm-gold img { height: 34px; }
-.fm-gold b { font-family: var(--font-burst); font-size: 1.6rem; color: var(--yolk); }
-.fm-alert { border: 4px solid var(--ink); border-radius: 14px; padding: 6px 10px; font-weight: 900; text-align: center; animation: pop-in 400ms var(--ease-pop) both; }
+.fm-stat, .fm-gold { display: flex; align-items: center; gap: 3px; background: var(--navy-700); border: 3px solid var(--ink); border-radius: 999px; padding: 1px 10px 1px 3px; }
+.fm-stat img, .fm-gold img { height: 28px; }
+.fm-stat b, .fm-gold b { font-family: var(--font-burst); font-size: 1.25rem; }
+.fm-gold b { color: var(--yolk); }
+.fm-stat small { font-size: .75rem; font-weight: 900; opacity: .8; }
+.fm-stat.full b { color: var(--yolk); animation: wobble .5s ease-in-out infinite; }
+.fm-alert { border: 4px solid var(--ink); border-radius: 12px; padding: 4px 10px; font-weight: 900; text-align: center; font-size: .9rem; animation: pop-in 400ms var(--ease-pop) both; }
 .fm-alert.boost { background: var(--yolk); color: var(--ink); }
 .fm-alert.danger { background: var(--turkey); color: #fff; animation: shake 400ms linear infinite; }
 .fm-alert.safe { background: var(--grass); color: var(--ink); }
-.fm-wrap { flex: 1; min-height: 0; display: grid; place-items: center; }
-.fm-scene { position: relative; width: 100%; height: 100%; border: 4px solid var(--ink); border-radius: 20px; overflow: hidden; background: url('../assets/sprites/farm_ground.webp') center/100% 100% no-repeat; box-shadow: var(--pop-shadow-sm); touch-action: manipulation; cursor: pointer; }
-.fm-deco { position: absolute; pointer-events: none; filter: drop-shadow(2px 3px 0 rgba(0,0,0,.25)); }
-.fm-deco.silo { width: 8%; left: 6%; top: 8%; }
-.fm-deco.pond { width: 15%; right: 6%; bottom: 14%; }
-.fm-deco.tree { width: 9%; right: 8%; top: 6%; }
-.fm-deco.hay { width: 10%; left: 8%; bottom: 16%; }
-.fm-coop { position: absolute; left: 50%; top: 38%; width: 36%; translate: -50% -50%; pointer-events: none; filter: drop-shadow(4px 6px 0 rgba(0,0,0,.3)); transition: width .4s; }
-.fm-coop.pop { animation: pop-in 600ms var(--ease-pop) both; }
-.fm-machine { position: absolute; left: 12%; top: 50%; width: 18%; pointer-events: none; filter: drop-shadow(3px 4px 0 rgba(0,0,0,.3)); }
-.fm-truck { position: absolute; width: 20%; bottom: 3.5%; left: 40%; pointer-events: none; filter: drop-shadow(3px 4px 0 rgba(0,0,0,.3)); animation: truck 7s ease-in-out infinite; }
-@keyframes truck { 0%, 15% { transform: translateX(-140%); } 40%, 60% { transform: translateX(0); } 85%, 100% { transform: translateX(160%); } }
-#fm-birds { position: absolute; inset: 0; pointer-events: none; }
-.fm-bird { position: absolute; width: 5.5%; transition: left 2.2s ease-in-out, top 2.2s ease-in-out; transform: translate(-50%, -100%); }
-.fm-bird img { width: 100%; display: block; animation: hop .5s ease-in-out infinite alternate; transform-origin: 50% 100%; }
-.fm-bird.flip img { scale: -1 1; }
-@keyframes hop { from { translate: 0 0; } to { translate: 0 -10%; } }
-.fm-taphint { position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-weight: 900; font-size: .85rem; color: #fff; text-shadow: 1px 1px 0 var(--ink), -1px -1px 0 var(--ink); pointer-events: none; }
-.fm-float { position: absolute; pointer-events: none; font-family: var(--font-burst); font-size: 1.5rem; color: var(--yolk); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; animation: floatup .9s ease-out forwards; z-index: 4; }
-@keyframes floatup { from { transform: translate(-50%, 0) scale(.6); opacity: 1; } to { transform: translate(-50%, -70px) scale(1.15); opacity: 0; } }
-.fm-crate { all: unset; position: absolute; right: 8px; bottom: 8px; width: 22%; max-width: 150px; display: grid; justify-items: center; cursor: pointer; z-index: 3; animation: wobble 1.2s ease-in-out infinite; }
-.fm-crate img { width: 70%; filter: drop-shadow(3px 3px 0 var(--ink)); }
-.fm-crate span { margin-top: -6px; background: var(--ink); color: #fff; border-radius: 10px; padding: 3px 8px; font-weight: 900; font-size: .75rem; text-align: center; line-height: 1.1; }
-.fm-crate span b { color: var(--yolk); font-size: 1rem; }
-.fm-shop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.fm-buy { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 1px; text-align: center; background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 14px; padding: 5px 3px 6px; box-shadow: var(--pop-shadow-sm); line-height: 1.05; transition: transform var(--t-fast); }
-.fm-buy img { height: 38px; max-width: 90%; object-fit: contain; }
-.fm-buy b { font-size: .78rem; font-weight: 900; }
-.fm-buy small { font-size: .66rem; opacity: .7; font-weight: 800; }
-.fm-buy .price { font-family: var(--font-burst); font-size: .95rem; color: #2a8a14; }
+.fm-alert.warn { background: #fff; color: var(--ink); }
+.fm-wrap { position: relative; flex: 1; min-height: 0; border: 4px solid var(--ink); border-radius: 18px; overflow: hidden; background: #4f8a22; box-shadow: var(--pop-shadow-sm); isolation: isolate; }
+.fm-wrap::before { content: ''; position: absolute; inset: -20px; z-index: -1; background: url('../assets/sprites/farm_ground.webp') center/cover; filter: blur(8px) brightness(.6) saturate(1.2); }
+.fm-scene { position: absolute; inset: 0; touch-action: none; }
+.fm-scene canvas { display: block; }
+.fm-crate { all: unset; position: absolute; right: 6px; bottom: 6px; width: 21%; max-width: 130px; display: grid; justify-items: center; cursor: pointer; z-index: 3; animation: wobble 1.2s ease-in-out infinite; }
+.fm-crate img { width: 72%; filter: drop-shadow(3px 3px 0 var(--ink)); }
+.fm-crate span { margin-top: -6px; background: var(--ink); color: #fff; border-radius: 10px; padding: 3px 7px; font-weight: 900; font-size: .7rem; text-align: center; line-height: 1.1; }
+.fm-crate span b { color: var(--yolk); font-size: .95rem; }
+.fm-controls { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: stretch; }
+.fm-hatch { all: unset; position: relative; width: 104px; height: 104px; border-radius: 50%; display: grid; place-items: center; cursor: pointer; background: radial-gradient(circle at 35% 30%, #ff8a6b, #e0402a 55%, #a52614); border: 5px solid var(--ink); box-shadow: inset 0 -8px 0 rgba(0,0,0,.25), var(--pop-shadow-sm); touch-action: none; -webkit-user-select: none; user-select: none; }
+.fm-hatch svg { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); transform: rotate(-90deg); pointer-events: none; }
+.fm-hatch .ring-bg { fill: none; stroke: rgba(0,0,0,.35); stroke-width: 9; }
+.fm-hatch .ring { fill: none; stroke: var(--yolk); stroke-width: 9; stroke-linecap: round; stroke-dasharray: 276.5; stroke-dashoffset: 0; transition: stroke-dashoffset .15s; }
+.fm-hatch span { position: relative; text-align: center; color: #fff; font-weight: 900; font-size: .7rem; line-height: 1; text-shadow: 1px 1px 0 var(--ink); pointer-events: none; }
+.fm-hatch span b { font-family: var(--font-burst); font-size: 1.5rem; letter-spacing: .04em; }
+.fm-hatch.on { transform: scale(.94); box-shadow: inset 0 -2px 0 rgba(0,0,0,.25), 0 0 0 6px rgba(255,199,44,.6); }
+.fm-hatch.empty { filter: grayscale(.7) brightness(.85); }
+.fm-shop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.fm-buy { all: unset; cursor: pointer; display: grid; justify-items: center; align-content: center; gap: 1px; text-align: center; background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; padding: 4px 2px; box-shadow: var(--pop-shadow-sm); line-height: 1.05; }
+.fm-buy img { height: 34px; max-width: 90%; object-fit: contain; }
+.fm-buy b { font-size: .72rem; font-weight: 900; }
+.fm-buy small { font-size: .62rem; opacity: .7; font-weight: 800; }
+.fm-buy .price { font-family: var(--font-burst); font-size: .9rem; color: #2a8a14; }
 .fm-buy.can { background: #eaffd8; box-shadow: var(--pop-shadow-sm), 0 0 0 3px var(--grass); }
-.fm-buy.can .price { animation: wobble 1s ease-in-out infinite; }
-.fm-buy.no { opacity: .55; }
+.fm-buy.need { box-shadow: var(--pop-shadow-sm), 0 0 0 3px var(--turkey); }
+.fm-buy.no { opacity: .6; }
 .fm-buy.max { background: #fff3c2; }
 .fm-buy:active { transform: translate(2px, 2px); }
+.fm-buy .dot { position: absolute; }
+.fm-sheet { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center; background: rgba(6,18,46,.75); padding: 10px; }
+.fm-sheet-box { width: min(520px, 100%); max-height: 100%; overflow: auto; display: grid; gap: 10px; }
+.fm-sheet-box h2 { margin: 0; font-family: var(--font-comic); letter-spacing: .04em; color: var(--chicken); }
+.fm-sheet-box h2 small { font-family: var(--font-body); font-size: .8rem; color: var(--ink); opacity: .7; letter-spacing: 0; }
+.fm-rs-list { display: grid; gap: 8px; }
+.fm-rs { all: unset; cursor: pointer; display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; border: 3px solid var(--ink); border-radius: 12px; padding: 6px 10px; background: #fff; box-shadow: var(--pop-shadow-sm); }
+.fm-rs img { width: 46px; height: 46px; object-fit: contain; }
+.fm-rs b { display: block; }
+.fm-rs small { opacity: .75; font-weight: 800; }
+.fm-rs .lv { font-size: .75rem; }
+.fm-rs .cost { font-family: var(--font-burst); font-size: 1.1rem; color: #b8860b; white-space: nowrap; }
+.fm-rs.can { background: #fff8d6; box-shadow: var(--pop-shadow-sm), 0 0 0 3px var(--yolk); }
+.fm-rs.max { opacity: .6; }
 .fb .farm-gain { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-.fb .farm-gain span { background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; padding: 2px 12px; font-family: var(--font-burst); font-size: 1.3rem; }
+.fb .farm-gain span { background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; padding: 2px 12px; font-family: var(--font-burst); font-size: 1.2rem; }
+@media (min-width: 700px) { .fm-hatch { width: 130px; height: 130px; } .fm-buy img { height: 46px; } .fm-buy b { font-size: .9rem; } .fm-buy .price { font-size: 1.1rem; } }
+@media (max-width: 440px) {
+  .fm-top { gap: 4px; }
+  .fm-cash { padding: 1px 8px 2px; }
+  .fm-cash b { font-size: 1.45rem; }
+  .fm-cash small { font-size: .68rem; }
+  .fm-stat, .fm-gold { padding: 1px 6px 1px 2px; gap: 2px; }
+  .fm-stat img, .fm-gold img { height: 20px; }
+  .fm-stat b, .fm-gold b { font-size: 1rem; }
+  .fm-stat small { font-size: .62rem; }
+  .fm-hatch { width: 92px; height: 92px; }
+  .fm-buy small { display: none; }
+  .fm-buy b { font-size: .66rem; }
+}

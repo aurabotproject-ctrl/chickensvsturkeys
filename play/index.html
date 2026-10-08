@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../css/tokens.css">
   <link rel="stylesheet" href="../css/ui.css">
   <link rel="stylesheet" href="play.css">
+  <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
 </head>
 <body>
   <!-- JOIN -->
@@ -78,24 +79,23 @@
     <div id="view-farm" class="view hidden">
       <div class="fm-top">
         <div class="fm-cash"><b id="fm-cash">$0</b><small id="fm-rate">+$0/s</small></div>
+        <div class="fm-stat" title="Chickens"><img src="../assets/sprites/chicken_idle.webp" alt="" id="fm-chick-ico"><b id="fm-chickens">0</b><small id="fm-cap">/20</small></div>
+        <div class="fm-stat" title="Trucks ship eggs/second"><img src="../assets/sprites/fm_van.webp" alt=""><b id="fm-ship">0</b><small>/s</small></div>
         <div class="fm-gold"><img src="../assets/sprites/fm_goldegg.webp" alt="golden eggs"><b id="fm-gold">0</b></div>
       </div>
       <div class="fm-alert hidden" id="fm-alert"></div>
       <div class="fm-wrap" id="fm-wrap">
-      <div class="fm-scene" id="fm-scene">
-        <img class="fm-deco silo" src="../assets/sprites/fm_silo.webp" alt="">
-        <img class="fm-deco pond" src="../assets/sprites/fm_pond.webp" alt="">
-        <img class="fm-deco tree" src="../assets/sprites/fm_tree.webp" alt="">
-        <img class="fm-deco hay" src="../assets/sprites/fm_hay.webp" alt="">
-        <img class="fm-coop" id="fm-coop" alt="your coop">
-        <img class="fm-machine hidden" id="fm-machine" alt="">
-        <img class="fm-truck hidden" id="fm-truck" alt="">
-        <div id="fm-birds"></div>
-        <div class="fm-taphint">👆 Tap your farm to collect eggs!</div>
-        <button class="fm-crate" id="fm-crate"><img src="../assets/sprites/fm_crate.webp" alt=""><span>ANSWER for<br><b>⚡ BOOST</b></span></button>
+        <div class="fm-scene" id="fm-scene"></div>
+        <button class="fm-crate" id="fm-crate"><img src="../assets/sprites/fm_crate.webp" alt=""><span>ANSWER =<br><b>STAMPEDE!</b></span></button>
       </div>
+      <div class="fm-controls">
+        <button class="fm-hatch" id="fm-hatch" aria-label="Hold to hatch chickens">
+          <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="ring-bg"/><circle cx="50" cy="50" r="44" class="ring" id="fm-ring"/></svg>
+          <span>HOLD TO<br><b>HATCH</b></span>
+        </button>
+        <div class="fm-shop" id="fm-shop"></div>
       </div>
-      <div class="fm-shop" id="fm-shop"></div>
+      <div class="fm-sheet hidden" id="fm-research"><div class="fm-sheet-box panel light"><h2>🔬 Research <small>spend golden eggs</small></h2><div id="fm-rs-list" class="fm-rs-list"></div><button class="btn grey" id="fm-rs-close">Back to farm</button></div></div>
     </div>
   </section>
 

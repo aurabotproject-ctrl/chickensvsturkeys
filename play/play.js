@@ -9,7 +9,9 @@ import { sprite, avatar, AVATARS, TEAM } from '../js/core/assets.js';
 import { lookupCode, cleanCode } from '../js/core/games.js';
 import { sfx } from '../js/core/sfx.js';
 import { EVENTS, FARM_PHONE } from '../js/events/events.js';
-import { COOP, MACHINE, TRUCK, nextCosts, fmt, tapValue, BOOST_MULT } from '../js/modes/farm/economy.js';
+import * as FE from '../js/modes/farm/economy.js';
+import { FarmScene } from '../js/modes/farm/scene.js';
+const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
 const D = { me: null, state: {}, ps: {}, cur: null, fb: null, teams: {}, standings: [] };
@@ -211,7 +213,7 @@ function onPstate() {
   const ps = D.ps;
   $('#me-score').textContent = SCORE(ps.score);
   if (isFarm()) {
-    L.farmAdj = 0; drawFarm();
+    farmState();
     if (ps.fox === 'danger' && !L.foxPrompted) { L.foxPrompted = true; setTab('answer'); navigator.vibrate?.([100, 50, 100]); } else if (!ps.fox) L.foxPrompted = false;
   }
   const eggs = ps.eggs || 0;
@@ -264,7 +266,7 @@ function setTab(t) {
   $('#view-answer').classList.toggle('hidden', t !== 'answer');
   $('#view-fight').classList.toggle('hidden', t !== 'fight' || isFarm());
   $('#view-farm').classList.toggle('hidden', t !== 'fight' || !isFarm());
-  if (isFarm() && t === 'fight') drawFarm(true);
+  if (isFarm() && t === 'fight') { ensureScene(); drawFarm(); if (FM.offscreen && FM.scene?.tex) { FM.scene.stampede(FM.offscreen); FM.offscreen = 0; } }
   if (t === 'fight') $('#tab-fight').classList.remove('nudge');
   sfx.click();
 }
@@ -326,7 +328,7 @@ function drawFeedback() {
   const lock = f.lockMs || 1500;
   const readMs = f.correct ? lock : Math.max(lock, 2600);
   const fg = f.farm;
-  const gain = fg ? `<div class="farm-gain"><span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
+  const gain = fg ? `<div class="farm-gain">${fg.chicks ? `<span>🐔 +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
   box.innerHTML = f.correct
     ? html`<div class="big">CORRECT!</div>${raw(gain)}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
     : html`<div class="big">NOPE!</div><div class="ans-was">Answer: <b>${f.rightText}</b></div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div><div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`;
@@ -492,110 +494,156 @@ function startMeter() {
 })();
 
 // ---------------- Egg Farm ----------------
-const FM = { taps: 0, sentTaps: 0, buySeq: 0, birdsShown: -1, coopShown: '', sendT: null };
-const coopName = (lvl) => COOP[lvl - 1]?.name || '';
-function farmCash() {
-  const ps = D.ps;
-  if (!ps.t) return ps.cash || 0;
-  const dt = Math.max(0, Math.min(5000, serverNow() - ps.t)) / 1000;
-  return (ps.cash || 0) + (ps.rate || 0) * dt + (L.farmAdj || 0);
+const FM = { scene: null, hatchReq: 0, hatchLocal: 0, holding: false, buySeq: 0, rsSeq: 0, balloonSeq: 0, foxSeq: 0, adjCash: 0, shopHtml: '', rsHtml: '', lastHatched: 0, lastChicks: 0, sendT: null };
+
+function ensureScene() {
+  if (!isFarm() || !D.me?.team) return;
+  if (FM.scene && FM.scene.team !== D.me.team) { FM.scene.destroy(); FM.scene = null; $('#fm-scene').innerHTML = ''; }
+  if (FM.scene) return;
+  FM.scene = new FarmScene($('#fm-scene'), {
+    team: D.me?.team,
+    onBalloon: (kind, x, y) => {
+      FM.balloonSeq += 1; sfx.correct();
+      FM.scene.floatText(kind === 'gold' ? '+1 🥇' : `+${fmt(Math.max(30, (D.ps.lay ? Math.min(D.ps.lay, D.ps.ship) * D.ps.value : 1) * 20))}`, x, y);
+      sendFarm({ balloonSeq: FM.balloonSeq, balloon: kind });
+    },
+    onFox: (ate) => {
+      if (ate) { FM.foxSeq += 1; sfx.wrong(); navigator.vibrate?.([100, 60, 100]); sendFarm({ foxSeq: FM.foxSeq, foxAte: true }); } else { sfx.correct(); }
+    },
+  });
+  $('#fm-chick-ico').src = sprite(`${D.me?.team || 'chicken'}_idle`);
+  FM.scene.init().then(() => { if (D.ps.coops) FM.scene.update(D.ps); }).catch((e) => console.error(e));
 }
-function sendFarm() {
+
+function sendFarm(extra = {}) {
+  Object.assign(FM.pending ||= {}, extra);
   clearTimeout(FM.sendT);
   FM.sendT = setTimeout(() => {
-    update(G(`inputs/${uid}`), { taps: FM.taps, buySeq: FM.buySeq, buy: FM.buy || '' }).catch(() => {});
-  }, 120);
+    const payload = { hatch: FM.hatchReq, buySeq: FM.buySeq, rsSeq: FM.rsSeq, balloonSeq: FM.balloonSeq, foxSeq: FM.foxSeq, ...FM.pending };
+    FM.pending = {};
+    update(G(`inputs/${uid}`), payload).catch(() => {});
+  }, 150);
 }
-function drawFarm(force = false) {
+
+/** New farm state from the host. */
+function farmState() {
+  const ps = D.ps;
+  FM.adjCash = 0; FM.hatchLocal = 0;
+  ensureScene();
+  if (FM.scene?.tex) {
+    FM.scene.update(ps);
+    // chicks that arrived from the host that we didn't already animate (bots, stampedes)
+    const extra = (ps.hatched || 0) - FM.lastHatched - FM.animatedSinceLast;
+    const visible = !$('#view-farm').classList.contains('hidden');
+    if (FM.lastHatched && extra > 0) {
+      if (!visible) FM.offscreen = (FM.offscreen || 0) + extra;
+      else if (extra >= 6) FM.scene.stampede(extra); else FM.scene.hatchRun(extra);
+    }
+  }
+  FM.lastHatched = ps.hatched || 0; FM.animatedSinceLast = 0;
+  drawFarm();
+  if (ps.fox === 'danger' && !L.foxPrompted) { L.foxPrompted = true; setTab('answer'); navigator.vibrate?.([100, 50, 100]); } else if (!ps.fox) L.foxPrompted = false;
+}
+FM.animatedSinceLast = 0;
+
+function predicted() {
+  const ps = D.ps;
+  const dt = ps.t ? Math.max(0, Math.min(5000, serverNow() - ps.t)) / 1000 : 0;
+  return {
+    cash: (ps.cash || 0) + (ps.rate || 0) * dt + FM.adjCash,
+    charge: Math.min(ps.chargeMax || 20, (ps.charge || 0) + (ps.refill || 1) * dt - FM.hatchLocal),
+    chickens: Math.min(ps.cap || 20, (ps.chickens || 0) + FM.hatchLocal),
+  };
+}
+
+function drawFarm() {
   if (!isFarm() || $('#view-farm').classList.contains('hidden')) return;
   const ps = D.ps; const team = D.me?.team || 'chicken';
-  const cash = farmCash();
-  $('#fm-cash').textContent = fmt(cash);
+  const pr = predicted();
+  $('#fm-cash').textContent = fmt(pr.cash);
   const boosting = ps.boostUntil > serverNow();
-  $('#fm-rate').textContent = `+${fmt(ps.rate || 0)}/s${boosting ? ` ⚡×${BOOST_MULT}` : ''}${ps.golden ? ' 🥇×2' : ''}${ps.catchup ? ' 🚀×3' : ''}`;
-  $('#fm-cash').parentElement.classList.toggle('boost', boosting);
+  $('#fm-rate').textContent = `+${fmt(ps.rate || 0)}/s${ps.mult > 1 ? ` ×${ps.mult}` : ''}`;
+  $('#fm-cash').parentElement.classList.toggle('boost', ps.mult > 1);
+  $('#fm-chickens').textContent = FE.fmtN(pr.chickens);
+  $('#fm-cap').textContent = `/${FE.fmtN(ps.cap || 20)}`;
+  $('#fm-chickens').parentElement.classList.toggle('full', pr.chickens >= (ps.cap || 20));
+  $('#fm-ship').textContent = FE.fmtN(ps.ship || 0);
+  $('#fm-ship').parentElement.classList.toggle('full', (ps.lay || 0) > (ps.ship || 0));
   $('#fm-gold').textContent = ps.gold || 0;
-  // alert strip
+  // hatch ring
+  const frac = Math.max(0, pr.charge) / (ps.chargeMax || 20);
+  $('#fm-ring').style.strokeDashoffset = `${276.5 * (1 - frac)}`;
+  $('#fm-hatch').classList.toggle('empty', pr.charge < 1);
+  // alert strip: most important message first
   const al = $('#fm-alert');
-  if (ps.fox === 'danger') { al.className = 'fm-alert danger'; al.innerHTML = '🦊 FOX RAID! Answer a question correctly NOW to protect your cash!'; } else if (ps.fox === 'safe') { al.className = 'fm-alert safe'; al.textContent = '🛡️ Your farm is safe from the fox!'; } else if (boosting) { al.className = 'fm-alert boost'; al.textContent = `⚡ BOOST ×${BOOST_MULT} — ${Math.ceil((ps.boostUntil - serverNow()) / 1000)}s left`; } else { al.className = 'fm-alert hidden'; }
-  // buildings
-  const coopSrc = sprite(`fm_coop_${team === 'chicken' ? 'c' : 't'}${ps.coop || 1}`);
-  const coop = $('#fm-coop');
-  if (FM.coopShown !== coopSrc) { coop.src = coopSrc; coop.classList.remove('pop'); void coop.offsetWidth; if (FM.coopShown) coop.classList.add('pop'); FM.coopShown = coopSrc; coop.style.width = `${28 + (ps.coop || 1) * 4}%`; }
-  const m = MACHINE[ps.machine || 0]; const mi = $('#fm-machine');
-  mi.classList.toggle('hidden', !m?.sprite); if (m?.sprite && !mi.src.includes(m.sprite)) mi.src = sprite(m.sprite);
-  const tr = TRUCK[ps.truck || 0]; const ti = $('#fm-truck');
-  ti.classList.toggle('hidden', !tr?.sprite); if (tr?.sprite && !ti.src.includes(tr.sprite)) ti.src = sprite(tr.sprite);
-  // birds
-  const show = Math.min(ps.birds || 3, 14);
-  if (show !== FM.birdsShown || force) {
-    FM.birdsShown = show;
-    const box = $('#fm-birds');
-    while (box.children.length < show) {
-      const b = document.createElement('div'); b.className = 'fm-bird';
-      b.innerHTML = `<img src="${sprite(`${team}_idle`)}" alt="">`;
-      b.style.left = `${20 + Math.random() * 60}%`; b.style.top = `${55 + Math.random() * 30}%`;
-      b.querySelector('img').style.animationDelay = `${Math.random()}s`;
-      box.appendChild(b);
-    }
-    while (box.children.length > show) box.lastChild.remove();
-  }
+  const shipFull = (ps.lay || 0) > (ps.ship || 0) + 0.01;
+  const coopsFull = pr.chickens >= (ps.cap || 20);
+  if (ps.fox === 'danger') { al.className = 'fm-alert danger'; al.textContent = '🦊 FOX RAID! Answer a question correctly NOW to protect your cash!'; } else if (ps.fox === 'safe') { al.className = 'fm-alert safe'; al.textContent = '🛡️ Your farm is safe from the fox!'; } else if (boosting) { al.className = 'fm-alert boost'; al.textContent = `⚡ BOOST ×${BOOST_MULT} — ${Math.ceil((ps.boostUntil - serverNow()) / 1000)}s left · answer again to add more!`; } else if (shipFull) { al.className = 'fm-alert warn'; al.textContent = '📦 Your trucks are full — eggs are going to waste! Buy a truck.'; } else if (coopsFull) { al.className = 'fm-alert warn'; al.textContent = '🏠 Your coops are full! Build or upgrade a coop.'; } else { al.className = 'fm-alert hidden'; }
   // shop
-  const costs = nextCosts(ps.birds ? ps : { birds: 3, coop: 1, machine: 0, truck: 0 });
+  const c = FE.nextCosts({ ...ps, coops: ps.coops || [1, 0, 0, 0], trucks: ps.trucks || [1, 0, 0, 0], machine: ps.machine || 0, coopBuys: ps.coopBuys || 0, truckBuys: ps.truckBuys || 0 });
+  const t = team === 'chicken' ? 'c' : 't';
+  const anyRs = Object.keys(FE.RESEARCH).some((k) => { const rc = FE.researchCost({ research: ps.research || {} }, k); return rc != null && (ps.gold || 0) >= rc; });
   const items = [
-    ['birds', `${team}_idle`, '+1 Bird', `${ps.birds || 3}/${COOP[(ps.coop || 1) - 1].cap}`, costs.birds, costs.birds ? '' : 'Coop full!'],
-    ['coop', `fm_coop_${team === 'chicken' ? 'c' : 't'}${Math.min(5, (ps.coop || 1) + 1)}`, costs.coop ? coopName((ps.coop || 1) + 1) : 'Coop', `Lv ${ps.coop || 1}`, costs.coop, 'MAX'],
-    ['machine', MACHINE[Math.min(3, (ps.machine || 0) + 1)].sprite, costs.machine ? MACHINE[(ps.machine || 0) + 1].name : 'Machine', `×${MACHINE[ps.machine || 0].mult}`, costs.machine, 'MAX'],
-    ['truck', TRUCK[Math.min(2, (ps.truck || 0) + 1)].sprite, costs.truck ? TRUCK[(ps.truck || 0) + 1].name : 'Truck', `×${TRUCK[ps.truck || 0].mult}`, costs.truck, 'MAX'],
+    ['coop', c.coop ? `fm_coop_${t}${c.coop.level}` : `fm_coop_${t}5`, c.coop ? (c.coop.level === 1 ? 'New Coop' : c.coop.name) : 'Coops', c.coop ? `+room` : '', c.coop, coopsFull],
+    ['truck', c.truck ? FE.TRUCK_LV[c.truck.level].sprite : 'fm_truck', c.truck ? (c.truck.level === 1 ? 'New Van' : c.truck.name) : 'Trucks', c.truck ? `sell faster` : '', c.truck, shipFull],
+    ['machine', c.machine ? FE.MACHINE_LV[(ps.machine || 0) + 1].sprite : 'fm_packer', c.machine ? c.machine.name : 'Machine', c.machine ? 'eggs worth more' : '', c.machine, false],
   ];
-  const html2 = items.map(([k, icon, title, sub, c, blocked]) => {
-    const can = c && cash >= c.cash && (ps.gold || 0) >= c.gold;
-    const price = c ? `${fmt(c.cash)}${c.gold ? ` +${c.gold}🥇` : ''}` : blocked;
-    return `<button class="fm-buy ${!c ? 'max' : can ? 'can' : 'no'}" data-buy="${k}" ${c ? '' : 'disabled'}><img src="${sprite(icon)}" alt=""><b>${esc(title)}</b><small>${esc(sub)}</small><span class="price">${esc(price)}</span></button>`;
+  let html2 = items.map(([k, icon, title, sub, cost, need]) => {
+    const can = cost && pr.cash >= cost.cash;
+    return `<button class="fm-buy ${!cost ? 'max' : can ? 'can' : need ? 'need no' : 'no'}" data-buy="${k}" ${cost ? '' : 'disabled'}><img src="${sprite(icon)}" alt=""><b>${esc(title)}</b><small>${esc(sub)}</small><span class="price">${cost ? esc(fmt(cost.cash)) : 'MAX'}</span></button>`;
   }).join('');
+  html2 += `<button class="fm-buy ${anyRs ? 'can' : ''}" data-buy="research"><img src="${sprite('fm_goldegg')}" alt=""><b>Research</b><small>golden eggs</small><span class="price" style="color:#b8860b">🔬 ${ps.gold || 0}</span></button>`;
   if (FM.shopHtml !== html2) { FM.shopHtml = html2; $('#fm-shop').innerHTML = html2; }
+  if (!$('#fm-research').classList.contains('hidden')) drawResearch();
 }
-setInterval(() => { if (isFarm() && D.state.phase === 'playing') drawFarm(); }, 250);
-setInterval(() => { // birds wander
-  if (!isFarm()) return;
-  for (const b of $$('.fm-bird')) {
-    if (Math.random() < 0.5) continue;
-    const nl = 12 + Math.random() * 76;
-    b.classList.toggle('flip', nl < parseFloat(b.style.left));
-    b.style.left = `${nl}%`; b.style.top = `${52 + Math.random() * 38}%`;
-  }
-}, 1500);
 
-$('#fm-scene').addEventListener('pointerdown', (e) => {
-  if (e.target.closest('#fm-crate') || D.state.phase !== 'playing' || D.state.paused) return;
-  FM.taps += 1;
-  const val = tapValue(D.ps.birds ? D.ps : { birds: 3, machine: 0, truck: 0 }) * (D.ps.boostUntil > serverNow() ? BOOST_MULT : 1);
-  L.farmAdj = (L.farmAdj || 0) + val;
-  const r = $('#fm-scene').getBoundingClientRect();
-  const f = document.createElement('div'); f.className = 'fm-float';
-  f.textContent = `+${fmt(val)}`; f.style.left = `${e.clientX - r.left}px`; f.style.top = `${e.clientY - r.top - 20}px`;
-  $('#fm-scene').appendChild(f); setTimeout(() => f.remove(), 900);
-  if (FM.taps % 4 === 0) sfx.egg();
-  sendFarm();
-});
+function drawResearch() {
+  const ps = D.ps;
+  const html2 = Object.entries(FE.RESEARCH).map(([k, r]) => {
+    const lv = ps.research?.[k] || 0; const cost = lv >= r.max ? null : r.cost[lv];
+    const can = cost != null && (ps.gold || 0) >= cost;
+    return `<button class="fm-rs ${cost == null ? 'max' : can ? 'can' : ''}" data-rs="${k}"><img src="${sprite(k === 'hens' ? `${D.me?.team || 'chicken'}_idle` : r.icon)}" alt=""><span><b>${esc(r.name)}</b><small>${esc(r.desc)}</small><br><span class="lv">Level ${lv}/${r.max}</span></span><span class="cost">${cost == null ? 'MAX' : `${cost} 🥇`}</span></button>`;
+  }).join('');
+  if (FM.rsHtml !== html2) { FM.rsHtml = html2; $('#fm-rs-list').innerHTML = html2; }
+}
+
+// hold-to-hatch
+function hatchTick() {
+  if (!FM.holding || D.state.phase !== 'playing' || D.state.paused) return;
+  const pr = predicted();
+  if (pr.charge >= 1 && pr.chickens < (D.ps.cap || 20)) {
+    FM.hatchReq += 1; FM.hatchLocal += 1; FM.animatedSinceLast += 1;
+    FM.scene?.hatchRun(1);
+    if (FM.hatchReq % 3 === 0) sfx.bok();
+    sendFarm();
+  } else if (pr.chickens >= (D.ps.cap || 20)) { FM.holding = false; $('#fm-hatch').classList.remove('on'); sfx.wrong(); }
+  drawFarm();
+}
+setInterval(hatchTick, 1000 / FE.HATCH_RATE);
+const hatchBtn = $('#fm-hatch');
+hatchBtn.addEventListener('pointerdown', (e) => { e.preventDefault(); hatchBtn.setPointerCapture(e.pointerId); FM.holding = true; hatchBtn.classList.add('on'); hatchTick(); });
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => hatchBtn.addEventListener(ev, () => { FM.holding = false; hatchBtn.classList.remove('on'); }));
+hatchBtn.addEventListener('contextmenu', (e) => e.preventDefault());
+
+setInterval(() => { if (isFarm() && D.state.phase === 'playing') drawFarm(); }, 250);
 $('#fm-crate').addEventListener('click', () => { sfx.click(); setTab('answer'); });
 $('#fm-shop').addEventListener('click', (e) => {
   const b = e.target.closest('[data-buy]'); if (!b || b.disabled || D.state.phase !== 'playing') return;
+  const k = b.dataset.buy;
+  if (k === 'research') { $('#fm-research').classList.remove('hidden'); FM.rsHtml = ''; drawResearch(); sfx.click(); return; }
   if (!b.classList.contains('can')) { sfx.wrong(); b.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 200 }); return; }
-  const k = b.dataset.buy; const c = nextCosts(D.ps)[k];
-  FM.buySeq += 1; FM.buy = k;
-  if (c) L.farmAdj = (L.farmAdj || 0) - c.cash;
+  const ps = D.ps;
+  const c = FE.nextCosts({ ...ps, coops: ps.coops, trucks: ps.trucks })[k];
+  FM.buySeq += 1;
+  if (c) FM.adjCash -= c.cash;
   sfx.join(); navigator.vibrate?.(30);
-  update(G(`inputs/${uid}`), { taps: FM.taps, buySeq: FM.buySeq, buy: k }).catch(() => {});
+  sendFarm({ buy: k });
+  drawFarm();
 });
-
-// Keep the whole farm map visible (it is a 2:3 picture) at any screen shape.
-function fitFarm() {
-  const wrap = $('#fm-wrap'); const sc = $('#fm-scene');
-  if (!wrap || !wrap.clientHeight) return;
-  const W = wrap.clientWidth; const H = wrap.clientHeight; const ratio = 2 / 3;
-  let w = W; let h = W / ratio;
-  if (h > H) { h = H; w = H * ratio; }
-  sc.style.width = `${Math.floor(w)}px`; sc.style.height = `${Math.floor(h)}px`;
-}
-new ResizeObserver(fitFarm).observe($('#fm-wrap'));
+$('#fm-rs-list').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-rs]'); if (!b) return;
+  if (!b.classList.contains('can')) { sfx.wrong(); return; }
+  FM.rsSeq += 1; sfx.correct();
+  sendFarm({ rs: b.dataset.rs });
+});
+$('#fm-rs-close').addEventListener('click', () => $('#fm-research').classList.add('hidden'));
