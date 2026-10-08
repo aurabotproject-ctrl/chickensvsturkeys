@@ -135,6 +135,7 @@ function setupLobby() {
   const st = meta.settings;
   $('#lobby-info').innerHTML = html`<b>${meta.bankTitle}</b> · ${meta.questionCount} questions · ${isSiege() ? `2 halves × ${st.roundSeconds >= 60 ? `${+(st.roundSeconds / 60).toFixed(1)} min` : `${st.roundSeconds}s`} (teams swap attack & defence)` : isTimed() ? `${Math.round(st.roundSeconds / 60)} minutes` : `${st.rounds} round${st.rounds > 1 ? 's' : ''} × ${st.roundSeconds}s`} · ${isCannon() ? 'Egg Cannon' : isFarm() ? 'Egg Farm' : isTowers() ? 'Coop Wars' : isSiege() ? 'Coop Siege' : 'Dodge Egg'}`;
   if (isTowers()) $('.lobby-logo').src = sprite('tw_logo');
+  if (isSiege()) $('.lobby-logo').src = sprite('sg_logo');
   $('#btn-bots').onclick = () => { for (let i = 0; i < 4; i++) addBot(); drawRoster(); };
   $('#btn-shuffle').onclick = shuffleTeams;
   $('#btn-full').onclick = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
@@ -407,7 +408,7 @@ function showRoundOverlay(standings) {
   const ov = $('#overlay');
   ov.className = 'overlay';
   ov.innerHTML = html`<div class="round-box">
-    <h1 class="comic-title slant">${isSiege() ? 'HALF TIME!' : `ROUND ${S.round} COMPLETE!`}</h1>${raw(isSiege() ? `<p class="swap-note">Teams swap! ${defenderFor(S.round + 1) === 'chicken' ? '🐔 Chickens defend · 🦃 Turkeys attack' : '🦃 Turkeys defend · 🐔 Chickens attack'}</p>` : '')}
+    ${raw(isSiege() ? `<img class="halftime-img" src="${sprite('sg_halftime')}" alt="Half time!">` : `<h1 class="comic-title slant">ROUND ${S.round} COMPLETE!</h1>`)}${raw(isSiege() ? `<p class="swap-note">Teams swap! ${defenderFor(S.round + 1) === 'chicken' ? '🐔 Chickens defend · 🦃 Turkeys attack' : '🦃 Turkeys defend · 🐔 Chickens attack'}</p>` : '')}
     <div class="round-teams">
       <div class="round-team chicken"><img src="${sprite(ts.chicken >= ts.turkey ? 'chicken_win' : 'chicken_dizzy')}" alt=""><div class="big">${showScore(ts.chicken)}</div><div class="lbl">CHICKENS</div></div>
       <div class="vs-burst burst">VS</div>

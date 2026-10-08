@@ -65,7 +65,9 @@ export const tc = (team) => (team === 'turkey' ? 't' : 'c');
  * art from COOP_SIEGE_IMAGE_PROMPTS.md is sliced). Anything not listed here
  * is never requested, so the older stand-in art is used without 404s.
  */
-export const SG_ART = new Set([]);
+export const SG_ART = new Set([
+  'sg_attack', 'sg_bomb_c', 'sg_bomb_t', 'sg_breakin', 'sg_brute_c1', 'sg_brute_c2', 'sg_brute_t1', 'sg_brute_t2', 'sg_coop_c', 'sg_coop_t', 'sg_corn', 'sg_defend', 'sg_double_c', 'sg_double_t', 'sg_frost_c', 'sg_frost_t', 'sg_giant_c1', 'sg_giant_c2', 'sg_giant_t1', 'sg_giant_t2', 'sg_halftime', 'sg_helmet_c1', 'sg_helmet_c2', 'sg_helmet_t1', 'sg_helmet_t2', 'sg_logo', 'sg_mower_c', 'sg_mower_t', 'sg_popper_c', 'sg_popper_t', 'sg_raider_c1', 'sg_raider_c2', 'sg_raider_t1', 'sg_raider_t2', 'sg_runner_c1', 'sg_runner_c2', 'sg_runner_t1', 'sg_runner_t2', 'sg_shooter_c', 'sg_shooter_t', 'sg_sign', 'sg_spikes_c', 'sg_spikes_t', 'sg_wall_c', 'sg_wall_t',
+]);
 const has = (n) => SG_ART.has(n);
 
 /**

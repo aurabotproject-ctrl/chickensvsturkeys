@@ -122,6 +122,9 @@ export class SiegeArena {
     this.buildScene();
     this.sync = {};
     this.pushSync(true);
+    // DEFEND! by the coop, ATTACK! on the road
+    this.word('sg_defend', 330, H / 2 - 20, 330, 3.2);
+    this.word('sg_attack', W - 300, H / 2 - 20, 330, 3.2);
   }
   startBattle() { this.running = true; this.paused = false; }
   stopRound() { this.running = false; }
@@ -388,7 +391,7 @@ export class SiegeArena {
     this.stats.through += 1;
     const p = this.players.get(u.owner); if (p) { p.score += PTS.breakthrough; this.onChange(p); }
     this.burst('impact', 100, H / 2, 1.1);
-    this.word('word_splat', 120, H / 2 - 40, 200);
+    this.word(this.tex.sg_breakin ? 'sg_breakin' : 'word_splat', 140, H / 2 - 40, 240);
     this.floatText(p ? `${first(p.name)} broke in!` : 'BREAK IN!', 160, H / 2 - 150, COLORS[this.att], 30);
     sfx.splat?.();
     if (this.coopHp <= 0 && !this.raided) {
@@ -516,7 +519,8 @@ export class SiegeArena {
     const frames = this.attFrames(u.k, u.team);
     const s = new PIXI.Sprite(frames[0]); s.anchor.set(0.5, 0.95);
     const size = { r: 74, h: 88, v: 80, b: 120, g: 170 }[u.k];
-    s.base = size / Math.max(s.texture.width, s.texture.height * 0.85);
+    // walkers are sized by height (the Hurdler's pole makes it wide); vehicles by width
+    s.base = u.k === 'b' || u.k === 'g' ? size / s.texture.width : (size * 0.95) / s.texture.height;
     const fresh = attArt(u.k, u.team).frames.length > 0;
     if (!fresh && u.k === 'h') s.tint = 0xd8d8d8;
     const p = this.players.get(u.owner);

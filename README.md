@@ -94,7 +94,7 @@ Create Game → **Coop Siege** → each half lasts 2½, 3½ or 5 minutes. There 
 - **Points:** defenders score for knocking out attackers. Attackers score for breaking in (30), setting off a tractor (15), wrecking defences, chewing (+1 per 100 damage) and staying alive on the lawn (+1 every 3 s). Highest team total after both halves wins.
 - A few free "wild" raiders wander in so defenders always have something to do (they give no points).
 - On phones the lawn stands upright: rows become columns, attackers come down from the top and your coop is at the bottom. The row numbers match the big screen.
-- Dedicated art prompts: `COOP_SIEGE_IMAGE_PROMPTS.md` (stand-in art is used until then).
+- Art: dedicated sprites `assets/sprites/sg_*.webp` (sliced from `assets/images/sg-*.png`). Prompts: `COOP_SIEGE_IMAGE_PROMPTS.md`.
 
 ⚠️ This update changes `database.rules.json` again (Coop Siege adds `sg`) — paste it into Firebase → Realtime Database → Rules → **Publish**.
 

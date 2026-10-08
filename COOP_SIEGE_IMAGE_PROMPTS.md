@@ -1,6 +1,6 @@
 # COOP SIEGE — ChatGPT Image Prompts
 
-Coop Siege is **already playable** using stand-in art from the other modes (cannon chickens as egg shooters, the corn hopper, hay bales, Coop Wars troops and tractors). These prompts make dedicated art so it looks like a proper lawn-defence game.
+✔ **Art received and wired in** (sg-defences, sg-attackers-chicken, sg-attackers-turkey, sg-bases, sg-ui → `assets/sprites/sg_*.webp`, listed in `SG_ART` in `js/modes/siege/rules.js`). Stand-in art from the other modes is still used for anything missing.
 
 ## How to use
 - **One prompt = one image.** Each prompt is self-contained, so paste one block at a time.

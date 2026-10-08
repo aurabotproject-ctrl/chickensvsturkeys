@@ -199,3 +199,4 @@ body.mode-farm .team-panel.turkey span { left: 62%; }
 body.mode-towers .stage { background: radial-gradient(circle at 50% 55%, #4f8f26, #22430f); }
 body.mode-towers .timer span { font-size: clamp(22px, 2.6vw, 48px); }
 .swap-note { font-family: var(--font-burst); font-size: 2rem; letter-spacing: .03em; color: var(--yolk); text-shadow: 3px 3px 0 var(--ink); margin: 0 0 10px; text-align: center; }
+.halftime-img { display: block; width: min(560px, 70vw); margin: 0 auto 4px; filter: drop-shadow(5px 5px 0 var(--ink)); animation: pop-in .5s ease-out both; }

@@ -108,7 +108,7 @@ const MODES = [
   { id: 'dodge', name: 'Dodge Egg', img: 'chicken_throw', desc: 'Answer to earn eggs, then dodge and throw in a 1-minute arena battle.' },
   { id: 'cannon', name: 'Egg Cannon', img: 'c_chicken_fire', desc: 'Answer 5 questions to load your cannon, then aim and blast the enemy fort.' },
   { id: 'towers', name: 'Coop Wars', img: 'tw_logo', desc: 'Draw lines from your coops to march troops and capture the map. Right answers send reinforcements!' },
-  { id: 'siege', name: 'Coop Siege', img: 'tw_fort_c', desc: 'Two halves: defend your coop with egg shooters and hay walls, then swap and attack! Right answers earn corn to spend.' },
+  { id: 'siege', name: 'Coop Siege', img: 'sg_logo', desc: 'Two halves: defend your coop with egg shooters and hay walls, then swap and attack! Right answers earn corn to spend.' },
   { id: 'farm', name: 'Egg Farm', img: 'fm_coop_c4', desc: 'Grow the richest egg farm — every right answer boosts your farm.' },
 ];
 
