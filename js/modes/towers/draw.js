@@ -12,13 +12,13 @@ export const TW_SPRITES = [
   'tw_tractor_c1', 'tw_tractor_c2', 'tw_tractor_t1', 'tw_tractor_t2',
   'tw_fx_dust', 'tw_fx_wfeath', 'tw_fx_bfeath', 'tw_fx_splat', 'tw_fx_sparkle',
   'tw_hay1', 'tw_hay_round', 'tw_mud', 'tw_rocks', 'tw_stump', 'tw_crate', 'tw_fence', 'tw_fence_broken',
-  'tw_captured', 'tw_reinforce', 'tw_conquer', 'tw_map_farm',
+  'tw_captured', 'tw_reinforce', 'tw_conquer', 'tw_map_farm', 'tw_map_autumn', 'tw_map_winter',
   // older farm art kept as a backup
   'fm_coop_c3', 'fm_coop_t3', 'fm_tower', 'fm_tractor', 'fm_goldegg', 'fm_hay',
   'chicken_run', 'turkey_run', 'sparkle', 'impact', 'feathers', 'puff', 'word_bok', 'word_gobble',
 ];
-/** Map themes: add tw_map_autumn / tw_map_winter sprites later and list them here. */
-export const MAP_THEMES = ['tw_map_farm'];
+/** Map themes — each game picks one at random (same on every device, from the map seed). */
+export const MAP_THEMES = ['tw_map_farm', 'tw_map_autumn', 'tw_map_winter'];
 const FALLBACK = { coop: 'fm_coop_c3', sniper: 'fm_tower', shed: 'fm_tractor', fort: 'fm_coop_c3', gold: 'fm_goldegg' };
 export const COLORS = { chicken: 0x1e6fe0, turkey: 0xe0402a, null: 0x8a94a8 };
 
@@ -34,7 +34,8 @@ export async function loadTextures() {
 export function drawBackground(tex, seed, buildings, walls, rot = 0) {
   const c = new PIXI.Container();
   const R = rng(seed + 7);
-  const theme = MAP_THEMES[Math.floor(R() * MAP_THEMES.length)];
+  const pick = MAP_THEMES[Math.floor(R() * MAP_THEMES.length)];
+  const theme = (typeof window !== 'undefined' && window.cvtTheme) || pick; // cvtTheme: testing override
   if (tex[theme]) {
     // the painted map has scenery round its border, so stretch it a little past the playing field
     const g0 = new PIXI.Graphics(); g0.beginFill(0x3f7a1f).drawRoundedRect(-118, -88, MAP_W + 236, MAP_H + 176, 46).endFill(); c.addChild(g0);

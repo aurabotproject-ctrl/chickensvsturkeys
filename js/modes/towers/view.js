@@ -152,7 +152,7 @@ export class TowerView {
         g.lineStyle(mine ? 22 : 14, COLORS[b.team], mine ? 0.55 : 0.32).moveTo(b.x, b.y).lineTo(t.x, t.y);
         const len = Math.hypot(t.x - b.x, t.y - b.y); const ux = (t.x - b.x) / len; const uy = (t.y - b.y) / len;
         const off = (this.time * 90) % 28; g.lineStyle(0);
-        for (let d = 34 + off; d < len - 34; d += 28) g.beginFill(b.team === 'turkey' ? 0xffe0d8 : 0xdde9ff, 0.95).drawCircle(b.x + ux * d, b.y + uy * d, mine ? 6 : 4).endFill();
+        for (let d = 34 + off; d < len - 34; d += 28) g.beginFill(b.team === 'turkey' ? 0xa8201a : 0x0f4fae, 0.85).drawCircle(b.x + ux * d, b.y + uy * d, mine ? 6 : 4).endFill();
       }
     }
     const dg = this.drawG; dg.clear();

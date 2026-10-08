@@ -2,7 +2,7 @@
 
 ✔ **Art received and wired in** (tw-coops, tw-troops, tw-specials, tw-map-farm, tw-obstacles, tw-ui → sliced into `assets/sprites/tw_*.webp`).
 
-Still optional: **`tw-map-autumn.png`** and **`tw-map-winter.png`** (prompt 4). Upload them and Claude will add them to `MAP_THEMES` in `js/modes/towers/draw.js` so each game picks a random theme.
+✔ All three map themes (summer farm, autumn, winter) are in — each game picks one at random. More themes: add `tw_map_<name>.webp` to `assets/sprites/` and list it in `MAP_THEMES` in `js/modes/towers/draw.js`.
 
 ## How to use
 - **One prompt = one image.** Each prompt is self-contained, so you only paste one block at a time.
