@@ -350,7 +350,8 @@ function answerLoop() {
   for (const p of arena.players.values()) loaded[p.team] += p.eggs;
   const b = $('#phase-banner small');
   if (b) b.textContent = `${done} / ${humans.length} finished · 🐔 ${loaded.chicken} eggs loaded · 🦃 ${loaded.turkey} eggs loaded`;
-  if (left <= 0 || (humans.length && done === humans.length)) { phaseBanner(''); startBattle(); }
+  const botsOnly = !humans.length && serverNow() - (S.endsAt - meta.settings.roundSeconds * 1000) > 4000;
+  if (left <= 0 || botsOnly || (humans.length && done === humans.length)) { phaseBanner(''); startBattle(); }
 }
 
 async function endRound() {
