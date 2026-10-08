@@ -83,6 +83,19 @@ Create Game → **Coop Wars** → 5, 8 or 12 minutes, and choose **Troop growth*
 - The team with the most buildings at the end wins (or wipe out the other team early).
 - Art: dedicated Coop Wars sprites (`assets/sprites/tw_*.webp`, sliced from `assets/images/tw-*.png`). Towers grow 1–5 storeys with their level; grey = unclaimed. If any file is missing the game falls back to the older farm art. Prompts: `COOP_WARS_IMAGE_PROMPTS.md`.
 
-⚠️ This update changes `database.rules.json` again — paste it into Firebase → Realtime Database → Rules → **Publish**.
+## Coop Siege (lawn-defence style)
+Create Game → **Coop Siege** → each half lasts 2½, 3½ or 5 minutes. There are always **2 halves**.
+- **First half:** 🐔 Chickens DEFEND their coop and 🦃 Turkeys ATTACK. **Second half:** they swap.
+- Every right answer earns **🌽 50 corn** (+10 if 🔥 Sure, +25 on every 3rd answer in a row; double during a Golden Egg Rush).
+- **Defenders** pick a defence in the shop, then tap an empty square on the 5 × 9 lawn:
+  Egg Shooter 100 · Corn Popper 50 (+25 corn every 12 s) · Hay Wall 50 · Rotten Egg Trap 100 · Frost Egger 175 (slows) · Double Shooter 200 · Egg Bomb 150 (blasts 3 × 3).
+- **Attackers** pick a troop, then tap a row (1–5) to send it: Raider 50 · Helmet Raider 100 · Hurdler 125 (jumps the first defence) · Tractor Brute 225 · Battle Wagon 400 (smashes everything).
+- Each row has one lawn tractor that flattens the row the first time an attacker reaches the coop. After that, every attacker that gets through eats eggs from the coop (12 eggs). Empty the coop and the attackers win the half early (+100 team bonus).
+- **Points:** defenders score for knocking out attackers. Attackers score for breaking in (30), setting off a tractor (15), wrecking defences, chewing (+1 per 100 damage) and staying alive on the lawn (+1 every 3 s). Highest team total after both halves wins.
+- A few free "wild" raiders wander in so defenders always have something to do (they give no points).
+- On phones the lawn stands upright: rows become columns, attackers come down from the top and your coop is at the bottom. The row numbers match the big screen.
+- Dedicated art prompts: `COOP_SIEGE_IMAGE_PROMPTS.md` (stand-in art is used until then).
+
+⚠️ This update changes `database.rules.json` again (Coop Siege adds `sg`) — paste it into Firebase → Realtime Database → Rules → **Publish**.
 
 **Next:** Phase 13 — polish & classroom hardening.

@@ -8,7 +8,8 @@ import { $, $$, html, raw, esc, params } from '../js/core/ui.js';
 import { sprite, avatar, AVATARS, TEAM } from '../js/core/assets.js';
 import { lookupCode, cleanCode } from '../js/core/games.js';
 import { sfx } from '../js/core/sfx.js';
-import { EVENTS, FARM_PHONE, TOWER_PHONE } from '../js/events/events.js';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js';
+import { SiegeView } from '../js/modes/siege/view.js';
 import { TowerView } from '../js/modes/towers/view.js';
 import * as FE from '../js/modes/farm/economy.js';
 import { FarmScene } from '../js/modes/farm/scene.js';
@@ -22,8 +23,9 @@ const SAVE_KEY = 'cvt-player';
 const isCannon = () => D.state.mode === 'cannon';
 const isFarm = () => D.state.mode === 'farm';
 const isTowers = () => D.state.mode === 'towers';
-const hasMap = () => isFarm() || isTowers();
-const UNIT = () => (isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() ? 'battle points' : 'KO points');
+const isSiege = () => D.state.mode === 'siege';
+const hasMap = () => isFarm() || isTowers() || isSiege();
+const UNIT = () => (isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
 const SCORE = (n) => (isFarm() ? fmt(n) : Math.floor(n || 0));
 
 // ---------------- join ----------------
@@ -89,6 +91,10 @@ function subscribe() {
   on('tw/own', (v) => { TW.own = v; TW.view?.setOwn(v); });
   on('tw/lv', (v) => { TW.lv = v; TW.view?.setLevels(v); });
   on('tw/p', (v) => { TW.p = v || ''; TW.view?.setPaths(v || ''); });
+  on('sg/info', (v) => { SG.info = v; if (v) { ensureSg(); SG.view?.setInfo(v); drawSgHud(); } });
+  on('sg/g', (v) => { SG.g = v || ''; SG.view?.setGrid(SG.g); });
+  on('sg/u', (v) => { SG.u = v || ''; SG.view?.setUnits(SG.u); });
+  on('sg/m', (v) => { SG.m = v || '11111'; SG.view?.setMowers(SG.m); });
   setInterval(tickTimer, 250);
 }
 
@@ -166,11 +172,12 @@ function onState() {
     } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
-  if (isFarm() !== document.body.classList.contains('mode-farm') || isTowers() !== document.body.classList.contains('mode-towers')) {
+  if (isFarm() !== document.body.classList.contains('mode-farm') || isTowers() !== document.body.classList.contains('mode-towers') || isSiege() !== document.body.classList.contains('mode-siege')) {
     document.body.classList.toggle('mode-farm', isFarm());
     document.body.classList.toggle('mode-towers', isTowers());
+    document.body.classList.toggle('mode-siege', isSiege());
     $('#tab-answer').firstChild.textContent = hasMap() ? '❓ QUIZ ⚡' : '❓ ANSWER';
-    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : isTowers() ? '🗺️ MAP ' : '🥚 FIGHT ';
+    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : isTowers() ? '🗺️ MAP ' : isSiege() ? '🏰 BATTLE ' : '🥚 FIGHT ';
   }
   if (phase === 'playing' || phase === 'answer') {
     if (s.paused) { ov.className = 'overlay'; ov.innerHTML = '<div class="box"><h1 class="comic-title">PAUSED</h1><p>Eyes on the teacher!</p></div>'; } else if (ov.innerHTML.includes('PAUSED')) ov.className = 'overlay hidden';
@@ -182,7 +189,7 @@ function onState() {
     if (E) {
       const t = document.createElement('div');
       t.className = 'event-toast';
-      t.innerHTML = `<img src="${sprite(E.banner)}" alt="${esc(E.name)}"><p>${esc(isFarm() ? FARM_PHONE[ev.type] || E.phone : isTowers() ? TOWER_PHONE[ev.type] || E.phone : E.phone)}</p>`;
+      t.innerHTML = `<img src="${sprite(E.banner)}" alt="${esc(E.name)}"><p>${esc(isFarm() ? FARM_PHONE[ev.type] || E.phone : isTowers() ? TOWER_PHONE[ev.type] || E.phone : isSiege() ? SIEGE_PHONE[ev.type] || E.phone : E.phone)}</p>`;
       document.body.appendChild(t); sfx.event();
       navigator.vibrate?.(200);
       setTimeout(() => t.remove(), 3500);
@@ -200,7 +207,7 @@ function showRoundEnd() {
     <div class="scores"><div style="background:var(--chicken)">🐔 ${SCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">🦃 ${SCORE(D.teams.turkey)}</div></div>
     <p>💥 ${SCORE(ps.score)} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} correct</p>
     <img src="${sprite(isFarm() ? `fm_coop_${me.team === 'chicken' ? 'c' : 't'}${ps.coop || 1}` : (isCannon() ? 'c_' : '') + me.team + '_idle')}" alt="" style="width:${isFarm() ? 200 : 120}px">
-    <p>Next round soon — watch the big screen!</p></div>`;
+    <p>${isSiege() ? `HALF TIME! Teams swap — next half you ${ps.role === 'def' ? 'ATTACK ⚔️' : 'DEFEND 🛡️'}.` : 'Next round soon — watch the big screen!'}</p></div>`;
 }
 
 function showFinal() {
@@ -221,6 +228,7 @@ function onPstate() {
   const ps = D.ps;
   $('#me-score').textContent = SCORE(ps.score);
   if (isTowers()) drawTwHud();
+  if (isSiege()) drawSgHud();
   if (isFarm()) {
     farmState();
     if (ps.fox === 'danger' && !L.foxPrompted) { L.foxPrompted = true; setTab('answer'); navigator.vibrate?.([100, 50, 100]); } else if (!ps.fox) L.foxPrompted = false;
@@ -276,6 +284,8 @@ function setTab(t) {
   $('#view-fight').classList.toggle('hidden', t !== 'fight' || hasMap());
   $('#view-farm').classList.toggle('hidden', t !== 'fight' || !isFarm());
   $('#view-tw').classList.toggle('hidden', t !== 'fight' || !isTowers());
+  $('#view-sg').classList.toggle('hidden', t !== 'fight' || !isSiege());
+  if (isSiege() && t === 'fight') { ensureSg(); SG.view?.layout(); }
   if (isTowers() && t === 'fight') ensureTw();
   if (isFarm() && t === 'fight') { ensureScene(); drawFarm(); if (FM.offscreen && FM.scene?.tex) { FM.scene.stampede(FM.offscreen); FM.offscreen = 0; } }
   if (t === 'fight') $('#tab-fight').classList.remove('nudge');
@@ -338,8 +348,8 @@ function drawFeedback() {
   box.className = `fb ${f.correct ? 'right' : 'wrong'}`;
   const lock = f.lockMs || 1500;
   const readMs = f.correct ? lock : Math.max(lock, 2600);
-  const fg = f.farm; const tw = f.tw;
-  const gain = tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team!' : `to your ${tw.buildings} coop${tw.buildings === 1 ? '' : 's'}`}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>🐔 +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
+  const fg = f.farm; const tw = f.tw; const sg = f.sg;
+  const gain = sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team!' : `to your ${tw.buildings} coop${tw.buildings === 1 ? '' : 's'}`}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>🐔 +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
   box.innerHTML = f.correct
     ? html`<div class="big">CORRECT!</div>${raw(gain)}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
     : html`<div class="big">NOPE!</div><div class="ans-was">Answer: <b>${f.rightText}</b></div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div><div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`;
@@ -701,3 +711,52 @@ function drawTwHud() {
 }
 setInterval(() => { if (isTowers()) { twHintT = null; drawTwHud(); } }, 4000);
 $('#tw-crate').addEventListener('click', () => { sfx.click(); setTab('answer'); });
+
+// ---------------- Coop Siege ----------------
+const SG = { view: null, seq: 0, q: [], info: null, g: '', u: '', m: '11111', spent: 0, lastCorn: null };
+function ensureSg() {
+  if (!isSiege() || !D.me?.team || !uid) return;
+  if (SG.view) return;
+  SG.view = new SiegeView($('#sg-view'), {
+    uid,
+    onCommand: (c, info) => {
+      SG.seq += 1; SG.q.push({ s: SG.seq, ...c }); SG.q = SG.q.slice(-8);
+      SG.spent += info.cost;
+      update(G(`inputs/${uid}`), { q: SG.q }).catch(() => {});
+      sgHint(c.op === 'def' ? `${info.name} placed! 🛡️` : `${info.name} sent down row ${c.r + 1}! ⚔️`, 'good');
+      sfx.click(); navigator.vibrate?.(25);
+      drawSgHud();
+    },
+    onHint: (msg, cls) => { sgHint(msg, cls); if (cls === 'bad') sfx.wrong(); },
+  });
+  if (SG.info) SG.view.setInfo(SG.info);
+  SG.view.setGrid(SG.g); SG.view.setUnits(SG.u); SG.view.setMowers(SG.m);
+  drawSgHud();
+}
+let sgHintT = null;
+function sgHint(msg, cls = '') {
+  const h = $('#sg-hint'); h.textContent = msg; h.className = `tw-hint ${cls}`;
+  clearTimeout(sgHintT); sgHintT = setTimeout(() => { sgHintT = null; drawSgHud(); }, 2600);
+}
+function drawSgHud() {
+  if (!isSiege()) return;
+  const ps = D.ps; const info = SG.info;
+  if (ps.corn !== SG.lastCorn) { SG.lastCorn = ps.corn; SG.spent = 0; } // fresh number from the big screen
+  const corn = Math.max(0, (ps.corn || 0) - SG.spent);
+  const role = ps.role || (info && D.me?.team === info.def ? 'def' : 'att');
+  $('#sg-corn').textContent = corn;
+  $('#sg-tc').textContent = ps.tc ?? 0; $('#sg-tt').textContent = ps.tt ?? 0;
+  const r = $('#sg-role'); r.textContent = role === 'def' ? '🛡️ DEFEND' : '⚔️ ATTACK'; r.classList.toggle('att', role === 'att');
+  if (info) {
+    const pct = Math.round((info.hp / info.max) * 100);
+    $('#sg-hp').innerHTML = `${info.def === 'chicken' ? '🐔 Chicken coop' : '🦃 Turkey barn'}: ${info.hp}/${info.max} 🥚<i style="--hp:${pct}%"></i>`;
+  }
+  SG.view?.setRole({ team: D.me?.team, role, corn });
+  if (sgHintT) return;
+  const h = $('#sg-hint');
+  h.className = ps.golden ? 'tw-hint good' : 'tw-hint';
+  h.textContent = ps.golden ? '🥇 Golden Egg Rush — right answers give DOUBLE corn!'
+    : role === 'def' ? 'DEFEND your coop! Pick a defence, then tap an empty square. Answer questions for more 🌽.'
+      : 'ATTACK! Pick an attacker, then tap a row to send it. Answer questions for more 🌽.';
+}
+$('#sg-quiz').addEventListener('click', () => { sfx.click(); setTab('answer'); });

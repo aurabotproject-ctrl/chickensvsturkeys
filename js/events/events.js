@@ -28,8 +28,16 @@ export const TOWER_PHONE = {
   fox: 'A fox raided the leading team\'s biggest coops! 🦊',
 };
 
+/** Phone messages for Coop Siege. */
+export const SIEGE_PHONE = {
+  golden: 'Right answers give DOUBLE corn for 20 seconds! 🥇🌽',
+  double: 'Everyone gets +100 corn! 🌽🌽',
+  shield: 'Catch-up! The team that\'s behind gets +150 corn each! 🚀',
+  storm: 'Egg Storm! Eggs are raining on the lawn — attackers AND defences get splatted! ⛈️',
+};
+
 export const RANDOM_POOL = ['golden', 'double', 'shield', 'storm', 'fog', 'fox'];
 export const randomEvent = (exclude, mode = 'dodge') => {
-  const pool = RANDOM_POOL.filter((e) => e !== exclude && !(mode === 'cannon' && e === 'fox') && !(mode === 'farm' && (e === 'storm' || e === 'fog')) && !(mode === 'towers' && e === 'fog'));
+  const pool = RANDOM_POOL.filter((e) => e !== exclude && !(mode === 'cannon' && e === 'fox') && !(mode === 'farm' && (e === 'storm' || e === 'fog')) && !(mode === 'towers' && e === 'fog') && !(mode === 'siege' && (e === 'fog' || e === 'fox')));
   return pool[Math.floor(Math.random() * pool.length)];
 };

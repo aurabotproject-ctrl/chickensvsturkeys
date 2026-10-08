@@ -198,3 +198,4 @@ body.mode-farm .team-panel.turkey span { left: 62%; }
 /* Coop Wars */
 body.mode-towers .stage { background: radial-gradient(circle at 50% 55%, #4f8f26, #22430f); }
 body.mode-towers .timer span { font-size: clamp(22px, 2.6vw, 48px); }
+.swap-note { font-family: var(--font-burst); font-size: 2rem; letter-spacing: .03em; color: var(--yolk); text-shadow: 3px 3px 0 var(--ink); margin: 0 0 10px; text-align: center; }

@@ -490,3 +490,13 @@ More modes, avatar unlocks, class leaderboards across games, progress over time 
 - Keep a **"Lite mode"** switch (fewer particles, no screen shake) for older Chromebooks.
 - Teacher should always be able to **end/skip/pause** instantly.
 - Teams must feel **fair**: auto-balance, and catch-up mechanics (Shield Up, comeback eggs) so the losing team never gives up.
+
+
+---
+
+## ✔ Coop Siege (lawn-defence mode) — built
+- Files: `js/modes/siege/rules.js` (grid, costs, art lists), `arena.js` (host simulation + projector), `view.js` (phone board, plain DOM).
+- 2 halves (`settings.rounds` forced to 2). Round 1 chickens defend, round 2 turkeys defend (`defenderFor`).
+- Host → phones sync under `games/{id}/sg`: `info` {def, hp, max, half}, `g` (45 squares, `K|uid`), `u` (attackers `id.row.x.kind.owner`), `m` (tractors `11111`).
+- Phones → host: `inputs/{uid}.q` command queue `{s, op:'def', k, r, c}` / `{s, op:'att', k, r}`.
+- Dedicated art: `SG_ART` in rules.js lists the sg_* sprites that exist; anything else uses stand-in art.

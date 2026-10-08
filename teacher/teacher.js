@@ -108,6 +108,7 @@ const MODES = [
   { id: 'dodge', name: 'Dodge Egg', img: 'chicken_throw', desc: 'Answer to earn eggs, then dodge and throw in a 1-minute arena battle.' },
   { id: 'cannon', name: 'Egg Cannon', img: 'c_chicken_fire', desc: 'Answer 5 questions to load your cannon, then aim and blast the enemy fort.' },
   { id: 'towers', name: 'Coop Wars', img: 'tw_logo', desc: 'Draw lines from your coops to march troops and capture the map. Right answers send reinforcements!' },
+  { id: 'siege', name: 'Coop Siege', img: 'tw_fort_c', desc: 'Two halves: defend your coop with egg shooters and hay walls, then swap and attack! Right answers earn corn to spend.' },
   { id: 'farm', name: 'Egg Farm', img: 'fm_coop_c4', desc: 'Grow the richest egg farm — every right answer boosts your farm.' },
 ];
 
@@ -129,8 +130,8 @@ function renderCreate(main) {
     </section>
     <section class="panel light" style="margin-top:18px"><h3>3. Settings</h3>
       <div class="settings-grid">
-        <div class="field ${s.mode === 'farm' || s.mode === 'towers' ? 'hidden' : ''}"><span>Rounds</span>${raw(seg('rounds', [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']]))}</div>
-        <div class="field"><span>${s.mode === 'cannon' ? 'Answer time per round' : s.mode === 'farm' || s.mode === 'towers' ? 'Game length' : 'Round length'}</span>${raw(seg('roundSeconds', s.mode === 'farm' || s.mode === 'towers' ? [[300, '5 min'], [480, '8 min'], [720, '12 min']] : [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}${raw(s.mode === 'cannon' ? '<span class="hint">Students answer 5 questions, then a 45-second battle.</span>' : '')}</div>
+        <div class="field ${s.mode === 'farm' || s.mode === 'towers' || s.mode === 'siege' ? 'hidden' : ''}"><span>Rounds</span>${raw(seg('rounds', [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']]))}</div>
+        <div class="field"><span>${s.mode === 'cannon' ? 'Answer time per round' : s.mode === 'farm' || s.mode === 'towers' ? 'Game length' : s.mode === 'siege' ? 'Length of each half' : 'Round length'}</span>${raw(seg('roundSeconds', s.mode === 'farm' || s.mode === 'towers' ? [[300, '5 min'], [480, '8 min'], [720, '12 min']] : s.mode === 'siege' ? [[150, '2½ min'], [210, '3½ min'], [300, '5 min']] : [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}${raw(s.mode === 'cannon' ? '<span class="hint">Students answer 5 questions, then a 45-second battle.</span>' : s.mode === 'siege' ? '<span class="hint">2 halves — the teams swap between defending and attacking at half time.</span>' : '')}</div>
         <div class="field"><span>Confidence check</span>${raw(seg('confidence', [['every', 'Every question'], ['third', 'Every 3rd'], ['off', 'Off']]))}<span class="hint">Students tap 🔥 Sure / 🤔 Think so / 🎲 Guessing — powers the blind-spot report.</span></div>
         <div class="field ${s.mode !== 'towers' ? 'hidden' : ''}"><span>Troop growth</span>${raw(seg('growth', [['auto', 'Auto'], ['questions', 'Questions only'], ['slow', 'Slow + questions']]))}<span class="hint">Auto = slow growth for 4 or fewer students, questions-only for bigger classes.</span></div>
         <div class="field ${s.mode !== 'dodge' ? 'hidden' : ''}"><span>When hit by an egg</span>${raw(seg('koMode', [['respawn', 'Back in 5 s'], ['out', 'Out for the round']]))}</div>
@@ -140,7 +141,7 @@ function renderCreate(main) {
     </section>`;
   $$('.mode-card', main).forEach((c) => {
     c.onclick = () => { if (c.classList.contains('soon')) { toast('That game is coming in a later phase!', 'warn'); return; } s.mode = c.dataset.mode;
-      if (s.mode === 'farm' || s.mode === 'towers') { s.settings.rounds = 1; if (![300, 480, 720].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 480; } else if (s.settings.roundSeconds > 90) s.settings.roundSeconds = 60;
+      if (s.mode === 'farm' || s.mode === 'towers') { s.settings.rounds = 1; if (![300, 480, 720].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 480; } else if (s.mode === 'siege') { s.settings.rounds = 2; if (![150, 210, 300].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 210; } else if (s.settings.roundSeconds > 90) s.settings.roundSeconds = 60;
       renderCreate(main); };
   });
   $('#tobanks').onclick = (e) => { e.preventDefault(); go('banks'); };

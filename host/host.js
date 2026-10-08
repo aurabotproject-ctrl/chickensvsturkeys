@@ -19,6 +19,8 @@ import { CannonArena } from '../js/modes/cannon/arena.js';
 import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js';
 import { FarmBoard, fmt } from '../js/modes/farm/board.js';
 import { TowerArena } from '../js/modes/towers/arena.js';
+import { SiegeArena } from '../js/modes/siege/arena.js';
+import { defenderFor } from '../js/modes/siege/rules.js';
 import { EVENTS, randomEvent } from '../js/events/events.js';
 
 const gameId = params.get('g');
@@ -40,9 +42,10 @@ let settledSince = 0;
 const isCannon = () => meta?.mode === 'cannon';
 const isFarm = () => meta?.mode === 'farm';
 const isTowers = () => meta?.mode === 'towers';
-const isTimed = () => isFarm() || isTowers();
-const showScore = (n) => (isFarm() ? fmt(n) : isTowers() ? Math.floor(n) : Math.round(n));
-const UNIT = () => (isCannon() ? 'pts' : isFarm() ? '' : 'KO');
+const isSiege = () => meta?.mode === 'siege';
+const isTimed = () => isFarm() || isTowers() || isSiege();
+const showScore = (n) => (isFarm() ? fmt(n) : isTowers() || isSiege() ? Math.floor(n) : Math.round(n));
+const UNIT = () => (isCannon() || isSiege() ? 'pts' : isFarm() ? '' : 'KO');
 
 // ---------------- boot ----------------
 async function boot() {
@@ -59,7 +62,7 @@ async function boot() {
   document.body.classList.add(`mode-${S.mode}`);
 
   // Fresh start: clear any old game state (keeps the players).
-  await update(G(), { state: { phase: 'lobby', round: 0, mode: S.mode }, current: null, fb: null, sub: null, inputs: null, pstate: null, tw: null, teams: { chicken: 0, turkey: 0 }, standings: null, answers: null });
+  await update(G(), { state: { phase: 'lobby', round: 0, mode: S.mode }, current: null, fb: null, sub: null, inputs: null, pstate: null, tw: null, sg: null, teams: { chicken: 0, turkey: 0 }, standings: null, answers: null });
 
   setupLobby();
   listen();
@@ -130,7 +133,7 @@ function setupLobby() {
     $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   } catch { $('#qr').textContent = 'QR unavailable'; }
   const st = meta.settings;
-  $('#lobby-info').innerHTML = html`<b>${meta.bankTitle}</b> · ${meta.questionCount} questions · ${isTimed() ? `${Math.round(st.roundSeconds / 60)} minutes` : `${st.rounds} round${st.rounds > 1 ? 's' : ''} × ${st.roundSeconds}s`} · ${isCannon() ? 'Egg Cannon' : isFarm() ? 'Egg Farm' : isTowers() ? 'Coop Wars' : 'Dodge Egg'}`;
+  $('#lobby-info').innerHTML = html`<b>${meta.bankTitle}</b> · ${meta.questionCount} questions · ${isSiege() ? `2 halves × ${st.roundSeconds >= 60 ? `${+(st.roundSeconds / 60).toFixed(1)} min` : `${st.roundSeconds}s`} (teams swap attack & defence)` : isTimed() ? `${Math.round(st.roundSeconds / 60)} minutes` : `${st.rounds} round${st.rounds > 1 ? 's' : ''} × ${st.roundSeconds}s`} · ${isCannon() ? 'Egg Cannon' : isFarm() ? 'Egg Farm' : isTowers() ? 'Coop Wars' : isSiege() ? 'Coop Siege' : 'Dodge Egg'}`;
   if (isTowers()) $('.lobby-logo').src = sprite('tw_logo');
   $('#btn-bots').onclick = () => { for (let i = 0; i < 4; i++) addBot(); drawRoster(); };
   $('#btn-shuffle').onclick = shuffleTeams;
@@ -212,7 +215,14 @@ async function startGame() {
   $('#lobby').classList.add('hidden');
   $('#game').classList.remove('hidden');
   if (!arena) {
-    arena = isTowers()
+    if (isSiege()) meta.settings.rounds = 2;
+    arena = isSiege()
+      ? new SiegeArena($('#arena'), {
+        onChange: (p) => dirty.add(p.uid),
+        onSync: (up) => update(G(), up).catch(console.error),
+        onWin: () => { if (S.phase === 'playing') endRound(); },
+      })
+      : isTowers()
       ? new TowerArena($('#arena'), {
         growth: meta.settings.growth || 'auto',
         onChange: (p) => dirty.add(p.uid),
@@ -235,7 +245,7 @@ async function startGame() {
     if (isFarm()) arena.now = serverNow;
     try { await arena.init(); } catch (e) { console.error(e); toast('The arena failed to load: ' + e.message, 'bad', 8000); }
     if (isTimed()) setInterval(() => { if (S.phase === 'playing') { for (const uid of arena.players.keys()) dirty.add(uid); bumpScores(); } }, 1000);
-    if (isTowers()) setInterval(() => { if (S.phase === 'playing' && !S.paused) arena.botTick(0.25); }, 250);
+    if (isTowers() || isSiege()) setInterval(() => { if (S.phase === 'playing' && !S.paused) arena.botTick(0.25); }, 250);
     if (!isTimed()) arena.app.ticker.add(() => {
       if (S.phase !== 'playing' || S.paused) return;
       const dt = Math.min(arena.app.ticker.deltaMS / 1000, 0.05);
@@ -254,9 +264,10 @@ async function startRound() {
   S.round += 1;
   S.phase = 'countdown'; S.event = null; S.paused = false;
   await writeState();
-  arena.startRound();
+  arena.startRound(S.round);
   for (const uid of arena.players.keys()) dirty.add(uid);
-  $('#round-label').textContent = `ROUND ${S.round} / ${meta.settings.rounds}`;
+  if (isSiege()) { const d = defenderFor(S.round); phaseBanner(`<b>${S.round === 1 ? 'FIRST HALF' : 'SECOND HALF'}: ${d === 'chicken' ? '🐔 CHICKENS DEFEND · 🦃 TURKEYS ATTACK' : '🦃 TURKEYS DEFEND · 🐔 CHICKENS ATTACK'}</b><small>Answer questions for corn 🌽 — defenders build on the lawn, attackers pick a row!</small>`, 6000); }
+  $('#round-label').textContent = isSiege() ? `HALF ${S.round} / 2` : `ROUND ${S.round} / ${meta.settings.rounds}`;
   const ms = meta.settings.roundSeconds * 1000;
   $('#timer').textContent = meta.settings.roundSeconds >= 60 ? `${Math.floor(meta.settings.roundSeconds / 60)}:${String(meta.settings.roundSeconds % 60).padStart(2, '0')}` : meta.settings.roundSeconds;
   await countdown();
@@ -396,14 +407,14 @@ function showRoundOverlay(standings) {
   const ov = $('#overlay');
   ov.className = 'overlay';
   ov.innerHTML = html`<div class="round-box">
-    <h1 class="comic-title slant">ROUND ${S.round} COMPLETE!</h1>
+    <h1 class="comic-title slant">${isSiege() ? 'HALF TIME!' : `ROUND ${S.round} COMPLETE!`}</h1>${raw(isSiege() ? `<p class="swap-note">Teams swap! ${defenderFor(S.round + 1) === 'chicken' ? '🐔 Chickens defend · 🦃 Turkeys attack' : '🦃 Turkeys defend · 🐔 Chickens attack'}</p>` : '')}
     <div class="round-teams">
       <div class="round-team chicken"><img src="${sprite(ts.chicken >= ts.turkey ? 'chicken_win' : 'chicken_dizzy')}" alt=""><div class="big">${showScore(ts.chicken)}</div><div class="lbl">CHICKENS</div></div>
       <div class="vs-burst burst">VS</div>
       <div class="round-team turkey"><img src="${sprite(ts.turkey >= ts.chicken ? 'turkey_win' : 'turkey_dizzy')}" alt=""><div class="big">${showScore(ts.turkey)}</div><div class="lbl">TURKEYS</div></div>
     </div>
     <div class="top5">${raw(standings.slice(0, 5).map((p, i) => html`<div class="who"><img src="${avatar(p.av)}" alt=""><b>${i + 1}. ${p.name}</b><span>${showScore(p.score)} ${UNIT()}</span></div>`).join(''))}</div>
-    <div class="next-row"><button class="btn big" id="ov-next">NEXT ROUND ▶</button><span id="ov-auto"></span></div></div>`;
+    <div class="next-row"><button class="btn big" id="ov-next">${isSiege() ? 'SECOND HALF ▶' : 'NEXT ROUND ▶'}</button><span id="ov-auto"></span></div></div>`;
   let n = 25;
   const tick = () => {
     $('#ov-auto').textContent = `starts in ${n}s`;
@@ -472,7 +483,7 @@ async function playAgain() {
   for (const p of players.values()) { p.correct = 0; p.answered = 0; }
   S.round = 0; S.phase = 'lobby'; S.winner = null;
   lastThrow.clear();
-  await update(G(), { pstate: null, standings: null, answers: null, fb: null, current: null, sub: null, inputs: null, tw: null, teams: { chicken: 0, turkey: 0 }, 'meta/status': 'lobby', state: { phase: 'lobby', round: 0 } });
+  await update(G(), { pstate: null, standings: null, answers: null, fb: null, current: null, sub: null, inputs: null, tw: null, sg: null, teams: { chicken: 0, turkey: 0 }, 'meta/status': 'lobby', state: { phase: 'lobby', round: 0 } });
   $('#game').classList.add('hidden');
   $('#lobby').classList.remove('hidden');
   drawRoster();
@@ -483,7 +494,10 @@ function handleSub(uid, sub) {
   if (!sub || S.phase !== (isCannon() ? 'answer' : 'playing') || !arena?.players.has(uid)) return;
   const r = engine.grade(uid, sub, { round: S.round });
   if (!r) return;
-  if (isTowers()) {
+  if (isSiege()) {
+    r.feedback.sg = arena.reward(uid, { correct: r.entry.correct, conf: r.entry.conf, streak: r.feedback.streak });
+    r.feedback.eggs = 0; r.feedback.bonus = []; r.feedback.lockMs = r.entry.correct ? 900 : 2500;
+  } else if (isTowers()) {
     r.feedback.tw = arena.reward(uid, { correct: r.entry.correct, conf: r.entry.conf, streak: r.feedback.streak });
     r.feedback.eggs = 0; r.feedback.bonus = []; r.feedback.lockMs = r.entry.correct ? 900 : 2500;
   } else if (isFarm()) {
@@ -532,7 +546,7 @@ function handleInput(uid, inp) {
 
 // ---------------- scores + sync ----------------
 function teamScores() {
-  if (isTowers() && arena) return arena.teamTotals();
+  if ((isTowers() || isSiege()) && arena) return arena.teamTotals();
   const t = { chicken: bonus.chicken, turkey: bonus.turkey };
   if (arena) for (const p of arena.players.values()) t[p.team] += p.score;
   return t;
@@ -661,7 +675,7 @@ $('#c-scores').onclick = () => {
   const st = computeStandings();
   modal({
     title: 'Scores', wide: true,
-    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>${isCannon() ? 'Target points' : isFarm() ? 'Money earned' : isTowers() ? 'Battle points' : 'KO points'}</th><th>Correct</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${p.team === 'chicken' ? '🐔' : '🦃'}</td><td>${showScore(p.score)}</td><td>${p.bot ? '—' : `${engine.stats(p.uid).correct}/${engine.stats(p.uid).answered}`}</td></tr>`).join('')}</tbody></table>`,
+    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>${isCannon() ? 'Target points' : isFarm() ? 'Money earned' : isTowers() || isSiege() ? 'Battle points' : 'KO points'}</th><th>Correct</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${p.team === 'chicken' ? '🐔' : '🦃'}</td><td>${showScore(p.score)}</td><td>${p.bot ? '—' : `${engine.stats(p.uid).correct}/${engine.stats(p.uid).answered}`}</td></tr>`).join('')}</tbody></table>`,
     buttons: [{ label: 'Close', value: null }],
   });
 };

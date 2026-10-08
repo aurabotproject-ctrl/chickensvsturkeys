@@ -214,3 +214,43 @@ body.mode-towers .egg-bar, body.mode-towers .egg-count { display: none; }
 .tw-scene { position: absolute; inset: 0; touch-action: none; }
 .tw-scene canvas { display: block; }
 .tw-crate { width: 19%; max-width: 110px; }
+
+/* ---------- Coop Siege ---------- */
+body.mode-siege .egg-bar, body.mode-siege .egg-count { display: none; }
+#view-sg { gap: 6px; }
+.sg-role { font-family: var(--font-burst); font-size: 1.15rem; letter-spacing: .03em; padding: 2px 12px; border: 3px solid var(--ink); border-radius: 999px; background: var(--grass); color: #fff; text-shadow: 2px 2px 0 var(--ink); white-space: nowrap; }
+.sg-role.att { background: var(--turkey); }
+.sg-wrap { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.sg-shop { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 4px; flex: none; scrollbar-width: none; }
+.sg-card { flex: none; width: 74px; display: grid; justify-items: center; gap: 0; padding: 4px 3px 3px; background: #ddd; color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; opacity: .55; cursor: pointer; font: inherit; }
+.sg-card.can { background: #fff; opacity: 1; }
+.sg-card.on { outline: 4px solid var(--yolk); transform: translateY(-2px); box-shadow: 0 4px 0 var(--ink); }
+.sg-card img { height: 40px; width: 64px; object-fit: contain; }
+.sg-card b { font-size: .62rem; line-height: 1.05; text-align: center; min-height: 2.1em; display: flex; align-items: center; }
+.sg-card span { font-family: var(--font-burst); font-size: 1rem; }
+.sg-board { position: relative; flex: 1; min-height: 0; border: 4px solid var(--ink); border-radius: 16px; overflow: hidden; background: #6bb33a; touch-action: none; user-select: none; box-shadow: var(--pop-shadow-sm); }
+.sg-field, .sg-units { position: absolute; inset: 0; }
+.sg-units { pointer-events: none; }
+.sg-cell { position: absolute; background: #8fd14f; display: grid; place-items: center; }
+.sg-cell.dk { background: #76bd3c; }
+.sg-cell img { position: absolute; inset: 4%; width: 92%; height: 92%; object-fit: contain; pointer-events: none; filter: drop-shadow(1px 2px 0 rgba(0,0,0,.35)); }
+.sg-cell.mine { box-shadow: inset 0 0 0 3px var(--yolk); }
+.role-def .sg-cell:not(.full):active { background: #fff6b0; }
+.sg-coop { position: absolute; background: #5d8f2c; display: grid; place-items: center; overflow: hidden; }
+.sg-coop img { height: 100%; max-width: 100%; object-fit: contain; opacity: .9; }
+.sg-road { position: absolute; background: #b98a4f; }
+.sg-rownum { position: absolute; transform: translate(-50%, -50%); font-family: var(--font-burst); font-size: 1.25rem; color: #fff; text-shadow: 2px 2px 0 var(--ink); pointer-events: none; }
+.sg-mower { position: absolute; width: 9%; max-width: 46px; transform: translate(-50%, -50%); pointer-events: none; }
+.sg-mower.used { opacity: .15; filter: grayscale(1); }
+.sg-unit { position: absolute; width: 11%; max-width: 54px; aspect-ratio: 1; transform: translate(-50%, -60%); transition: left .5s linear, top .5s linear, opacity .3s; }
+.sg-board.vertical .sg-unit { width: 13%; }
+.sg-unit img { width: 100%; height: 100%; object-fit: contain; transform: scaleX(-1); filter: drop-shadow(1px 2px 0 rgba(0,0,0,.4)); }
+.sg-unit.k-b, .sg-unit.k-g { width: 15%; max-width: 70px; }
+.sg-unit.mine img { filter: drop-shadow(0 0 3px var(--yolk)) drop-shadow(0 0 3px var(--yolk)); }
+.sg-unit.gone { opacity: 0; }
+.sg-flash { position: absolute; background: rgba(255, 199, 44, .45); animation: sgflash .45s ease-out forwards; }
+.sg-flash.bad { background: rgba(255, 90, 60, .45); }
+@keyframes sgflash { to { opacity: 0; } }
+.sg-bottom { display: flex; align-items: center; gap: 8px; }
+.sg-hp { flex: 1; font-weight: 900; font-size: .85rem; }
+.sg-hp i { display: block; height: 10px; border: 2px solid var(--ink); border-radius: 99px; background: linear-gradient(90deg, var(--grass) var(--hp, 100%), #333 var(--hp, 100%)); margin-top: 2px; }

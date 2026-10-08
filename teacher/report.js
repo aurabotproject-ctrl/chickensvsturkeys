@@ -27,7 +27,7 @@ function msg(h) { root.innerHTML = `<div class="empty-msg"><p>${h}</p></div>`; }
 
 const nm = (s) => (opts.initials ? s.split(/\s+/).map((w) => w[0]?.toUpperCase() + '.').join('') : s);
 const fmtDate = (t) => (t ? new Date(t).toLocaleString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '');
-const MODE = { dodge: 'Dodge Egg', cannon: 'Egg Cannon', farm: 'Egg Farm', towers: 'Coop Wars' };
+const MODE = { dodge: 'Dodge Egg', cannon: 'Egg Cannon', farm: 'Egg Farm', towers: 'Coop Wars', siege: 'Coop Siege' };
 
 function head(title, sub) {
   return `<div class="rhead"><div><h1>${title}<small>${esc(sub || '')}</small></h1></div>
