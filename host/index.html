@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="host.css">
   <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js"></script>
 </head>
 <body>
   <div id="boot" class="loading"><div class="spin-egg"></div><p>Setting up the arena…</p></div>
@@ -56,6 +57,8 @@
         <div class="team-panel turkey"><img src="../assets/sprites/panel_turkey.webp" alt=""><span id="score-turkey">0</span></div>
       </div>
       <div id="event-pill" class="event-pill hidden"></div>
+      <div id="wind-pill" class="wind-pill hidden"></div>
+      <div id="phase-banner" class="phase-banner hidden"></div>
       <div class="hud-bottom">
         <button class="icon-btn" id="c-pause" title="Pause"><img src="../assets/sprites/ico_pause.webp" alt="Pause"></button>
         <button class="icon-btn" id="c-next" title="End round / next round"><img src="../assets/sprites/ico_next.webp" alt="Next"></button>

@@ -15,6 +15,8 @@ import { loadBankByKey } from '../js/quiz/banks.js';
 import { QuizEngine } from '../js/quiz/engine.js';
 import { DodgeArena } from '../js/modes/dodge/arena.js';
 import { makeBot, botTick } from '../js/modes/dodge/bots.js';
+import { CannonArena } from '../js/modes/cannon/arena.js';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js';
 import { EVENTS, randomEvent } from '../js/events/events.js';
 
 const gameId = params.get('g');
@@ -25,10 +27,16 @@ const players = new Map(); // uid -> { name, av, team, online, bot }
 const bots = new Map();
 const lastThrow = new Map();
 const dirty = new Set();
-const S = { phase: 'lobby', round: 0, endsAt: 0, paused: false, pausedAt: 0, remaining: 0, event: null, winner: null };
+const S = { phase: 'lobby', round: 0, endsAt: 0, paused: false, pausedAt: 0, remaining: 0, event: null, winner: null, mode: 'dodge', wind: 0, quota: 0 };
 const bonus = { chicken: 0, turkey: 0 };
 let autoEvents = []; let lastEvent = null; let playIndex = 0;
 let nextTimer = null;
+const QUOTA = 5;          // Egg Cannon: questions per round
+const BATTLE_MS = 45000;  // Egg Cannon: battle length
+const roundAnswered = new Map();
+let settledSince = 0;
+const isCannon = () => meta?.mode === 'cannon';
+const UNIT = () => (isCannon() ? 'pts' : 'KO');
 
 // ---------------- boot ----------------
 async function boot() {
@@ -41,9 +49,11 @@ async function boot() {
   if (meta.hostUid !== user.uid) return fail('This game belongs to another teacher account.');
   try { bank = await loadBankByKey(user.uid, meta.bankKey); } catch (e) { return fail('Couldn\'t load the question bank: ' + e.message); }
   engine = new QuizEngine(bank, meta.settings);
+  S.mode = meta.mode || 'dodge';
+  document.body.classList.add(`mode-${S.mode}`);
 
   // Fresh start: clear any old game state (keeps the players).
-  await update(G(), { state: { phase: 'lobby', round: 0 }, current: null, fb: null, sub: null, inputs: null, pstate: null, teams: { chicken: 0, turkey: 0 }, standings: null, answers: null });
+  await update(G(), { state: { phase: 'lobby', round: 0, mode: S.mode }, current: null, fb: null, sub: null, inputs: null, pstate: null, teams: { chicken: 0, turkey: 0 }, standings: null, answers: null });
 
   setupLobby();
   listen();
@@ -99,7 +109,8 @@ function joinMidGame(uid) {
   const p = players.get(uid);
   arena.addPlayer({ uid, name: p.name, team: p.team });
   dirty.add(uid);
-  if (S.phase === 'playing') dealNext(uid);
+  if (S.phase === 'playing' && !isCannon()) dealNext(uid);
+  if (S.phase === 'answer' && isCannon() && (roundAnswered.get(uid) || 0) < QUOTA) dealNext(uid);
 }
 
 // ---------------- lobby ----------------
@@ -113,7 +124,7 @@ function setupLobby() {
     $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
   } catch { $('#qr').textContent = 'QR unavailable'; }
   const st = meta.settings;
-  $('#lobby-info').innerHTML = html`<b>${meta.bankTitle}</b> · ${meta.questionCount} questions · ${st.rounds} round${st.rounds > 1 ? 's' : ''} × ${st.roundSeconds}s · Dodge Egg`;
+  $('#lobby-info').innerHTML = html`<b>${meta.bankTitle}</b> · ${meta.questionCount} questions · ${st.rounds} round${st.rounds > 1 ? 's' : ''} × ${st.roundSeconds}s · ${isCannon() ? 'Egg Cannon' : 'Dodge Egg'}`;
   $('#btn-bots').onclick = () => { for (let i = 0; i < 4; i++) addBot(); drawRoster(); };
   $('#btn-shuffle').onclick = shuffleTeams;
   $('#btn-full').onclick = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
@@ -194,16 +205,22 @@ async function startGame() {
   $('#lobby').classList.add('hidden');
   $('#game').classList.remove('hidden');
   if (!arena) {
-    arena = new DodgeArena($('#arena'), {
-      koMode: meta.settings.koMode,
-      onHit: ({ victim, thrower }) => { dirty.add(victim.uid); if (thrower) dirty.add(thrower.uid); bumpScores(); },
-      onSweep: (winner) => { bonus[winner] += 5; showBanner('sweep'); setEvent('sweep', 0); bumpScores(); },
-      onEggsChanged: (p) => dirty.add(p.uid),
-    });
+    arena = isCannon()
+      ? new CannonArena($('#arena'), {
+        onTarget: ({ shooter }) => { if (shooter) dirty.add(shooter.uid); bumpScores(); },
+        onEggsChanged: (p) => dirty.add(p.uid),
+      })
+      : new DodgeArena($('#arena'), {
+        koMode: meta.settings.koMode,
+        onHit: ({ victim, thrower }) => { dirty.add(victim.uid); if (thrower) dirty.add(thrower.uid); bumpScores(); },
+        onSweep: (winner) => { bonus[winner] += 5; showBanner('sweep'); setEvent('sweep', 0); bumpScores(); },
+        onEggsChanged: (p) => dirty.add(p.uid),
+      });
     try { await arena.init(); } catch (e) { console.error(e); toast('The arena failed to load: ' + e.message, 'bad', 8000); }
     arena.app.ticker.add(() => {
       if (S.phase !== 'playing' || S.paused) return;
       const dt = Math.min(arena.app.ticker.deltaMS / 1000, 0.05);
+      if (isCannon()) { for (const b of bots.values()) cannonBotTick(arena, b, dt); return; }
       for (const b of bots.values()) botTick(arena, b, dt, { onAnswer: (bot, ok) => { const p = players.get(bot.uid); if (p) { p.answered = (p.answered || 0) + 1; p.correct = (p.correct || 0) + (ok ? 1 : 0); } } });
     });
   }
@@ -224,13 +241,10 @@ async function startRound() {
   const ms = meta.settings.roundSeconds * 1000;
   $('#timer').textContent = meta.settings.roundSeconds;
   await countdown();
+  if (isCannon()) { startAnswerPhase(); return; }
   S.phase = 'playing';
   S.endsAt = serverNow() + ms;
-  autoEvents = [];
-  if (meta.settings.events === 'auto') {
-    const n = meta.settings.roundSeconds >= 75 ? 2 : 1;
-    for (let i = 0; i < n; i++) autoEvents.push(S.endsAt - ms * (n === 1 ? rand(0.35, 0.65) : i === 0 ? rand(0.6, 0.75) : rand(0.25, 0.4)));
-  }
+  scheduleEvents(ms);
   await writeState();
   sfx.whistle();
   // Deal the first question to every real player.
@@ -238,6 +252,52 @@ async function startRound() {
   for (const [uid, p] of players) if (!p.bot && arena.players.has(uid)) updates[`current/${uid}`] = engine.deal(uid);
   updates.fb = null;
   await update(G(), updates);
+}
+
+function scheduleEvents(ms) {
+  autoEvents = [];
+  if (meta.settings.events !== 'auto') return;
+  const n = ms >= 75000 ? 2 : 1;
+  for (let i = 0; i < n; i++) autoEvents.push(S.endsAt - ms * (n === 1 ? rand(0.35, 0.65) : i === 0 ? rand(0.6, 0.75) : rand(0.25, 0.4)));
+}
+
+// ----- Egg Cannon: answer phase → battle phase -----
+async function startAnswerPhase() {
+  S.phase = 'answer'; S.quota = QUOTA; S.wind = arena.wind;
+  S.endsAt = serverNow() + meta.settings.roundSeconds * 1000;
+  roundAnswered.clear();
+  await writeState();
+  sfx.whistle();
+  phaseBanner(`<b>ANSWER ${QUOTA} QUESTIONS</b> to load your cannon!<small>Each correct answer = 1 egg</small>`);
+  const updates = { fb: null };
+  for (const [uid, p] of players) if (!p.bot && arena.players.has(uid)) updates[`current/${uid}`] = engine.deal(uid);
+  await update(G(), updates);
+  $('#round-label').textContent = `ROUND ${S.round} · ANSWER!`;
+}
+
+async function startBattle() {
+  if (S.phase !== 'answer') return;
+  S.phase = 'playing';
+  S.endsAt = serverNow() + BATTLE_MS;
+  for (const b of bots.values()) if (arena.players.has(b.uid)) botLoadEggs(arena, b);
+  arena.startBattle();
+  settledSince = 0;
+  scheduleEvents(BATTLE_MS);
+  await writeState();
+  await update(G(), { current: null });
+  phaseBanner('<b>FIRE!</b><small>Set your angle, time your power, hit the enemy fort!</small>', 2200);
+  sfx.go();
+  $('#round-label').textContent = `ROUND ${S.round} / ${meta.settings.rounds}`;
+  for (const uid of arena.players.keys()) dirty.add(uid);
+}
+
+let bannerTimer = null;
+function phaseBanner(htmlText, ms = 0) {
+  const b = $('#phase-banner');
+  clearTimeout(bannerTimer);
+  if (!htmlText) { b.classList.add('hidden'); return; }
+  b.innerHTML = htmlText; b.classList.remove('hidden'); b.classList.remove('anim-pop'); void b.offsetWidth; b.classList.add('anim-pop');
+  if (ms) bannerTimer = setTimeout(() => b.classList.add('hidden'), ms);
 }
 
 async function countdown() {
@@ -252,6 +312,7 @@ async function countdown() {
 }
 
 function loop() {
+  if (S.phase === 'answer') { answerLoop(); return; }
   if (S.phase !== 'playing') return;
   if (S.paused) return;
   const left = Math.max(0, S.endsAt - serverNow());
@@ -262,11 +323,34 @@ function loop() {
     t.classList.toggle('hurry', secs <= 10);
     if (secs <= 5 && secs > 0) sfx.tick();
   }
-  if (autoEvents.length && serverNow() >= autoEvents[0]) { autoEvents.shift(); triggerEvent(randomEvent(lastEvent)); }
+  if (autoEvents.length && serverNow() >= autoEvents[0]) { autoEvents.shift(); triggerEvent(randomEvent(lastEvent, S.mode)); }
   if (S.event && S.event.until && serverNow() > S.event.until) { S.event = null; $('#event-pill').classList.add('hidden'); writeState(); }
   if (S.event?.until) $('#event-pill').textContent = `${EVENTS[S.event.type].name} ${Math.ceil((S.event.until - serverNow()) / 1000)}s`;
+  if (isCannon()) {
+    const anyTargets = arena.targetsLeft('chicken') && arena.targetsLeft('turkey');
+    if (arena.isSettled() || !anyTargets) { settledSince ||= serverNow(); } else settledSince = 0;
+    if (settledSince && serverNow() - settledSince > 2500) endRound();
+    const wind = $('#wind-pill');
+    wind.classList.remove('hidden');
+    wind.textContent = arena.wind ? `WIND ${arena.wind > 0 ? '→' : '←'} ${Math.abs(arena.wind)}` : 'NO WIND';
+  }
   if (left <= 0) endRound();
   drawStandings();
+}
+
+function answerLoop() {
+  if (S.paused) return;
+  const left = Math.max(0, S.endsAt - serverNow());
+  const secs = Math.ceil(left / 1000);
+  const t = $('#timer');
+  if (t.textContent !== String(secs)) { t.textContent = secs; t.classList.toggle('hurry', secs <= 10); }
+  const humans = [...players.entries()].filter(([uid, p]) => !p.bot && arena.players.has(uid) && p.online !== false);
+  const done = humans.filter(([uid]) => (roundAnswered.get(uid) || 0) >= QUOTA).length;
+  const loaded = { chicken: 0, turkey: 0 };
+  for (const p of arena.players.values()) loaded[p.team] += p.eggs;
+  const b = $('#phase-banner small');
+  if (b) b.textContent = `${done} / ${humans.length} finished · 🐔 ${loaded.chicken} eggs loaded · 🦃 ${loaded.turkey} eggs loaded`;
+  if (left <= 0 || (humans.length && done === humans.length)) { phaseBanner(''); startBattle(); }
 }
 
 async function endRound() {
@@ -274,6 +358,7 @@ async function endRound() {
   S.phase = 'roundEnd'; S.event = null;
   arena.stopRound();
   $('#event-pill').classList.add('hidden');
+  $('#wind-pill').classList.add('hidden');
   sfx.whistle();
   const standings = computeStandings();
   const last = S.round >= meta.settings.rounds;
@@ -294,7 +379,7 @@ function showRoundOverlay(standings) {
       <div class="vs-burst burst">VS</div>
       <div class="round-team turkey"><img src="${sprite(ts.turkey >= ts.chicken ? 'turkey_win' : 'turkey_dizzy')}" alt=""><div class="big">${ts.turkey}</div><div class="lbl">TURKEYS</div></div>
     </div>
-    <div class="top5">${raw(standings.slice(0, 5).map((p, i) => html`<div class="who"><img src="${avatar(p.av)}" alt=""><b>${i + 1}. ${p.name}</b><span>${p.score} KO</span></div>`).join(''))}</div>
+    <div class="top5">${raw(standings.slice(0, 5).map((p, i) => html`<div class="who"><img src="${avatar(p.av)}" alt=""><b>${i + 1}. ${p.name}</b><span>${p.score} ${UNIT()}</span></div>`).join(''))}</div>
     <div class="next-row"><button class="btn big" id="ov-next">NEXT ROUND ▶</button><span id="ov-auto"></span></div></div>`;
   let n = 25;
   const tick = () => {
@@ -329,7 +414,7 @@ async function finalScreen() {
     <img class="win-banner" src="${sprite(winner === 'chicken' ? 'win_chicken' : winner === 'turkey' ? 'win_turkey' : 'win_tie')}" alt="${winner} wins">
     <div class="final-scores"><div style="background:var(--chicken)">🐔 ${ts.chicken}</div><div style="background:var(--turkey)">🦃 ${ts.turkey}</div></div>
     <div class="podium-wrap"><img class="podium" src="${sprite('podium')}" alt="">
-      ${raw(top.map((p, i) => html`<div class="podium-spot p${i + 1}" style="animation-delay:${0.3 + (2 - i) * 0.35}s"><img class="av" src="${avatar(p.av)}" alt=""><img class="medal" src="${sprite(['medal_gold', 'medal_silver', 'medal_bronze'][i])}" alt=""><b>${p.name}</b><span>${p.score} KO</span></div>`).join(''))}
+      ${raw(top.map((p, i) => html`<div class="podium-spot p${i + 1}" style="animation-delay:${0.3 + (2 - i) * 0.35}s"><img class="av" src="${avatar(p.av)}" alt=""><img class="medal" src="${sprite(['medal_gold', 'medal_silver', 'medal_bronze'][i])}" alt=""><b>${p.name}</b><span>${p.score} ${UNIT()}</span></div>`).join(''))}
     </div>
     <div class="final-btns">
       <button class="img-btn" id="f-again" title="Play again"><img src="${sprite('btn_playagain')}" alt="Play again"></button>
@@ -337,7 +422,7 @@ async function finalScreen() {
       <a class="btn grey" href="../teacher/">🏠 Teacher HQ</a>
     </div></div>`;
   $('#f-again').onclick = playAgain;
-  $('#f-results').onclick = () => window.open('../teacher/?view=results', '_blank');
+  $('#f-results').onclick = () => window.open(`../teacher/report.html?r=${encodeURIComponent(`${gameId}-${playIndex}`)}`, '_blank');
 }
 
 function confetti() {
@@ -372,7 +457,7 @@ async function playAgain() {
 
 // ---------------- answers + inputs ----------------
 function handleSub(uid, sub) {
-  if (!sub || S.phase !== 'playing' || !arena?.players.has(uid)) return;
+  if (!sub || S.phase !== (isCannon() ? 'answer' : 'playing') || !arena?.players.has(uid)) return;
   const r = engine.grade(uid, sub, { round: S.round });
   if (!r) return;
   const before = arena.players.get(uid).eggs;
@@ -381,7 +466,8 @@ function handleSub(uid, sub) {
   const p = players.get(uid); if (p) { p.correct = engine.stats(uid).correct; p.answered = engine.stats(uid).answered; }
   dirty.add(uid);
   const { entry } = r;
-  const next = engine.deal(uid);
+  let next = engine.deal(uid);
+  if (isCannon()) { const n = (roundAnswered.get(uid) || 0) + 1; roundAnswered.set(uid, n); if (n >= QUOTA) next = null; }
   update(G(), {
     [`fb/${uid}`]: r.feedback,
     [`answers/${uid}/${entry.n}`]: { qid: entry.qid, choice: entry.choice, correct: entry.correct, conf: entry.conf || '', ms: entry.ms, round: entry.round, at: entry.at },
@@ -395,6 +481,15 @@ function dealNext(uid) {
 
 function handleInput(uid, inp) {
   if (!inp || !arena) return;
+  if (isCannon()) {
+    if (inp.angle != null && S.phase === 'playing') arena.setAim(uid, +inp.angle);
+    const n = +inp.throws || 0;
+    if (n > 0 && n !== (lastThrow.get(uid) || 0)) {
+      lastThrow.set(uid, n);
+      if (S.phase === 'playing' && !S.paused) arena.fire(uid, +inp.angle, +inp.power);
+    }
+    return;
+  }
   if (S.phase === 'playing' && !S.paused) arena.setMove(uid, +inp.mx || 0, +inp.my || 0);
   const n = +inp.throws || 0;
   if (n > 0 && n !== (lastThrow.get(uid) || 0)) {
@@ -450,7 +545,7 @@ function flush(force = false) {
     if (!p || !info || info.bot) continue;
     const st = engine.stats(uid);
     updates[`pstate/${uid}`] = {
-      eggs: p.eggs, score: p.score, ko: p.ko, koLeft: p.ko && p.koT < 999 ? Math.ceil(p.koT) : 0, shield: p.shieldT > 0,
+      eggs: p.eggs, score: p.score, ko: !!p.ko, koLeft: p.ko && p.koT < 999 ? Math.ceil(p.koT) : 0, shield: p.shieldT > 0, rq: roundAnswered.get(uid) || 0,
       correct: st.correct, answered: st.answered, streak: st.streak,
       ...(standings ? { rank: standings.findIndex((s) => s.uid === uid) + 1, of: standings.length } : {}),
     };
@@ -497,7 +592,7 @@ function showBanner(type) {
 
 // ---------------- teacher controls ----------------
 $('#c-pause').onclick = async () => {
-  if (S.phase !== 'playing') return;
+  if (S.phase !== 'playing' && S.phase !== 'answer') return;
   S.paused = !S.paused;
   arena.paused = S.paused;
   if (S.paused) {
@@ -517,19 +612,19 @@ $('#c-pause').onclick = async () => {
   writeState();
 };
 $('#c-next').onclick = () => {
-  if (S.phase === 'playing') endRound();
+  if (S.phase === 'answer') { phaseBanner(''); startBattle(); } else if (S.phase === 'playing') endRound();
   else if (S.phase === 'roundEnd') { clearTimeout(nextTimer); hideOverlay(); startRound(); }
 };
 $('#c-event').onclick = () => {
   if (S.phase !== 'playing') { toast('Events can only happen during a round.', 'warn'); return; }
   if (meta.settings.events === 'off') { toast('Events are switched off for this game.', 'warn'); return; }
-  triggerEvent(randomEvent(lastEvent));
+  triggerEvent(randomEvent(lastEvent, S.mode));
 };
 $('#c-scores').onclick = () => {
   const st = computeStandings();
   modal({
     title: 'Scores', wide: true,
-    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>KO points</th><th>Correct</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${p.team === 'chicken' ? '🐔' : '🦃'}</td><td>${p.score}</td><td>${p.bot ? '—' : `${engine.stats(p.uid).correct}/${engine.stats(p.uid).answered}`}</td></tr>`).join('')}</tbody></table>`,
+    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>${isCannon() ? 'Target points' : 'KO points'}</th><th>Correct</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${p.team === 'chicken' ? '🐔' : '🦃'}</td><td>${p.score}</td><td>${p.bot ? '—' : `${engine.stats(p.uid).correct}/${engine.stats(p.uid).answered}`}</td></tr>`).join('')}</tbody></table>`,
     buttons: [{ label: 'Close', value: null }],
   });
 };
@@ -538,13 +633,13 @@ $('#c-sound img').src = sprite(isMuted() ? 'ico_mute' : 'ico_sound');
 $('#c-end').onclick = async () => {
   if (S.phase === 'final') return;
   if (!(await confirmBox('End the game now and show the winners?', 'End game'))) return;
-  if (S.phase === 'playing') { S.phase = 'roundEnd'; arena.stopRound(); }
+  if (S.phase === 'playing' || S.phase === 'answer') { S.phase = 'roundEnd'; arena.stopRound(); phaseBanner(''); }
   hideOverlay();
   finalScreen();
 };
 window.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea')) return;
-  if (e.key === ' ' && S.phase === 'playing') { e.preventDefault(); $('#c-pause').click(); }
+  if (e.key === ' ' && (S.phase === 'playing' || S.phase === 'answer')) { e.preventDefault(); $('#c-pause').click(); }
   if (e.key === 'f') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
 });
 

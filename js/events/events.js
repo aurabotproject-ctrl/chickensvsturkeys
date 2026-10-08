@@ -12,7 +12,7 @@ export const EVENTS = {
 
 /** Events that can be picked at random (Clean Sweep happens on its own). */
 export const RANDOM_POOL = ['golden', 'double', 'shield', 'storm', 'fog', 'fox'];
-export const randomEvent = (exclude) => {
-  const pool = RANDOM_POOL.filter((e) => e !== exclude);
+export const randomEvent = (exclude, mode = 'dodge') => {
+  const pool = RANDOM_POOL.filter((e) => e !== exclude && !(mode === 'cannon' && e === 'fox'));
   return pool[Math.floor(Math.random() * pool.length)];
 };

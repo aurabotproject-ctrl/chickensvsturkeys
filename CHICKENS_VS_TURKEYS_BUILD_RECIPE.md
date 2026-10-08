@@ -432,15 +432,15 @@ Drop in real art; layered birds, fake-3D animation, shadows, squash/stretch, par
 Multi-round flow, between-round scoreboard, final podium, random events system, teacher controls (pause/skip/end), results archive written at game end.
 ✅ *Gate:* Full 3-round game start to finish; archive appears under Teacher → Results.
 
-**Phase 8 — Master Teacher Print Diagnostic**
+**Phase 8 — Master Teacher Print Diagnostic ✔ built**
 Teacher Report from the final screen and from Teacher → Results: class overview, strand mastery, confidence-vs-competence, student × strand matrix, question analysis cards, student slips, A4 `@media print` styles, CSV export.
 ✅ *Gate:* After a real test game, print to PDF: every page is A4, readable in black and white, numbers match the answer log, blind spots are correct.
 
-**Phase 9 — Egg Cannon v1 (placeholders)**
+**Phase 9 — Egg Cannon v1 (placeholders) ✔ built**
 Side-scroll world, forts, Matter.js, 5-question phase, angle + power bar, volley playback, attribution + scoring.
 ✅ *Gate:* Full round with 4+ players, scores credited correctly; report still works for this mode.
 
-**Phase 10 — Egg Cannon art + juice**
+**Phase 10 — Egg Cannon art + juice ✔ built**
 Parallax, cannon animation, destruction particles, camera work, special eggs.
 
 **Phase 11 — Egg Farm v1**
@@ -463,6 +463,8 @@ More modes, avatar unlocks, class leaderboards across games, progress over time 
 - Students sign in per browser *tab*, so you can test with several tabs on one computer.
 - Host keyboard: Space = pause, F = full screen. The bottom control bar fades until you hover it.
 - Throw = drag on the right pad and let go (a quick tap throws straight ahead). Gentle aim assist helps younger students.
+- **Teacher Report** (`teacher/report.html?r=…`): opens from Results or the 📊 View Results button on the winners screen. Toolbar: print/save PDF, choose sections, sort, initials-only, CSV export. Overview + matrix print A4 landscape; question cards + student slips print A4 portrait.
+- **Egg Cannon flow per round:** answer phase (5 questions each, ends when everyone's done or time runs out) → 45 s battle (drag the dial to set angle, tap FIRE as the power bar sweeps) → round ends when all eggs are fired and the dust settles. 3 fort designs (Twin Towers, Castle Keep, Hay Fortress) rotate randomly; scarecrow dummies/pumpkin/barrel/TNT = 1 point, bullseye = 2. Wind changes each round. Fox Raid is skipped in this mode.
 - Events available: Golden Egg Rush, Double Trouble, Shield Up, Egg Storm, Fog of Feathers, Fox Raid (+ automatic Clean Sweep). Team Swap is not used (it scrambles scoring).
 
 ## 13. Starter Prompts (paste after this file)

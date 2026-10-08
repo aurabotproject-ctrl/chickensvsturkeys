@@ -59,4 +59,10 @@ database.rules.json        paste into Firebase → Realtime Database → Rules
 CHICKENS_VS_TURKEYS_BUILD_RECIPE.md / _IMAGE_PROMPTS.md
 ```
 
-**Next:** Phase 8 — Master Teacher Print Diagnostic.
+## Teacher Report (Phase 8)
+After any game: **Teacher HQ → Results → click a game**, or **View Results** on the winners screen. Print it or *Save as PDF*.
+
+## Egg Cannon (Phases 9–10)
+Create Game → **Egg Cannon**. Each round: students answer 5 questions (each right answer loads 1 egg), then everyone aims with the dial and taps **FIRE** while the power bar swings. Knock over or smash the other team's scarecrows, pumpkins, barrels, TNT and bullseyes for points.
+
+**Next:** Phase 11 — Egg Farm.

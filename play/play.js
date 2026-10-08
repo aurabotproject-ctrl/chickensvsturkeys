@@ -15,6 +15,8 @@ const D = { me: null, state: {}, ps: {}, cur: null, fb: null, teams: {}, standin
 const L = { answeredN: 0, picked: null, shownAt: 0, lockUntil: 0, fbShownN: 0, tab: 'answer', lastEvent: 0, lastPhase: '', prevEggs: 0, unsubs: [] };
 const G = (p) => ref(db, `games/${gameId}/${p}`);
 const SAVE_KEY = 'cvt-player';
+const isCannon = () => D.state.mode === 'cannon';
+const UNIT = () => (isCannon() ? 'target points' : 'KO points');
 
 // ---------------- join ----------------
 async function boot() {
@@ -149,9 +151,10 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
-  if (phase === 'playing') {
+  document.body.classList.toggle('mode-cannon', isCannon());
+  if (phase === 'playing' || phase === 'answer') {
     if (s.paused) { ov.className = 'overlay'; ov.innerHTML = '<div class="box"><h1 class="comic-title">PAUSED</h1><p>Eyes on the teacher!</p></div>'; } else if (ov.innerHTML.includes('PAUSED')) ov.className = 'overlay hidden';
   }
   const ev = s.event;
@@ -177,8 +180,8 @@ function showRoundEnd() {
     <h1 class="comic-title slant">ROUND ${D.state.round} OVER!</h1>
     ${raw(ps.rank ? `<div>You're</div><div class="rank">#${ps.rank}</div><div>out of ${ps.of}</div>` : '')}
     <div class="scores"><div style="background:var(--chicken)">🐔 ${D.teams.chicken ?? 0}</div><div style="background:var(--turkey)">🦃 ${D.teams.turkey ?? 0}</div></div>
-    <p>💥 ${ps.score || 0} KO points · ✅ ${ps.correct || 0}/${ps.answered || 0} correct</p>
-    <img src="${sprite(me.team + '_idle')}" alt="" style="width:120px">
+    <p>💥 ${ps.score || 0} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} correct</p>
+    <img src="${sprite((isCannon() ? 'c_' : '') + me.team + '_idle')}" alt="" style="width:120px">
     <p>Next round soon — watch the big screen!</p></div>`;
 }
 
@@ -192,7 +195,7 @@ function showFinal() {
     <h2 class="comic-title">${tie ? 'IT\'S A DRAW!' : won ? 'YOUR TEAM WON!' : 'SO CLOSE!'}</h2>
     ${raw(ps.rank ? `<div class="rank">#${ps.rank}</div><div>out of ${ps.of} players</div>` : '')}
     <div class="scores"><div style="background:var(--chicken)">🐔 ${D.teams.chicken ?? 0}</div><div style="background:var(--turkey)">🦃 ${D.teams.turkey ?? 0}</div></div>
-    <p>💥 ${ps.score || 0} KO points · ✅ ${ps.correct || 0}/${ps.answered || 0} questions right</p></div>`;
+    <p>💥 ${ps.score || 0} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} questions right</p></div>`;
   if (won || tie) sfx.win();
 }
 
@@ -206,6 +209,10 @@ function onPstate() {
   if (eggs > L.prevEggs && L.tab === 'answer') $('#tab-fight').classList.add('nudge');
   if (eggs === 0) $('#tab-fight').classList.remove('nudge');
   L.prevEggs = eggs;
+  $('#cn-eggs').textContent = `🥚 ${eggs} egg${eggs === 1 ? '' : 's'}`;
+  $('#cn-fire').disabled = eggs === 0;
+  drawProgress();
+  if (!D.cur && isCannon()) drawQuestion();
   const ko = $('#ko');
   if (ps.ko) {
     ko.classList.remove('hidden');
@@ -221,7 +228,7 @@ function onPstate() {
 function tickTimer() {
   const s = D.state;
   const el = $('#me-timer');
-  if (s.phase === 'playing') {
+  if (s.phase === 'playing' || s.phase === 'answer') {
     const left = s.paused ? s.remaining : s.endsAt - serverNow();
     const secs = Math.max(0, Math.ceil(left / 1000));
     el.textContent = secs;
@@ -231,7 +238,14 @@ function tickTimer() {
 }
 
 // ---------------- tabs ----------------
+function showView(v) {
+  $('#view-answer').classList.toggle('hidden', v !== 'answer');
+  $('#view-fight').classList.toggle('hidden', v !== 'fight');
+  $('#view-cannon').classList.toggle('hidden', v !== 'cannon');
+}
+
 function setTab(t) {
+  if (isCannon()) return;
   L.tab = t;
   $('#tab-answer').classList.toggle('on', t === 'answer');
   $('#tab-fight').classList.toggle('on', t === 'fight');
@@ -246,7 +260,12 @@ $('#tab-fight').onclick = () => setTab('fight');
 // ---------------- questions ----------------
 function drawQuestion() {
   const c = D.cur;
-  if (!c) { $('#question').textContent = D.state.phase === 'playing' ? 'Loading question…' : 'Get ready…'; $('#answers').innerHTML = ''; return; }
+  drawProgress();
+  if (!c) {
+    const loaded = isCannon() && D.state.phase === 'answer' && (D.ps.rq || 0) >= (D.state.quota || 5);
+    $('#question').innerHTML = loaded ? `🎉 Cannon loaded with <b>${D.ps.eggs || 0}</b> egg${D.ps.eggs === 1 ? '' : 's'}!<br><small>Get ready to FIRE…</small>` : D.state.phase === 'playing' && !isCannon() ? 'Loading question…' : 'Get ready…';
+    $('#answers').innerHTML = ''; return;
+  }
   if (L.lockUntil) return; // feedback still showing; will redraw after
   if (c.n === L.answeredN) return; // already answered, waiting for result
   // The next question can arrive a moment before the result of the last one — wait for the result first.
@@ -379,3 +398,79 @@ function setupPad() {
 
 setupPad();
 boot();
+
+// ---------------- Egg Cannon controller ----------------
+function drawProgress() {
+  const el = $('#qprog');
+  const on = isCannon() && D.state.phase === 'answer';
+  el.classList.toggle('hidden', !on);
+  if (on) {
+    const done = D.ps.rq || 0; const q = D.state.quota || 5;
+    el.textContent = done >= q ? `All ${q} answered · 🥚 ${D.ps.eggs || 0}` : `Question ${Math.min(done + 1, q)} of ${q} · 🥚 ${D.ps.eggs || 0} loaded`;
+  }
+}
+
+const CN = { angle: 45, power: 0, t0: performance.now(), raf: 0, lastSent: 0 };
+function cnGeom() {
+  const dir = D.me?.team === 'turkey' ? -1 : 1;
+  return { dir, px: dir > 0 ? 24 : 196, py: 118, r: 92 };
+}
+function drawDial() {
+  const { dir, px, py, r } = cnGeom();
+  const a = (CN.angle * Math.PI) / 180;
+  const ex = px + dir * Math.cos(a) * r; const ey = py - Math.sin(a) * r;
+  const pts = []; for (let d = 5; d <= 85; d += 5) { const t = (d * Math.PI) / 180; pts.push(`${(px + dir * Math.cos(t) * r).toFixed(1)} ${(py - Math.sin(t) * r).toFixed(1)}`); }
+  $('#cn-arc').setAttribute('d', `M ${pts.join(' L ')}`);
+  const arrow = $('#cn-arrow');
+  arrow.setAttribute('x1', px); arrow.setAttribute('y1', py); arrow.setAttribute('x2', ex); arrow.setAttribute('y2', ey);
+  $('#cn-tip').setAttribute('cx', ex); $('#cn-tip').setAttribute('cy', ey);
+  $('#cn-pivot').setAttribute('cx', px); $('#cn-pivot').setAttribute('cy', py);
+  $('#cn-angle').textContent = `${Math.round(CN.angle)}°`;
+  const w = D.state.wind || 0;
+  $('#cn-wind').textContent = w ? `WIND ${w > 0 ? '→' : '←'} ${Math.abs(w)}` : 'NO WIND';
+}
+function sendAim(force = false) {
+  const now = Date.now();
+  if (!force && now - CN.lastSent < 150) return;
+  CN.lastSent = now;
+  input.angle = Math.round(CN.angle); input.power = +CN.power.toFixed(3);
+  update(G(`inputs/${uid}`), { ...input }).catch(() => {});
+}
+function startMeter() {
+  drawDial();
+  cancelAnimationFrame(CN.raf);
+  const loop = (t) => {
+    // power sweeps up and down every 1.6 s
+    const k = ((t - CN.t0) / 800) % 2;
+    CN.power = k < 1 ? k : 2 - k;
+    $('#cn-fill').style.width = `${(1 - CN.power) * 100}%`;
+    if (!$('#view-cannon').classList.contains('hidden')) CN.raf = requestAnimationFrame(loop);
+  };
+  CN.raf = requestAnimationFrame(loop);
+}
+(function setupCannon() {
+  const dial = $('#cn-dial');
+  const svg = dial.querySelector('svg');
+  const aimAt = (e) => {
+    const r = svg.getBoundingClientRect();
+    const sx = 220 / r.width; const sy = 130 / r.height; const s = Math.max(sx, sy);
+    const ox = (r.width * s - 220) / 2; const oy = (r.height * s - 130) / 2;
+    const x = (e.clientX - r.left) * s - ox; const y = (e.clientY - r.top) * s - oy;
+    const { dir, px, py } = cnGeom();
+    const ang = (Math.atan2(py - y, dir * (x - px)) * 180) / Math.PI;
+    CN.angle = Math.max(5, Math.min(85, ang));
+    drawDial(); sendAim();
+  };
+  let dragging = false;
+  dial.addEventListener('pointerdown', (e) => { dragging = true; dial.setPointerCapture(e.pointerId); aimAt(e); });
+  dial.addEventListener('pointermove', (e) => { if (dragging) aimAt(e); });
+  dial.addEventListener('pointerup', () => { dragging = false; sendAim(true); });
+  $('#cn-fire').addEventListener('click', () => {
+    if ((D.ps.eggs || 0) <= 0 || D.state.phase !== 'playing') return;
+    input.throws += 1;
+    sendAim(true);
+    const last = $('#cn-last'); last.classList.remove('hidden'); last.style.left = `calc(${CN.power * 100}% - 3px)`;
+    sfx.egg(); navigator.vibrate?.(30);
+  });
+  drawDial();
+})();

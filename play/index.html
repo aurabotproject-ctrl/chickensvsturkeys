@@ -39,6 +39,7 @@
     <div class="egg-bar" id="egg-bar"></div>
 
     <div id="view-answer" class="view">
+      <div class="qprog hidden" id="qprog"></div>
       <div class="question panel light" id="question">Get ready…</div>
       <div class="answers" id="answers"></div>
       <div class="conf hidden" id="conf">
@@ -58,6 +59,21 @@
         <div class="pad-half aim"><div class="pad-hint">AIM &amp; THROW<br><small>drag, then let go</small></div><img class="aim-base" id="aim-base" src="../assets/sprites/aimpad.webp" alt=""><div class="aim-arrow" id="aim-arrow"></div></div>
       </div>
       <div class="ko hidden" id="ko"></div>
+    </div>
+    <div id="view-cannon" class="view hidden">
+      <div class="cn-info"><span id="cn-eggs">🥚 0 eggs</span><span id="cn-wind">NO WIND</span></div>
+      <div class="cn-dial" id="cn-dial">
+        <svg viewBox="0 0 220 130" aria-hidden="true">
+          <path id="cn-arc" d="" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="22" stroke-linecap="round"/>
+          <line id="cn-arrow" x1="0" y1="0" x2="0" y2="0" stroke="#ffc72c" stroke-width="10" stroke-linecap="round"/>
+          <circle id="cn-tip" r="13" fill="#ffc72c" stroke="#111" stroke-width="4"/>
+          <circle id="cn-pivot" r="12" fill="#fff" stroke="#111" stroke-width="4"/>
+        </svg>
+        <div class="cn-angle" id="cn-angle">45°</div>
+        <div class="cn-hint">drag to aim</div>
+      </div>
+      <div class="cn-meter"><i id="cn-fill"></i><b id="cn-last" class="hidden"></b><span>POWER</span></div>
+      <button id="cn-fire" class="btn big red cn-fire">🔥 FIRE!</button>
     </div>
   </section>
 

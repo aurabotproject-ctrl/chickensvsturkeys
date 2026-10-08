@@ -106,7 +106,7 @@ function renderDashboard(main) {
 // ---------------- Create game ----------------
 const MODES = [
   { id: 'dodge', name: 'Dodge Egg', img: 'chicken_throw', desc: 'Answer to earn eggs, then dodge and throw in a 1-minute arena battle.' },
-  { id: 'cannon', name: 'Egg Cannon', img: 'egg_bomb', desc: 'Artillery-style egg blasting at the enemy fort.', soon: true },
+  { id: 'cannon', name: 'Egg Cannon', img: 'c_chicken_fire', desc: 'Answer 5 questions to load your cannon, then aim and blast the enemy fort.' },
   { id: 'farm', name: 'Egg Farm', img: 'egg_gold', desc: 'Grow the richest egg farm by answering questions.', soon: true },
 ];
 
@@ -129,9 +129,9 @@ function renderCreate(main) {
     <section class="panel light" style="margin-top:18px"><h3>3. Settings</h3>
       <div class="settings-grid">
         <div class="field"><span>Rounds</span>${raw(seg('rounds', [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']]))}</div>
-        <div class="field"><span>Round length</span>${raw(seg('roundSeconds', [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}</div>
+        <div class="field"><span>${s.mode === 'cannon' ? 'Answer time per round' : 'Round length'}</span>${raw(seg('roundSeconds', [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}${raw(s.mode === 'cannon' ? '<span class="hint">Students answer 5 questions, then a 45-second battle.</span>' : '')}</div>
         <div class="field"><span>Confidence check</span>${raw(seg('confidence', [['every', 'Every question'], ['third', 'Every 3rd'], ['off', 'Off']]))}<span class="hint">Students tap 🔥 Sure / 🤔 Think so / 🎲 Guessing — powers the blind-spot report.</span></div>
-        <div class="field"><span>When hit by an egg</span>${raw(seg('koMode', [['respawn', 'Back in 5 s'], ['out', 'Out for the round']]))}</div>
+        <div class="field ${s.mode === 'cannon' ? 'hidden' : ''}"><span>When hit by an egg</span>${raw(seg('koMode', [['respawn', 'Back in 5 s'], ['out', 'Out for the round']]))}</div>
         <div class="field"><span>Random events</span>${raw(seg('events', [['auto', 'Automatic'], ['manual', 'I\'ll trigger them'], ['off', 'Off']]))}</div>
       </div>
       <div class="launch"><button id="launch" class="btn big" ${raw(bankOpts.length ? '' : 'disabled')}>🚀 Launch Game</button></div>
@@ -167,12 +167,12 @@ function resultRow(r) {
     <span class="badge yolk">${r.accuracy ?? '–'}%</span></div>`;
 }
 function wireResultRows(root) {
-  $$('[data-result]', root).forEach((row) => { row.onclick = () => showResult(ctx.results.find((r) => r.id === row.dataset.result)); });
+  $$('[data-result]', root).forEach((row) => { row.onclick = () => { location.href = `report.html?r=${encodeURIComponent(row.dataset.result)}`; }; });
 }
 
 function renderResults(main) {
   main.innerHTML = html`<h1 class="page-title">Results</h1>
-    <p style="color:#cfe0ff">Every finished game is saved here. The full printable <b>Master Teacher Diagnostic</b> (strand mastery, blind spots, question analysis) arrives in Phase 8 — for now you get the summary.</p>
+    <p style="color:#cfe0ff">Every finished game is saved here. Click one to open its printable <b>Master Teacher Diagnostic</b> — strand mastery, student accuracy, blind spots and question analysis.</p>
     <div class="list" id="rlist"></div>`;
   const list = $('#rlist');
   list.innerHTML = ctx.results.length ? ctx.results.map(resultRow).join('') : '<div class="panel light"><p class="empty">No finished games yet.</p></div>';

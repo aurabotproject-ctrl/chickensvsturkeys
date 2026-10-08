@@ -138,3 +138,12 @@ html, body { height: 100%; overflow: hidden; }
 @keyframes fall { to { transform: translateY(115vh) rotate(720deg); } }
 
 .msg-screen { min-height: 100vh; display: grid; place-items: center; text-align: center; padding: 24px; }
+
+/* Egg Cannon extras */
+.wind-pill { position: absolute; top: 19vh; left: 2vw; font-family: var(--font-comic); font-size: clamp(16px, 1.6vw, 28px); letter-spacing: .08em; background: #fff; color: var(--ink); border: 4px solid var(--ink); border-radius: 999px; padding: .1em .9em; box-shadow: var(--pop-shadow-sm); pointer-events: none; }
+.phase-banner { position: absolute; left: 0; right: 0; margin: 0 auto; top: 30%; width: min(80%, 900px); text-align: center; pointer-events: none; background: rgba(6,18,46,.86); border: 5px solid var(--ink); border-radius: 22px; padding: 2vh 2vw; box-shadow: var(--pop-shadow); color: #fff; }
+.phase-banner b { display: block; font-family: var(--font-burst); font-size: clamp(30px, 4vw, 70px); color: var(--yolk); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 5px 5px 0 var(--ink); line-height: 1.05; }
+.phase-banner small { display: block; margin-top: 1vh; font-size: clamp(14px, 1.4vw, 24px); font-weight: 900; color: #cfe0ff; }
+
+body.mode-cannon #game { grid-template-columns: 1fr; }
+body.mode-cannon .sidebar { display: none; }
