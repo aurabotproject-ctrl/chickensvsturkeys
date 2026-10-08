@@ -57,7 +57,7 @@ export class TowerArena {
   layout() {
     const w = this.el.clientWidth; const h = this.el.clientHeight;
     const top = h * 0.17; const bottom = h * 0.09;
-    const s = Math.min((w - 30) / MAP_W, (h - top - bottom) / MAP_H);
+    const s = Math.min((w - 20) / (MAP_W + 150), (h - top - bottom) / (MAP_H + 70));
     this.scale = s; this.world.scale.set(s);
     this.world.position.set((w - MAP_W * s) / 2, top + (h - top - bottom - MAP_H * s) / 2);
   }
@@ -109,6 +109,7 @@ export class TowerArena {
     this.lastCmd.clear();
     this.buildScene();
     this.sync = { own: '', lv: '', paths: '' };
+    this.word('tw_conquer', MAP_W / 2, MAP_H / 2 - 150, 640, 2.6);
     this.onSync({ 'tw/static': { b: m.b.map((b) => [b.x, b.y, b.k]), walls: m.walls, seed: m.seed }, 'tw/own': null, 'tw/lv': null, 'tw/p': null });
     this.pushSync(true);
     this.winner = null;
@@ -178,7 +179,12 @@ export class TowerArena {
     for (const b of targets) {
       b.lv = Math.min(KINDS[b.k].max, b.lv + each);
       this.floatText(`+${each}`, b.x, b.y - 70, COLORS[b.team]);
-      this.burst('sparkle', b.x, b.y - 30, 0.5);
+      this.burst('tw_fx_sparkle', b.x, b.y - 30, 0.35);
+    }
+    // big "REINFORCEMENTS!" now and then (not every answer, or it would cover the map)
+    const now = this.time;
+    if (this.tex.tw_reinforce && targets[0] && (!this.lastReinf || now - this.lastReinf > 9)) {
+      this.lastReinf = now; this.word('tw_reinforce', targets[0].x, targets[0].y - 120, 190);
     }
     this.onChange(p);
     return { troops: each * targets.length, buildings: targets.length, helper };
@@ -247,15 +253,28 @@ export class TowerArena {
 
   spawnTroop(from, to, value, tractor) {
     const dx = to.x - from.x; const dy = to.y - from.y; const len = Math.hypot(dx, dy) || 1;
-    const s = new PIXI.Sprite(this.tex[tractor ? 'fm_tractor' : `${from.team}_run`]);
+    const frames = this.troopFrames(from.team, tractor);
+    const s = new PIXI.Sprite(frames[0]);
     s.anchor.set(0.5, 0.9);
-    const size = tractor ? 34 : 26;
+    const size = tractor ? 44 : 30;
     s.base = size / (tractor ? s.texture.width : s.texture.height);
-    if (tractor) s.tint = from.team === 'chicken' ? 0xbcd6ff : 0xffc4b8;
+    s.frames = frames; s.flip = frames.old && tractor ? -1 : 1;
+    if (frames.old && tractor) s.tint = from.team === 'chicken' ? 0xbcd6ff : 0xffc4b8;
     this.layer.troops.addChild(s);
     const off = rnd(-6, 6);
     this.stats.spawn += value;
     this.troops.push({ from, to, team: from.team, owner: from.owner, value, tractor, len, ux: dx / len, uy: dy / len, d: KINDS[from.k].r * 0.5, x: from.x, y: from.y, off, s, ph: Math.random() * 6, dead: false });
+  }
+
+  /** Walk-cycle frames (new art), or the older sprites as a backup. */
+  troopFrames(team, tractor) {
+    const key = team + (tractor ? 'T' : '');
+    this.frameCache = this.frameCache || {};
+    if (this.frameCache[key]) return this.frameCache[key];
+    const tx = this.tex; const t = team === 'chicken' ? 'c' : 't';
+    let f = tractor ? [tx[`tw_tractor_${t}1`], tx[`tw_tractor_${t}2`]] : [1, 2, 3, 4].map((i) => tx[`tw_${team === 'chicken' ? 'chick' : 'turk'}${i}`]);
+    if (f.some((x) => !x)) { f = tractor ? [tx.fm_tractor] : [tx[`${team}_run`]]; f.old = true; }
+    this.frameCache[key] = f; return f;
   }
 
   arrive(t) {
@@ -266,7 +285,7 @@ export class TowerArena {
         b.lv -= t.value;
         const home = t.from.team === t.team ? t.from : null;
         if (home) home.lv = Math.min(KINDS[home.k].max, home.lv + t.value * 2);
-        if (b.lv <= 0) { b.lv = 0; this.burst('sparkle', b.x, b.y, 1); for (const x of m.b) x.paths = x.paths.filter((i) => i !== b.i); }
+        if (b.lv <= 0) { b.lv = 0; this.burst('tw_fx_sparkle', b.x, b.y, 0.8); for (const x of m.b) x.paths = x.paths.filter((i) => i !== b.i); }
       }
       return;
     }
@@ -278,7 +297,7 @@ export class TowerArena {
     const done = Math.min(dmg, b.lv);
     b.lv -= dmg;
     if (p) { p.damage += done; p.score += done; }
-    if (Math.random() < 0.3) this.burst('puff', b.x + rnd(-20, 20), b.y - 20, 0.3);
+    if (Math.random() < 0.3) this.burst(t.team === 'turkey' ? 'tw_fx_bfeath' : 'tw_fx_wfeath', b.x + rnd(-24, 24), b.y - 24, 0.32);
     if (b.lv <= 0 && dmg > 0) this.capture(b, t, p);
   }
 
@@ -286,9 +305,11 @@ export class TowerArena {
     const prev = b.owner;
     b.team = t.team; b.owner = t.owner || ''; b.lv = Math.max(0, -b.lv); b.paths = [];
     if (p) { p.captures += 1; p.score += 10; }
-    this.burst('impact', b.x, b.y - 30, 0.9);
-    this.word(t.team === 'turkey' ? 'word_gobble' : 'word_bok', b.x, b.y - 110);
-    this.floatText(p ? `${first(p.name)} captured it!` : 'CAPTURED!', b.x, b.y - 150, COLORS[t.team], 30);
+    this.burst('tw_fx_dust', b.x, b.y - 20, 1);
+    this.burst(t.team === 'turkey' ? 'tw_fx_bfeath' : 'tw_fx_wfeath', b.x, b.y - 40, 0.8);
+    if (this.tex.tw_captured) this.word('tw_captured', b.x, b.y - 105, 170);
+    else this.word(t.team === 'turkey' ? 'word_gobble' : 'word_bok', b.x, b.y - 110);
+    if (p) this.floatText(`${first(p.name)} captured it!`, b.x, b.y - 165, COLORS[t.team], 28);
     sfx.splat();
     if (p) this.onChange(p);
     const lost = prev && this.players.get(prev); if (lost) this.onChange(lost);
@@ -299,7 +320,7 @@ export class TowerArena {
     if (t.value <= 0) t.dead = true;
     const line = new PIXI.Graphics(); line.lineStyle(4, 0xffffff, 0.9).moveTo(b.x, b.y - 50).lineTo(t.x, t.y - 10);
     line.life = 0.15; line.maxLife = 0.15; line.isLine = true; this.layer.fx.addChild(line); this.fx.push(line);
-    this.burst('feathers', t.x, t.y - 10, 0.25);
+    this.burst('tw_fx_splat', t.x, t.y - 10, 0.22);
   }
 
   /** Opposing troops that meet cancel each other out. */
@@ -354,7 +375,7 @@ export class TowerArena {
     else if (type === 'storm') this.effects.storm = 8;
     else if (type === 'fox') {
       const list = m.b.filter((b) => b.team === (leading || (Math.random() < 0.5 ? 'chicken' : 'turkey')) && b.k !== 'gold').sort((a, b) => b.lv - a.lv).slice(0, 3);
-      for (const b of list) { const l = Math.ceil(b.lv * 0.4); b.lv -= l; this.floatText(`🦊 -${l}`, b.x, b.y - 80, 0xff7a00); this.burst('feathers', b.x, b.y - 30, 0.8); }
+      for (const b of list) { const l = Math.ceil(b.lv * 0.4); b.lv -= l; this.floatText(`🦊 -${l}`, b.x, b.y - 80, 0xff7a00); this.burst(b.team === 'turkey' ? 'tw_fx_bfeath' : 'tw_fx_wfeath', b.x, b.y - 30, 0.8); }
     }
     for (const p of this.players.values()) this.onChange(p);
   }
@@ -430,8 +451,8 @@ export class TowerArena {
     for (const t of this.troops) {
       const hop = Math.abs(Math.sin(this.time * 14 + t.ph)) * (t.tractor ? 1 : 5);
       t.s.position.set(t.x - t.uy * t.off, t.y + t.ux * t.off - hop);
-      if (!t.tractor) t.s.texture = this.tex[`${t.team}_${Math.floor(this.time * 8 + t.ph) % 2 ? 'run' : 'idle'}`];
-      t.s.scale.set(t.s.base * (t.ux < 0 ? -1 : 1) * (t.tractor ? -1 : 1), t.s.base);
+      const fr = t.s.frames; if (fr.length > 1) t.s.texture = fr[Math.floor(this.time * (t.tractor ? 8 : 10) + t.ph) % fr.length];
+      t.s.scale.set(t.s.base * (t.ux < 0 ? -1 : 1) * t.s.flip, t.s.base);
     }
     // fx
     this.fx = this.fx.filter((s) => {
@@ -448,13 +469,16 @@ export class TowerArena {
   }
 
   burst(name, x, y, scale = 0.5) {
-    const s = new PIXI.Sprite(this.tex[name]); s.anchor.set(0.5); s.position.set(x, y);
+    const alt = { tw_fx_dust: 'puff', tw_fx_wfeath: 'feathers', tw_fx_bfeath: 'feathers', tw_fx_sparkle: 'sparkle', tw_fx_splat: 'impact' };
+    const tx = this.tex[name] || this.tex[alt[name]]; if (!tx) return;
+    const s = new PIXI.Sprite(tx); s.anchor.set(0.5); s.position.set(x, y);
     s.base = scale * (160 / s.texture.width); s.maxLife = 0.5; s.life = 0.5;
     this.layer.fx.addChild(s); this.fx.push(s);
   }
-  word(name, x, y) {
+  word(name, x, y, width = 180, life = 1.1) {
+    if (!this.tex[name]) return;
     const s = new PIXI.Sprite(this.tex[name]); s.anchor.set(0.5); s.position.set(x, y);
-    s.base = 180 / s.texture.width; s.scale.set(0.01); s.maxLife = 1.1; s.life = 1.1; s.isWord = true;
+    s.base = width / s.texture.width; s.scale.set(0.01); s.maxLife = life; s.life = life; s.isWord = true;
     this.layer.fx.addChild(s); this.fx.push(s);
   }
   floatText(text, x, y, color = 0xffc72c, size = 34) {

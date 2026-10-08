@@ -81,7 +81,7 @@ Create Game → **Coop Wars** → 5, 8 or 12 minutes, and choose **Troop growth*
 - **Answer questions** (QUIZ tab or the crate) → +8 troops spread across all your coops (more for streaks and confident answers). Lost all your coops? Your answers reinforce your team.
 - Tractor sheds send tractors worth 2. Egg Snipers (water towers) shoot enemy troops inside their circle. Golden egg piles give bonus troops when you march to them. Hay bales block lines. The Grand Barn in the middle grows fastest.
 - The team with the most buildings at the end wins (or wipe out the other team early).
-- Dedicated art prompts: `COOP_WARS_IMAGE_PROMPTS.md`.
+- Art: dedicated Coop Wars sprites (`assets/sprites/tw_*.webp`, sliced from `assets/images/tw-*.png`). Towers grow 1–5 storeys with their level; grey = unclaimed. If any file is missing the game falls back to the older farm art. Prompts: `COOP_WARS_IMAGE_PROMPTS.md`.
 
 ⚠️ This update changes `database.rules.json` again — paste it into Firebase → Realtime Database → Rules → **Publish**.
 

@@ -1,6 +1,8 @@
 # COOP WARS — ChatGPT Image Prompts
 
-Coop Wars is already playable using the existing farm art (coops, water tower, tractor, golden egg). These prompts make dedicated art so it looks even better.
+✔ **Art received and wired in** (tw-coops, tw-troops, tw-specials, tw-map-farm, tw-obstacles, tw-ui → sliced into `assets/sprites/tw_*.webp`).
+
+Still optional: **`tw-map-autumn.png`** and **`tw-map-winter.png`** (prompt 4). Upload them and Claude will add them to `MAP_THEMES` in `js/modes/towers/draw.js` so each game picks a random theme.
 
 ## How to use
 - **One prompt = one image.** Each prompt is self-contained, so you only paste one block at a time.

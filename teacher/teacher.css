@@ -51,7 +51,8 @@
 /* Create game */
 .mode-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; }
 .mode-card { cursor: pointer; position: relative; overflow: hidden; text-align: center; padding: 1rem; min-height: 200px; display: grid; place-items: center; gap: .4rem; }
-.mode-card img { height: 110px; object-fit: contain; filter: drop-shadow(3px 3px 0 rgba(0,0,0,.4)); }
+.mode-card { min-width: 0; }
+.mode-card img { height: 110px; max-width: 100%; object-fit: contain; filter: drop-shadow(3px 3px 0 rgba(0,0,0,.4)); }
 .mode-card .title { font-family: var(--font-comic); font-size: 1.7rem; letter-spacing: .04em; }
 .mode-card.on { outline: 5px solid var(--yolk); transform: rotate(-1deg); }
 .mode-card.soon { opacity: .55; cursor: not-allowed; }

@@ -665,7 +665,8 @@ function ensureTw() {
   if (!isTowers() || !D.me?.team || !uid) return;
   if (TW.view && TW.view.team !== D.me.team) { TW.view.destroy(); TW.view = null; $('#tw-scene').innerHTML = ''; }
   if (TW.view) return;
-  $('#tw-ico').src = sprite(`fm_coop_${D.me.team === 'turkey' ? 't' : 'c'}2`);
+  $('#tw-ico').src = sprite(`tw_coop_${D.me.team === 'turkey' ? 't' : 'c'}2`);
+  $('#tw-troop-ico').src = sprite(D.me.team === 'turkey' ? 'tw_turk1' : 'tw_chick1');
   TW.view = new TowerView($('#tw-scene'), {
     team: D.me.team, uid,
     onCommand: (c) => {

@@ -131,6 +131,7 @@ function setupLobby() {
   } catch { $('#qr').textContent = 'QR unavailable'; }
   const st = meta.settings;
   $('#lobby-info').innerHTML = html`<b>${meta.bankTitle}</b> · ${meta.questionCount} questions · ${isTimed() ? `${Math.round(st.roundSeconds / 60)} minutes` : `${st.rounds} round${st.rounds > 1 ? 's' : ''} × ${st.roundSeconds}s`} · ${isCannon() ? 'Egg Cannon' : isFarm() ? 'Egg Farm' : isTowers() ? 'Coop Wars' : 'Dodge Egg'}`;
+  if (isTowers()) $('.lobby-logo').src = sprite('tw_logo');
   $('#btn-bots').onclick = () => { for (let i = 0; i < 4; i++) addBot(); drawRoster(); };
   $('#btn-shuffle').onclick = shuffleTeams;
   $('#btn-full').onclick = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
