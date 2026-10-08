@@ -521,7 +521,7 @@ function drawFarm(force = false) {
   // buildings
   const coopSrc = sprite(`fm_coop_${team === 'chicken' ? 'c' : 't'}${ps.coop || 1}`);
   const coop = $('#fm-coop');
-  if (FM.coopShown !== coopSrc) { coop.src = coopSrc; coop.classList.remove('pop'); void coop.offsetWidth; if (FM.coopShown) coop.classList.add('pop'); FM.coopShown = coopSrc; coop.style.width = `${50 + (ps.coop || 1) * 6}%`; }
+  if (FM.coopShown !== coopSrc) { coop.src = coopSrc; coop.classList.remove('pop'); void coop.offsetWidth; if (FM.coopShown) coop.classList.add('pop'); FM.coopShown = coopSrc; coop.style.width = `${28 + (ps.coop || 1) * 4}%`; }
   const m = MACHINE[ps.machine || 0]; const mi = $('#fm-machine');
   mi.classList.toggle('hidden', !m?.sprite); if (m?.sprite && !mi.src.includes(m.sprite)) mi.src = sprite(m.sprite);
   const tr = TRUCK[ps.truck || 0]; const ti = $('#fm-truck');
@@ -588,3 +588,14 @@ $('#fm-shop').addEventListener('click', (e) => {
   sfx.join(); navigator.vibrate?.(30);
   update(G(`inputs/${uid}`), { taps: FM.taps, buySeq: FM.buySeq, buy: k }).catch(() => {});
 });
+
+// Keep the whole farm map visible (it is a 2:3 picture) at any screen shape.
+function fitFarm() {
+  const wrap = $('#fm-wrap'); const sc = $('#fm-scene');
+  if (!wrap || !wrap.clientHeight) return;
+  const W = wrap.clientWidth; const H = wrap.clientHeight; const ratio = 2 / 3;
+  let w = W; let h = W / ratio;
+  if (h > H) { h = H; w = H * ratio; }
+  sc.style.width = `${Math.floor(w)}px`; sc.style.height = `${Math.floor(h)}px`;
+}
+new ResizeObserver(fitFarm).observe($('#fm-wrap'));
