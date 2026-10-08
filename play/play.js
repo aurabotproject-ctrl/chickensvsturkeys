@@ -75,7 +75,11 @@ async function join(saved) {
 }
 
 function subscribe() {
-  const on = (p, fn) => L.unsubs.push(onValue(G(p), (s) => fn(s.val())));
+  const on = (p, fn) => L.unsubs.push(onValue(G(p), (s) => fn(s.val()), (e) => {
+    console.error(p, e);
+    // The map lives under tw/ (Coop Wars) and sg/ (Coop Siege). If Firebase blocks it, the teacher hasn't published the latest rules.
+    if (/^(tw|sg)\//.test(p) && !L.mapBlocked) { L.mapBlocked = true; mapBlocked(); }
+  }));
   on(`players/${uid}`, (v) => {
     if (!v && D.me) { leave('You were removed from the game.'); return; }
     D.me = v; render();
@@ -705,6 +709,7 @@ function drawTwHud() {
   $('#tw-own').textContent = ps.buildings ?? 0;
   $('#tw-troops').textContent = ps.troops ?? 0;
   $('#tw-tc').textContent = ps.tc ?? 0; $('#tw-tt').textContent = ps.tt ?? 0;
+  if (L.mapBlocked) return;
   const h = $('#tw-hint');
   if (h.classList.contains('bad') || h.classList.contains('good')) { if (twHintT) return; }
   if (D.state.phase === 'playing' && ps.buildings === 0) { h.className = 'tw-hint bad'; h.textContent = 'You lost your coops! Answer questions to send troops to your team 💪'; } else if (ps.golden) { h.className = 'tw-hint good'; h.textContent = '🥇 Golden Egg Rush — right answers give DOUBLE troops!'; } else { h.className = 'tw-hint'; h.textContent = 'Drag from YOUR coop (gold ring) to another building. Swipe across your line to cut it. Answer to add troops!'; }
@@ -752,7 +757,7 @@ function drawSgHud() {
     $('#sg-hp').innerHTML = `${info.def === 'chicken' ? '🐔 Chicken coop' : '🦃 Turkey barn'}: ${info.hp}/${info.max} 🥚<i style="--hp:${pct}%"></i>`;
   }
   SG.view?.setRole({ team: D.me?.team, role, corn });
-  if (sgHintT) return;
+  if (sgHintT || L.mapBlocked) return;
   const h = $('#sg-hint');
   h.className = ps.golden ? 'tw-hint good' : 'tw-hint';
   h.textContent = ps.golden ? '🥇 Golden Egg Rush — right answers give DOUBLE corn!'
@@ -760,3 +765,16 @@ function drawSgHud() {
       : 'ATTACK! Pick an attacker, then tap a row to send it. Answer questions for more 🌽.';
 }
 $('#sg-quiz').addEventListener('click', () => { sfx.click(); setTab('answer'); });
+
+/** Shown when Firebase refuses to send the map (database rules not published yet). */
+function mapBlocked() {
+  const msg = 'The map is blocked by Firebase. TEACHER: open Firebase → Realtime Database → Rules, paste in database.rules.json from the project and click Publish, then refresh this page.';
+  for (const id of ['#tw-hint', '#sg-hint']) { const h = $(id); if (h) { h.className = 'tw-hint bad'; h.textContent = msg; } }
+  for (const id of ['#tw-scene', '#sg-view']) {
+    const el = $(id); if (!el) continue;
+    const box = document.createElement('div'); box.className = 'map-blocked';
+    box.innerHTML = '<b>🔒 Map blocked</b><span>Ask your teacher to publish the new database rules in Firebase, then refresh.</span>';
+    el.appendChild(box);
+  }
+  twHintT = 1; sgHintT = 1; // keep the message up
+}

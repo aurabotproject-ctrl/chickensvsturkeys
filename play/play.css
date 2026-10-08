@@ -254,3 +254,5 @@ body.mode-siege .egg-bar, body.mode-siege .egg-count { display: none; }
 .sg-bottom { display: flex; align-items: center; gap: 8px; }
 .sg-hp { flex: 1; font-weight: 900; font-size: .85rem; }
 .sg-hp i { display: block; height: 10px; border: 2px solid var(--ink); border-radius: 99px; background: linear-gradient(90deg, var(--grass) var(--hp, 100%), #333 var(--hp, 100%)); margin-top: 2px; }
+.map-blocked { position: absolute; inset: 12%; z-index: 5; display: grid; place-content: center; gap: 8px; text-align: center; background: #fff; color: var(--ink); border: 4px solid var(--ink); border-radius: 18px; padding: 16px; font-weight: 900; box-shadow: var(--pop-shadow-sm); }
+.map-blocked b { font-family: var(--font-burst); font-size: 1.8rem; color: var(--turkey); }
