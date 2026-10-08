@@ -8,7 +8,8 @@ import { $, $$, html, raw, esc, params } from '../js/core/ui.js';
 import { sprite, avatar, AVATARS, TEAM } from '../js/core/assets.js';
 import { lookupCode, cleanCode } from '../js/core/games.js';
 import { sfx } from '../js/core/sfx.js';
-import { EVENTS, FARM_PHONE } from '../js/events/events.js';
+import { EVENTS, FARM_PHONE, TOWER_PHONE } from '../js/events/events.js';
+import { TowerView } from '../js/modes/towers/view.js';
 import * as FE from '../js/modes/farm/economy.js';
 import { FarmScene } from '../js/modes/farm/scene.js';
 const { fmt, BOOST_MULT } = FE;
@@ -20,8 +21,10 @@ const G = (p) => ref(db, `games/${gameId}/${p}`);
 const SAVE_KEY = 'cvt-player';
 const isCannon = () => D.state.mode === 'cannon';
 const isFarm = () => D.state.mode === 'farm';
-const UNIT = () => (isCannon() ? 'target points' : isFarm() ? 'earned' : 'KO points');
-const SCORE = (n) => (isFarm() ? fmt(n) : (n || 0));
+const isTowers = () => D.state.mode === 'towers';
+const hasMap = () => isFarm() || isTowers();
+const UNIT = () => (isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() ? 'battle points' : 'KO points');
+const SCORE = (n) => (isFarm() ? fmt(n) : Math.floor(n || 0));
 
 // ---------------- join ----------------
 async function boot() {
@@ -82,6 +85,10 @@ function subscribe() {
   on(`fb/${uid}`, (v) => { D.fb = v; drawFeedback(); });
   on('teams', (v) => { D.teams = v || {}; });
   on('standings', (v) => { D.standings = v ? Object.values(v) : []; });
+  on('tw/static', (v) => { if (v) { ensureTw(); TW.view?.setStatic(v); TW.static = v; } });
+  on('tw/own', (v) => { TW.own = v; TW.view?.setOwn(v); });
+  on('tw/lv', (v) => { TW.lv = v; TW.view?.setLevels(v); });
+  on('tw/p', (v) => { TW.p = v || ''; TW.view?.setPaths(v || ''); });
   setInterval(tickTimer, 250);
 }
 
@@ -156,13 +163,14 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isFarm()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
-  if (isFarm() !== document.body.classList.contains('mode-farm')) {
+  if (isFarm() !== document.body.classList.contains('mode-farm') || isTowers() !== document.body.classList.contains('mode-towers')) {
     document.body.classList.toggle('mode-farm', isFarm());
-    $('#tab-answer').firstChild.textContent = isFarm() ? '❓ QUIZ ⚡' : '❓ ANSWER';
-    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : '🥚 FIGHT ';
+    document.body.classList.toggle('mode-towers', isTowers());
+    $('#tab-answer').firstChild.textContent = hasMap() ? '❓ QUIZ ⚡' : '❓ ANSWER';
+    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : isTowers() ? '🗺️ MAP ' : '🥚 FIGHT ';
   }
   if (phase === 'playing' || phase === 'answer') {
     if (s.paused) { ov.className = 'overlay'; ov.innerHTML = '<div class="box"><h1 class="comic-title">PAUSED</h1><p>Eyes on the teacher!</p></div>'; } else if (ov.innerHTML.includes('PAUSED')) ov.className = 'overlay hidden';
@@ -174,7 +182,7 @@ function onState() {
     if (E) {
       const t = document.createElement('div');
       t.className = 'event-toast';
-      t.innerHTML = `<img src="${sprite(E.banner)}" alt="${esc(E.name)}"><p>${esc(isFarm() ? FARM_PHONE[ev.type] || E.phone : E.phone)}</p>`;
+      t.innerHTML = `<img src="${sprite(E.banner)}" alt="${esc(E.name)}"><p>${esc(isFarm() ? FARM_PHONE[ev.type] || E.phone : isTowers() ? TOWER_PHONE[ev.type] || E.phone : E.phone)}</p>`;
       document.body.appendChild(t); sfx.event();
       navigator.vibrate?.(200);
       setTimeout(() => t.remove(), 3500);
@@ -212,6 +220,7 @@ function showFinal() {
 function onPstate() {
   const ps = D.ps;
   $('#me-score').textContent = SCORE(ps.score);
+  if (isTowers()) drawTwHud();
   if (isFarm()) {
     farmState();
     if (ps.fox === 'danger' && !L.foxPrompted) { L.foxPrompted = true; setTab('answer'); navigator.vibrate?.([100, 50, 100]); } else if (!ps.fox) L.foxPrompted = false;
@@ -264,8 +273,10 @@ function setTab(t) {
   $('#tab-answer').classList.toggle('on', t === 'answer');
   $('#tab-fight').classList.toggle('on', t === 'fight');
   $('#view-answer').classList.toggle('hidden', t !== 'answer');
-  $('#view-fight').classList.toggle('hidden', t !== 'fight' || isFarm());
+  $('#view-fight').classList.toggle('hidden', t !== 'fight' || hasMap());
   $('#view-farm').classList.toggle('hidden', t !== 'fight' || !isFarm());
+  $('#view-tw').classList.toggle('hidden', t !== 'fight' || !isTowers());
+  if (isTowers() && t === 'fight') ensureTw();
   if (isFarm() && t === 'fight') { ensureScene(); drawFarm(); if (FM.offscreen && FM.scene?.tex) { FM.scene.stampede(FM.offscreen); FM.offscreen = 0; } }
   if (t === 'fight') $('#tab-fight').classList.remove('nudge');
   sfx.click();
@@ -327,8 +338,8 @@ function drawFeedback() {
   box.className = `fb ${f.correct ? 'right' : 'wrong'}`;
   const lock = f.lockMs || 1500;
   const readMs = f.correct ? lock : Math.max(lock, 2600);
-  const fg = f.farm;
-  const gain = fg ? `<div class="farm-gain">${fg.chicks ? `<span>🐔 +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
+  const fg = f.farm; const tw = f.tw;
+  const gain = tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team!' : `to your ${tw.buildings} coop${tw.buildings === 1 ? '' : 's'}`}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>🐔 +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
   box.innerHTML = f.correct
     ? html`<div class="big">CORRECT!</div>${raw(gain)}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
     : html`<div class="big">NOPE!</div><div class="ans-was">Answer: <b>${f.rightText}</b></div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div><div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`;
@@ -647,3 +658,45 @@ $('#fm-rs-list').addEventListener('click', (e) => {
   sendFarm({ rs: b.dataset.rs });
 });
 $('#fm-rs-close').addEventListener('click', () => $('#fm-research').classList.add('hidden'));
+
+// ---------------- Coop Wars ----------------
+const TW = { view: null, seq: 0, q: [], static: null, own: null, lv: null, p: '' };
+function ensureTw() {
+  if (!isTowers() || !D.me?.team || !uid) return;
+  if (TW.view && TW.view.team !== D.me.team) { TW.view.destroy(); TW.view = null; $('#tw-scene').innerHTML = ''; }
+  if (TW.view) return;
+  $('#tw-ico').src = sprite(`fm_coop_${D.me.team === 'turkey' ? 't' : 'c'}2`);
+  TW.view = new TowerView($('#tw-scene'), {
+    team: D.me.team, uid,
+    onCommand: (c) => {
+      TW.seq += 1; TW.q.push({ s: TW.seq, ...c }); TW.q = TW.q.slice(-8);
+      update(G(`inputs/${uid}`), { q: TW.q }).catch(() => {});
+      twHint(c.op === 'path' ? 'Troops marching! 🐾' : 'Line cut ✂️', 'good');
+      sfx.click(); navigator.vibrate?.(25);
+    },
+    onHint: (msg, bad) => { twHint(msg, bad ? 'bad' : ''); if (bad) sfx.wrong(); },
+  });
+  TW.view.init().then(() => {
+    if (TW.static) TW.view.setStatic(TW.static);
+    if (TW.own) TW.view.setOwn(TW.own);
+    if (TW.lv) TW.view.setLevels(TW.lv);
+    TW.view.setPaths(TW.p || '');
+  }).catch((e) => console.error(e));
+}
+let twHintT = null;
+function twHint(msg, cls = '') {
+  const h = $('#tw-hint'); h.textContent = msg; h.className = `tw-hint ${cls}`;
+  clearTimeout(twHintT);
+  twHintT = setTimeout(() => { drawTwHud(); }, 2600);
+}
+function drawTwHud() {
+  const ps = D.ps;
+  $('#tw-own').textContent = ps.buildings ?? 0;
+  $('#tw-troops').textContent = ps.troops ?? 0;
+  $('#tw-tc').textContent = ps.tc ?? 0; $('#tw-tt').textContent = ps.tt ?? 0;
+  const h = $('#tw-hint');
+  if (h.classList.contains('bad') || h.classList.contains('good')) { if (twHintT) return; }
+  if (D.state.phase === 'playing' && ps.buildings === 0) { h.className = 'tw-hint bad'; h.textContent = 'You lost your coops! Answer questions to send troops to your team 💪'; } else if (ps.golden) { h.className = 'tw-hint good'; h.textContent = '🥇 Golden Egg Rush — right answers give DOUBLE troops!'; } else { h.className = 'tw-hint'; h.textContent = 'Drag from YOUR coop (gold ring) to another building. Swipe across your line to cut it. Answer to add troops!'; }
+}
+setInterval(() => { if (isTowers()) { twHintT = null; drawTwHud(); } }, 4000);
+$('#tw-crate').addEventListener('click', () => { sfx.click(); setTab('answer'); });

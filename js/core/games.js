@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS = {
   confidence: 'every', // every | third | off
   koMode: 'respawn',   // respawn | out
   events: 'auto',      // auto | manual | off
+  growth: 'auto',      // Coop Wars: auto | questions | slow
 };
 
 /** Creates /games/{id} and a unique /codes/{CODE}. Returns { gameId, code }. */

@@ -19,8 +19,17 @@ export const FARM_PHONE = {
   fox: 'A fox is raiding the leading team! Answer a question correctly to protect your cash! 🦊',
 };
 
+/** Phone messages for Coop Wars. */
+export const TOWER_PHONE = {
+  golden: 'Right answers give DOUBLE troops for 20 seconds! 🥇',
+  double: 'Every coop on the map gets +5 troops! 🥚',
+  shield: 'The team that\'s behind is shielded for 10 seconds! 🛡️',
+  storm: 'Egg Storm! Troops on the march are getting splatted! ⛈️',
+  fox: 'A fox raided the leading team\'s biggest coops! 🦊',
+};
+
 export const RANDOM_POOL = ['golden', 'double', 'shield', 'storm', 'fog', 'fox'];
 export const randomEvent = (exclude, mode = 'dodge') => {
-  const pool = RANDOM_POOL.filter((e) => e !== exclude && !(mode === 'cannon' && e === 'fox') && !(mode === 'farm' && (e === 'storm' || e === 'fog')));
+  const pool = RANDOM_POOL.filter((e) => e !== exclude && !(mode === 'cannon' && e === 'fox') && !(mode === 'farm' && (e === 'storm' || e === 'fog')) && !(mode === 'towers' && e === 'fog'));
   return pool[Math.floor(Math.random() * pool.length)];
 };

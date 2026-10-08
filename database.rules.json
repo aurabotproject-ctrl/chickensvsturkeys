@@ -53,6 +53,7 @@
         "state": { ".read": "auth != null" },
         "teams": { ".read": "auth != null" },
         "standings": { ".read": "auth != null" },
+        "tw": { ".read": "auth != null" },
 
         "players": {
           ".read": "auth != null",

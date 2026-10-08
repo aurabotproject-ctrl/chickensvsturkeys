@@ -73,4 +73,16 @@ Create Game → **Egg Farm** → 5, 8 or 12 minutes. Each student runs a farm on
 - **Golden eggs** buy **Research** upgrades. Tap **balloons** for bonuses; tap the **fox** 3 times before it reaches a coop.
 The big screen shows the live team race. Most money earned wins.
 
+## Coop Wars (Tower War style)
+Create Game → **Coop Wars** → 5, 8 or 12 minutes, and choose **Troop growth** (Auto / Questions only / Slow + questions).
+- Every student starts with their own coop (gold ring on their device, their name on the big screen). Your team is always at the bottom of your device.
+- **Drag** from your coop to any building to march troops along a line. Troops lower enemy and grey buildings — at **0** the building is **captured** and becomes yours. Troops sent to your team's buildings raise their level.
+- **Swipe** across one of your lines to cut it. Level **10** unlocks a 2nd line and level **20** a 3rd (max level 63).
+- **Answer questions** (QUIZ tab or the crate) → +8 troops spread across all your coops (more for streaks and confident answers). Lost all your coops? Your answers reinforce your team.
+- Tractor sheds send tractors worth 2. Egg Snipers (water towers) shoot enemy troops inside their circle. Golden egg piles give bonus troops when you march to them. Hay bales block lines. The Grand Barn in the middle grows fastest.
+- The team with the most buildings at the end wins (or wipe out the other team early).
+- Dedicated art prompts: `COOP_WARS_IMAGE_PROMPTS.md`.
+
+⚠️ This update changes `database.rules.json` again — paste it into Firebase → Realtime Database → Rules → **Publish**.
+
 **Next:** Phase 13 — polish & classroom hardening.
