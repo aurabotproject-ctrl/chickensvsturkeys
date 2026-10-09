@@ -33,6 +33,8 @@ Also check **Authentication → Sign-in method**: *Anonymous* and *Google* are b
 
 Host controls (bottom of the arena, appears on hover): pause · end round / next round · random event · scores · sound · end game. Keyboard: **Space** = pause, **F** = full screen.
 
+**Teams:** by default students tap **Chickens** or **Turkeys** when they join (Create Game → Teams → *Students choose*). Tap a student's name in the lobby to switch their team, or use 🔀 Shuffle. Anyone who hasn't chosen when you press START is placed automatically. Pick *Auto-balance* to have teams made for you.
+
 ## Making question banks
 - **✨ Build with Claude:** fill in the topic (or choose *attached file* + the pages to focus on), year level and number of questions → **Copy prompt** → paste into a new Claude chat (attach the file there if using one) → copy Claude's whole reply → **Next** → paste → **Check questions** → **Open in editor & save**.
 - **Curriculum:** pick New Zealand, Australia, England, Scotland, Wales, Northern Ireland, Ireland, USA (Common Core/NGSS, Texas TEKS, Florida B.E.S.T., Virginia SOL), Canada (Ontario, BC), Singapore, South Africa (CAPS), India (CBSE), IB PYP or Cambridge Primary. The subjects, strands, Year/Grade wording, spelling and examples in the prompt change to match. Your last choice is remembered. Edit `data/curricula.json` to tweak strands or add a curriculum.

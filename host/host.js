@@ -43,6 +43,7 @@ const isCannon = () => meta?.mode === 'cannon';
 const isFarm = () => meta?.mode === 'farm';
 const isTowers = () => meta?.mode === 'towers';
 const isSiege = () => meta?.mode === 'siege';
+const teamPick = () => (meta?.settings?.teams || 'auto') === 'choose';
 const isTimed = () => isFarm() || isTowers() || isSiege();
 const showScore = (n) => (isFarm() ? fmt(n) : isTowers() || isSiege() ? Math.floor(n) : Math.round(n));
 const UNIT = () => (isCannon() || isSiege() ? 'pts' : isFarm() ? '' : 'KO');
@@ -59,10 +60,11 @@ async function boot() {
   try { bank = await loadBankByKey(user.uid, meta.bankKey); } catch (e) { return fail('Couldn\'t load the question bank: ' + e.message); }
   engine = new QuizEngine(bank, meta.settings);
   S.mode = meta.mode || 'dodge';
+  S.teamPick = teamPick();
   document.body.classList.add(`mode-${S.mode}`);
 
   // Fresh start: clear any old game state (keeps the players).
-  await update(G(), { state: { phase: 'lobby', round: 0, mode: S.mode }, current: null, fb: null, sub: null, inputs: null, pstate: null, tw: null, sg: null, teams: { chicken: 0, turkey: 0 }, standings: null, answers: null });
+  await update(G(), { state: { phase: 'lobby', round: 0, mode: S.mode, teamPick: teamPick() }, current: null, fb: null, sub: null, inputs: null, pstate: null, tw: null, sg: null, teams: { chicken: 0, turkey: 0 }, standings: null, answers: null });
 
   setupLobby();
   listen();
@@ -88,7 +90,7 @@ function listen() {
       const cur = { ...p, bot: false };
       players.set(uid, cur);
       if (!prev) sfx.join();
-      if (!cur.team) assignTeam(uid);
+      if (!cur.team) { if (!teamPick() || S.phase !== 'lobby') assignTeam(uid); } // students pick their own team in the lobby
       else if (arena) {
         if (!arena.players.has(uid) && S.phase !== 'lobby') joinMidGame(uid);
         else if (arena.players.has(uid)) arena.setTeam(uid, cur.team);
@@ -162,6 +164,8 @@ function drawRoster() {
       ? list.map(([uid, p]) => html`<div class="pchip ${p.online === false ? 'off' : ''} ${p.bot ? 'bot' : ''}" data-uid="${uid}"><img src="${avatar(Number.isInteger(p.av) ? p.av : AVATARS[team][0])}" alt="">${p.bot ? '🤖 ' : ''}${p.name}</div>`).join('')
       : `<div class="empty-team">Waiting for ${TEAM[team].name.toLowerCase()}…</div>`;
   }
+  const choosing = [...players.values()].filter((p) => !p.team);
+  $('#choosing').innerHTML = choosing.length ? html`🤔 Choosing a team: ${choosing.map((p) => p.name).join(', ')}` : '';
   const n = players.size;
   $('#btn-start').disabled = n < 1;
   $('#btn-start').textContent = n ? `START! (${n})` : 'START!';
@@ -212,6 +216,7 @@ async function shuffleTeams() {
 // ---------------- game flow ----------------
 async function startGame() {
   if (!players.size) return;
+  for (const [uid, p] of players) if (!p.team) assignTeam(uid); // anyone still choosing gets a team
   $('#btn-start').disabled = true;
   $('#lobby').classList.add('hidden');
   $('#game').classList.remove('hidden');
@@ -484,7 +489,7 @@ async function playAgain() {
   for (const p of players.values()) { p.correct = 0; p.answered = 0; }
   S.round = 0; S.phase = 'lobby'; S.winner = null;
   lastThrow.clear();
-  await update(G(), { pstate: null, standings: null, answers: null, fb: null, current: null, sub: null, inputs: null, tw: null, sg: null, teams: { chicken: 0, turkey: 0 }, 'meta/status': 'lobby', state: { phase: 'lobby', round: 0 } });
+  await update(G(), { pstate: null, standings: null, answers: null, fb: null, current: null, sub: null, inputs: null, tw: null, sg: null, teams: { chicken: 0, turkey: 0 }, 'meta/status': 'lobby', state: { phase: 'lobby', round: 0, mode: S.mode, teamPick: teamPick() } });
   $('#game').classList.add('hidden');
   $('#lobby').classList.remove('hidden');
   drawRoster();

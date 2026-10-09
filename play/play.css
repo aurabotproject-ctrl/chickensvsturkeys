@@ -301,3 +301,12 @@ body.tw-quiz #view-answer .question { min-height: 0; }
   body.tw-quiz #view-answer .question { font-size: 1rem; padding: 6px 10px; }
   body.tw-quiz #view-answer .answers .ans { min-height: 0; padding: 6px; }
 }
+
+/* team choice on joining */
+.team-pick { display: grid; gap: 12px; justify-items: center; text-align: center; width: 100%; max-width: 640px; }
+.team-pick-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; width: 100%; }
+.team-btn { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 6px; padding: 14px 8px; border: 4px solid var(--ink); border-radius: 20px; box-shadow: var(--pop-shadow-sm); color: #fff; font-family: var(--font-comic); font-size: 1.6rem; letter-spacing: .05em; text-shadow: 2px 2px 0 var(--ink); transition: transform var(--t-fast); }
+.team-btn.chicken { background: var(--chicken); } .team-btn.turkey { background: var(--turkey); }
+.team-btn img { height: 120px; filter: drop-shadow(3px 3px 0 rgba(0,0,0,.4)); }
+.team-btn:active { transform: scale(.96); }
+.team-btn:disabled { opacity: .6; }

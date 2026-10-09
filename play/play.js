@@ -126,7 +126,10 @@ function render() {
   document.body.classList.toggle('team-chicken', me.team === 'chicken');
   document.body.classList.toggle('team-turkey', me.team === 'turkey');
   const phase = D.state.phase || 'lobby';
-  if (!me.team) { show('wait'); $('#wait').innerHTML = waitHtml('Sorting teams…', 'Hang tight!'); return; }
+  if (!me.team) {
+    if (D.state.teamPick && (D.state.phase || 'lobby') === 'lobby') { renderTeamPick(); return; }
+    show('wait'); $('#wait').innerHTML = waitHtml('Sorting teams…', 'Hang tight!'); return;
+  }
   if (!Number.isInteger(me.av)) { renderAvatarPick(); return; }
   if (phase === 'lobby') {
     show('wait');
@@ -146,6 +149,24 @@ function render() {
 }
 
 const waitHtml = (title, sub) => html`<div class="panel light wait-card"><div class="spin-egg" style="margin:0 auto 10px"></div><h2 style="margin:0">${title}</h2><p>${sub}</p></div>`;
+
+function renderTeamPick() {
+  if ($('#wait .team-pick') && !$('#wait').classList.contains('hidden')) return;
+  show('wait');
+  $('#wait').innerHTML = html`<div class="team-pick">
+    <h1 class="comic-title slant">PICK YOUR TEAM!</h1>
+    <p style="margin:0">Choose the team you're in for this class.</p>
+    <div class="team-pick-btns">
+      <button class="team-btn chicken" data-team="chicken"><img src="${sprite('chicken_idle')}" alt=""><span>CHICKENS</span></button>
+      <button class="team-btn turkey" data-team="turkey"><img src="${sprite('turkey_idle')}" alt=""><span>TURKEYS</span></button>
+    </div></div>`;
+  $$('[data-team]').forEach((b) => {
+    b.onclick = () => {
+      sfx.click(); $$('[data-team]').forEach((x) => { x.disabled = true; });
+      update(G(`players/${uid}`), { team: b.dataset.team }).catch((e) => { console.error(e); $$('[data-team]').forEach((x) => { x.disabled = false; }); });
+    };
+  });
+}
 
 let lastRevealTeam = null;
 function renderAvatarPick() {

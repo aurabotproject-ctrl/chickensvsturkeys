@@ -66,7 +66,10 @@
             "online": { ".write": "auth != null && auth.uid === $uid", ".validate": "newData.isBoolean()" },
             "joinedAt": { ".write": "auth != null && auth.uid === $uid", ".validate": "newData.isNumber()" },
             "av": { ".write": "auth != null && auth.uid === $uid", ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 24" },
-            "team": { ".validate": "newData.val() === 'chicken' || newData.val() === 'turkey'" }
+            "team": {
+              ".write": "auth != null && auth.uid === $uid && !data.exists() && !root.child('games/' + $g + '/kicked/' + $uid).exists()",
+              ".validate": "newData.val() === 'chicken' || newData.val() === 'turkey'"
+            }
           }
         },
 

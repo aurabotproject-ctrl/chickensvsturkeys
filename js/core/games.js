@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS = {
   koMode: 'respawn',   // respawn | out
   events: 'auto',      // auto | manual | off
   growth: 'auto',      // Coop Wars: auto | questions | slow
+  teams: 'choose',     // choose = students pick Chickens or Turkeys when joining · auto = balanced automatically
 };
 
 /** Creates /games/{id} and a unique /codes/{CODE}. Returns { gameId, code }. */
