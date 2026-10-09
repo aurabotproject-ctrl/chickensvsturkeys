@@ -3,17 +3,17 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261009231922';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261009231922';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009231922';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261009231922';
-import { sfx } from '../js/core/sfx.js?v=20261009231922';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261009231922';
-import { PaintView } from '../js/modes/paint/view.js?v=20261009231922';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261009231922';
-import { TowerView } from '../js/modes/towers/view.js?v=20261009231922';
-import * as FE from '../js/modes/farm/economy.js?v=20261009231922';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261009231922';
+} from '../js/core/firebase.js?v=20261009233647';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261009233647';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009233647';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261009233647';
+import { sfx } from '../js/core/sfx.js?v=20261009233647';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261009233647';
+import { PaintView } from '../js/modes/paint/view.js?v=20261009233647';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261009233647';
+import { TowerView } from '../js/modes/towers/view.js?v=20261009233647';
+import * as FE from '../js/modes/farm/economy.js?v=20261009233647';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261009233647';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;

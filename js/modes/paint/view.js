@@ -3,8 +3,8 @@
 // character. Put a finger down anywhere and drag the way you want to go
 // (like a joystick); arrow keys work too. When out, the whole field shows.
 // =========================================================
-import { avatar } from '../../core/assets.js?v=20261009231922';
-import { GW, GH, decode, paintGrid, makePalette } from './common.js?v=20261009231922';
+import { avatar } from '../../core/assets.js?v=20261009233647';
+import { GW, GH, decode, paintGrid, makePalette } from './common.js?v=20261009233647';
 
 export class PaintView {
   constructor(el, { uid, onSteer } = {}) {

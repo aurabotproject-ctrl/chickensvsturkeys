@@ -1,6 +1,6 @@
 // Test bots for Egg Cannon: they "answer" during the answer phase (handled by the host)
 // and lob eggs at the enemy fort during the battle.
-import { speedFor, VMAX } from './arena.js?v=20261009231922';
+import { speedFor, VMAX } from './arena.js?v=20261009233647';
 
 export function cannonBotTick(arena, bot, dt) {
   const p = arena.players.get(bot.uid);
