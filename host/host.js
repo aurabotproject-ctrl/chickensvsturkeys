@@ -6,22 +6,22 @@
 import {
   isConfigured, db, ref, get, set, update, remove, onValue, onChildAdded, onChildChanged,
   currentUser, isTeacher, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261009174320';
-import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep } from '../js/core/ui.js?v=20261009174320';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009174320';
-import { playUrl } from '../js/core/games.js?v=20261009174320';
-import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261009174320';
-import { loadBankByKey } from '../js/quiz/banks.js?v=20261009174320';
-import { QuizEngine } from '../js/quiz/engine.js?v=20261009174320';
-import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261009174320';
-import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261009174320';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261009174320';
-import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261009174320';
-import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261009174320';
-import { TowerArena } from '../js/modes/towers/arena.js?v=20261009174320';
-import { SiegeArena } from '../js/modes/siege/arena.js?v=20261009174320';
-import { defenderFor } from '../js/modes/siege/rules.js?v=20261009174320';
-import { EVENTS, randomEvent } from '../js/events/events.js?v=20261009174320';
+} from '../js/core/firebase.js?v=20261009181929';
+import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261009181929';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009181929';
+import { playUrl } from '../js/core/games.js?v=20261009181929';
+import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261009181929';
+import { loadBankByKey } from '../js/quiz/banks.js?v=20261009181929';
+import { QuizEngine } from '../js/quiz/engine.js?v=20261009181929';
+import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261009181929';
+import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261009181929';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261009181929';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261009181929';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261009181929';
+import { TowerArena } from '../js/modes/towers/arena.js?v=20261009181929';
+import { SiegeArena } from '../js/modes/siege/arena.js?v=20261009181929';
+import { defenderFor } from '../js/modes/siege/rules.js?v=20261009181929';
+import { EVENTS, randomEvent } from '../js/events/events.js?v=20261009181929';
 
 const gameId = params.get('g');
 const G = (p = '') => ref(db, `games/${gameId}${p ? '/' + p : ''}`);
@@ -249,7 +249,9 @@ async function startGame() {
         onEggsChanged: (p) => dirty.add(p.uid),
       });
     if (isFarm()) arena.now = serverNow;
+    const doneLoading = showLoading('Getting the game ready…');
     try { await arena.init(); } catch (e) { console.error(e); toast('The arena failed to load: ' + e.message, 'bad', 8000); }
+    doneLoading();
     if (isTimed()) setInterval(() => { if (S.phase === 'playing') { for (const uid of arena.players.keys()) dirty.add(uid); bumpScores(); } }, 1000);
     if (isTowers() || isSiege()) setInterval(() => { if (S.phase === 'playing' && !S.paused) arena.botTick(0.25); }, 250);
     if (!isTimed()) arena.app.ticker.add(() => {

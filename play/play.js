@@ -3,16 +3,16 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261009174320';
-import { $, $$, html, raw, esc, params } from '../js/core/ui.js?v=20261009174320';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009174320';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261009174320';
-import { sfx } from '../js/core/sfx.js?v=20261009174320';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261009174320';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261009174320';
-import { TowerView } from '../js/modes/towers/view.js?v=20261009174320';
-import * as FE from '../js/modes/farm/economy.js?v=20261009174320';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261009174320';
+} from '../js/core/firebase.js?v=20261009181929';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261009181929';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009181929';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261009181929';
+import { sfx } from '../js/core/sfx.js?v=20261009181929';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261009181929';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261009181929';
+import { TowerView } from '../js/modes/towers/view.js?v=20261009181929';
+import * as FE from '../js/modes/farm/economy.js?v=20261009181929';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261009181929';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -148,7 +148,7 @@ function render() {
   $('#me-team').textContent = TEAM[me.team].name.toUpperCase();
 }
 
-const waitHtml = (title, sub) => html`<div class="panel light wait-card"><div class="spin-egg" style="margin:0 auto 10px"></div><h2 style="margin:0">${title}</h2><p>${sub}</p></div>`;
+const waitHtml = (title, sub) => html`<div class="panel light wait-card"><img class="spin-img" src="${sprite('egg')}" alt=""><h2 style="margin:0">${title}</h2><p>${sub}</p></div>`;
 
 function renderTeamPick() {
   if ($('#wait .team-pick') && !$('#wait').classList.contains('hidden')) return;
@@ -564,7 +564,8 @@ function ensureScene() {
     },
   });
   $('#fm-chick-ico').src = sprite(`${D.me?.team || 'chicken'}_idle`);
-  FM.scene.init().then(() => { if (D.ps.coops) FM.scene.update(D.ps); }).catch((e) => console.error(e));
+  const doneFm = showLoading('Building your farm…', $('#fm-wrap'));
+  FM.scene.init().then(() => { doneFm(); if (D.ps.coops) FM.scene.update(D.ps); }).catch((e) => { doneFm(); console.error(e); });
 }
 
 function sendFarm(extra = {}) {
@@ -721,12 +722,14 @@ function ensureTw() {
     onHint: (msg, bad) => { twHint(msg, bad ? 'bad' : ''); if (bad) sfx.wrong(); },
     onTap: (b) => openTwQuiz(b.i),
   });
+  const doneTw = showLoading('Loading the map…', $('#tw-scene').parentElement);
   TW.view.init().then(() => {
+    doneTw();
     if (TW.static) TW.view.setStatic(TW.static);
     if (TW.own) TW.view.setOwn(TW.own);
     if (TW.lv) TW.view.setLevels(TW.lv);
     TW.view.setPaths(TW.p || '');
-  }).catch((e) => console.error(e));
+  }).catch((e) => { doneTw(); console.error(e); });
 }
 let twHintT = null;
 function twHint(msg, cls = '') {

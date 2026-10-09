@@ -1,4 +1,13 @@
 // Small DOM helpers shared by every page.
+const LOAD_EGG = new URL('../../assets/sprites/egg.webp', import.meta.url).href;
+/** Full-screen (or inside `parent`) "LOADING…" screen with a spinning egg. Returns a function that removes it. */
+export function showLoading(sub = '', parent = null) {
+  const el = document.createElement('div');
+  el.className = `loading-screen${parent ? ' inline' : ''}`;
+  el.innerHTML = `<img class="egg" src="${LOAD_EGG}" alt=""><b>LOADING…</b>${sub ? `<small>${sub}</small>` : ''}`;
+  (parent || document.body).appendChild(el);
+  return () => el.remove();
+}
 export const $ = (sel, root = document) => root.querySelector(sel);
 export const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 

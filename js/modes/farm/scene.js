@@ -5,8 +5,8 @@
 // the road, balloons to pop and the occasional sneaky fox.
 // =========================================================
 /* global PIXI */
-import { sprite } from '../../core/assets.js?v=20261009174320';
-import { COOP_LV, TRUCK_LV, MACHINE_LV } from './economy.js?v=20261009174320';
+import { sprite } from '../../core/assets.js?v=20261009181929';
+import { COOP_LV, TRUCK_LV, MACHINE_LV } from './economy.js?v=20261009181929';
 
 const MAP_W = 900; const MAP_H = 1350;
 export const PLOTS = [{ x: 330, y: 470 }, { x: 715, y: 610 }, { x: 560, y: 245 }, { x: 470, y: 950 }];

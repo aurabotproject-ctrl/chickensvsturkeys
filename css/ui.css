@@ -82,6 +82,13 @@
 
 /* ---------- Loading ---------- */
 .loading { display: grid; place-items: center; gap: 1rem; min-height: 50vh; text-align: center; }
+.loading-screen { position: fixed; inset: 0; z-index: 500; display: grid; place-content: center; justify-items: center; gap: 14px; background: var(--navy-900, #0b1a3d); color: #fff; text-align: center; }
+.loading-screen.inline { position: absolute; z-index: 30; border-radius: inherit; }
+.loading-screen .egg { width: 96px; height: auto; filter: drop-shadow(4px 4px 0 rgba(0,0,0,.45)); animation: egg-spin 1.1s linear infinite; }
+.loading-screen.inline .egg { width: 72px; }
+.loading-screen b { font-family: var(--font-burst, var(--font-comic)); font-size: 2.6rem; letter-spacing: .08em; color: var(--yolk); text-shadow: 3px 3px 0 var(--ink); }
+.loading-screen small { font-weight: 800; opacity: .8; }
+@keyframes egg-spin { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.08); } 100% { transform: rotate(360deg) scale(1); } }
 .spin-egg { width: 64px; height: 80px; border: 4px solid var(--ink); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; background: var(--shell); animation: wobble .6s ease-in-out infinite; }
 
 /* ---------- Teacher app shell ---------- */
@@ -109,3 +116,4 @@
   .side .me span { display: none; }
 }
 .tico { height: 1.2em; width: auto; vertical-align: -0.25em; display: inline-block; filter: drop-shadow(1px 1px 0 rgba(0,0,0,.35)); }
+.spin-img { display: block; width: 64px; margin: 0 auto 10px; animation: egg-spin 1.1s linear infinite; filter: drop-shadow(3px 3px 0 rgba(0,0,0,.4)); }
