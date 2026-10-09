@@ -39,13 +39,15 @@ html, body { height: 100%; overflow: hidden; }
 .hud-top { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: center; align-items: flex-start; gap: 1vw; padding: .6vh 1vw; pointer-events: none; }
 .team-panel { position: relative; width: clamp(200px, 23vw, 430px); filter: drop-shadow(4px 4px 0 rgba(0,0,0,.5)); }
 .team-panel img { width: 100%; display: block; }
-.team-panel span { position: absolute; top: 50%; transform: translate(-50%, -48%); font-family: var(--font-burst); font-size: clamp(28px, 4.6vw, 80px); color: var(--white); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); }
-.team-panel.chicken span { left: 58%; }
-.team-panel.turkey span { left: 62%; }
+.team-panel span { position: absolute; top: 48%; translate: -50% -50%; line-height: 1; white-space: nowrap; font-family: var(--font-burst); font-size: clamp(14px, min(3.8vw, calc(var(--fit, 13vw) / var(--len, 3))), 72px); color: var(--white); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); }
+/* centred in the dark box, leaving room for the egg on the right */
+.team-panel.chicken span { left: 52%; --fit: 13.5vw; }
+.team-panel.turkey span { left: 61.5%; --fit: 11vw; }
 .team-panel span.bump { animation: squash 420ms var(--ease-pop); }
 .timer { position: relative; width: clamp(120px, 11vw, 210px); display: grid; place-items: center; }
 .timer img { width: 100%; filter: drop-shadow(4px 4px 0 rgba(0,0,0,.5)); }
-.timer span { position: absolute; top: 46%; transform: translateY(-50%); font-family: var(--font-burst); font-size: clamp(30px, 3.6vw, 66px); color: var(--ink); }
+/* centred on the white clock face */
+.timer span { position: absolute; top: 61%; left: 49%; translate: -50% -50%; line-height: 1; white-space: nowrap; font-family: var(--font-burst); font-size: clamp(16px, min(3.4vw, calc(6.6vw / var(--len, 2))), 62px); color: var(--ink); }
 .timer span.hurry { color: var(--turkey); animation: shake 320ms linear infinite; }
 .timer small { position: absolute; bottom: -1.2vh; font-family: var(--font-comic); font-size: clamp(14px, 1.3vw, 24px); letter-spacing: .08em; background: var(--ink); color: var(--yolk); padding: .1em .7em; border-radius: 8px; white-space: nowrap; }
 .hud-bottom { position: absolute; bottom: 1vh; left: 50%; transform: translateX(-50%); display: flex; gap: .8vw; padding: .6vh 1vw; background: rgba(6,18,46,.55); border: 3px solid var(--ink); border-radius: 18px; transition: opacity .3s; }
@@ -150,7 +152,6 @@ body.mode-cannon .sidebar { display: none; }
 
 /* ---------- Egg Farm race board ---------- */
 body.mode-farm .stage { background: linear-gradient(rgba(10,40,10,.35), rgba(6,18,46,.55)), url('../assets/sprites/farm_ground.webp') center/cover; }
-body.mode-farm .timer span { font-size: clamp(22px, 2.6vw, 48px); }
 .farm-board { position: absolute; inset: 0; padding: 19vh 1.4vw 2vh; display: grid; grid-template-rows: auto 1fr auto; gap: 1.2vh; }
 .fb-tug { height: 2.4vh; display: flex; border: 4px solid var(--ink); border-radius: 999px; overflow: hidden; box-shadow: var(--pop-shadow-sm); background: #fff; }
 .fb-tug i { display: block; height: 100%; transition: width .8s ease; }
@@ -189,15 +190,11 @@ body.mode-farm .timer span { font-size: clamp(22px, 2.6vw, 48px); }
 @keyframes fox-run-l { 0% { left: -20vw; } 15%, 85% { left: 20vw; } 30% { left: 5vw; } 50% { left: 30vw; } 70% { left: 8vw; } 100% { left: -25vw; } }
 @keyframes fox-run-r { 0% { left: 110vw; } 15%, 85% { left: 55vw; } 30% { left: 70vw; } 50% { left: 48vw; } 70% { left: 66vw; } 100% { left: 115vw; } }
 
-body.mode-farm .team-panel span { font-size: clamp(20px, 2.6vw, 46px); }
-body.mode-farm .team-panel.chicken span { left: 60%; }
-body.mode-farm .team-panel.turkey span { left: 62%; }
 .fb-card.leader { transform: scale(1.03); box-shadow: 3px 3px 0 var(--ink), 0 0 0 4px #ffcf3a; }
 .fb-card.leader .rk { background: #ffcf3a; font-size: 1.1em; }
 
 /* Coop Wars */
 body.mode-towers .stage { background: radial-gradient(circle at 50% 55%, #4f8f26, #22430f); }
-body.mode-towers .timer span { font-size: clamp(22px, 2.6vw, 48px); }
 .swap-note { font-family: var(--font-burst); font-size: 2rem; letter-spacing: .03em; color: var(--yolk); text-shadow: 3px 3px 0 var(--ink); margin: 0 0 10px; text-align: center; }
 .halftime-img { display: block; width: min(560px, 70vw); margin: 0 auto 4px; filter: drop-shadow(5px 5px 0 var(--ink)); animation: pop-in .5s ease-out both; }
 .choosing { text-align: center; font-weight: 900; font-size: 2.2vh; color: var(--yolk); min-height: 1.4em; }

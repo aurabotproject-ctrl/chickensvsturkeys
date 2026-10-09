@@ -6,22 +6,22 @@
 import {
   isConfigured, db, ref, get, set, update, remove, onValue, onChildAdded, onChildChanged,
   currentUser, isTeacher, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261009144451';
-import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep } from '../js/core/ui.js?v=20261009144451';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009144451';
-import { playUrl } from '../js/core/games.js?v=20261009144451';
-import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261009144451';
-import { loadBankByKey } from '../js/quiz/banks.js?v=20261009144451';
-import { QuizEngine } from '../js/quiz/engine.js?v=20261009144451';
-import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261009144451';
-import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261009144451';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261009144451';
-import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261009144451';
-import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261009144451';
-import { TowerArena } from '../js/modes/towers/arena.js?v=20261009144451';
-import { SiegeArena } from '../js/modes/siege/arena.js?v=20261009144451';
-import { defenderFor } from '../js/modes/siege/rules.js?v=20261009144451';
-import { EVENTS, randomEvent } from '../js/events/events.js?v=20261009144451';
+} from '../js/core/firebase.js?v=20261009145526';
+import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep } from '../js/core/ui.js?v=20261009145526';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009145526';
+import { playUrl } from '../js/core/games.js?v=20261009145526';
+import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261009145526';
+import { loadBankByKey } from '../js/quiz/banks.js?v=20261009145526';
+import { QuizEngine } from '../js/quiz/engine.js?v=20261009145526';
+import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261009145526';
+import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261009145526';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261009145526';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261009145526';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261009145526';
+import { TowerArena } from '../js/modes/towers/arena.js?v=20261009145526';
+import { SiegeArena } from '../js/modes/siege/arena.js?v=20261009145526';
+import { defenderFor } from '../js/modes/siege/rules.js?v=20261009145526';
+import { EVENTS, randomEvent } from '../js/events/events.js?v=20261009145526';
 
 const gameId = params.get('g');
 const G = (p = '') => ref(db, `games/${gameId}${p ? '/' + p : ''}`);
@@ -727,5 +727,11 @@ async function archive(winner, ts) {
 
 window.addEventListener('beforeunload', (e) => { if (S.phase === 'playing' || S.phase === 'roundEnd') { e.preventDefault(); e.returnValue = ''; } });
 
+// Long numbers ($1,849 or 12:00) shrink to fit inside the scoreboard art.
+for (const id of ['timer', 'score-chicken', 'score-turkey']) {
+  const el = document.getElementById(id); if (!el) continue;
+  const fit = () => el.style.setProperty('--len', Math.max(2, el.textContent.length));
+  new MutationObserver(fit).observe(el, { childList: true, characterData: true, subtree: true }); fit();
+}
 window.cvt = { get arena() { return arena; }, players, S }; // handy for debugging in the console
 boot().catch((e) => { console.error(e); fail(explainError(e)); });
