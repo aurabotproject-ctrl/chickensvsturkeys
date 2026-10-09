@@ -1,18 +1,20 @@
 // =========================================================
 // COOP WARS — the student's map on their phone (PixiJS v7).
 // Landscape, exactly like the big screen (chickens left, turkeys right).
-//   drag from one of your coops (gold ring) → to any building = march
-//   swipe across one of your lines = cut it
+//   TAP one of your team's buildings = answer a question to add troops there
+//   DRAG from one of your team's buildings → to any building = march
+//   swipe across one of your team's lines = cut it
 // =========================================================
 /* global PIXI */
 import { MAP_W, MAP_H, KINDS, maxPaths, pathProblem, segmentsCross, distToSeg } from './map.js';
 import { loadTextures, drawBackground, makeBuilding, updateBuilding, COLORS } from './draw.js';
 
 export class TowerView {
-  constructor(el, { team, uid, onCommand, onHint } = {}) {
+  constructor(el, { team, uid, onCommand, onHint, onTap } = {}) {
     this.el = el; this.team = team; this.uid = uid;
     this.onCommand = onCommand || (() => {});
     this.onHint = onHint || (() => {});
+    this.onTap = onTap || (() => {});
     this.map = null; this.views = []; this.time = 0;
   }
 
@@ -82,7 +84,7 @@ export class TowerView {
     String(str || '').split(',').filter(Boolean).forEach((p) => { const [a, t] = p.split('>').map(Number); this.map.b[a]?.paths.push(t); });
   }
 
-  mine() { return this.map ? this.map.b.filter((b) => b.owner === this.uid && b.k !== 'gold') : []; }
+  mine() { return this.map ? this.map.b.filter((b) => b.team === this.team && b.k !== 'gold') : []; }
 
   // ---------- input ----------
   setupInput() {
@@ -91,7 +93,7 @@ export class TowerView {
     const near = (p, own) => {
       let best = null; let bd = 1e9;
       for (const b of this.map.b) {
-        if (own && b.owner !== this.uid) continue;
+        if (own && (b.team !== this.team || b.k === 'gold')) continue;
         const d = Math.hypot(b.x - p.x, b.y - p.y);
         if (d < Math.max(80, KINDS[b.k].r * (this.big || 1) + 36) && d < bd) { bd = d; best = b; }
       }
@@ -101,27 +103,37 @@ export class TowerView {
       if (!this.map) return;
       const p = at(e);
       const own = near(p, true);
-      this.drag = own ? { mode: 'send', from: own, cur: p } : { mode: 'cut', start: p, cur: p };
+      this.drag = own ? { mode: 'send', from: own, cur: p, sx: e.global.x, sy: e.global.y, t0: performance.now(), moved: false } : { mode: 'cut', start: p, cur: p };
     });
-    st.on('pointermove', (e) => { if (this.drag) this.drag.cur = at(e); });
+    st.on('pointermove', (e) => {
+      const d = this.drag; if (!d) return;
+      d.cur = at(e);
+      if (d.mode === 'send' && Math.hypot(e.global.x - d.sx, e.global.y - d.sy) > 14) d.moved = true;
+    });
     const end = (e) => {
       const d = this.drag; this.drag = null;
       if (!d || !this.map) return;
       const p = e ? at(e) : d.cur;
       if (d.mode === 'send') {
+        // quick tap (finger didn't move) = answer a question for this building
+        if (!d.moved) { this.tapFlash = { b: d.from, t: 0.35 }; this.onTap(d.from); return; }
         const to = near(p, false);
         if (!to || to === d.from) {
-          if (Math.hypot(p.x - d.from.x, p.y - d.from.y) < 40) this.onHint('Drag from your coop to the building you want to attack, help or collect.');
+          this.onHint('Drag from one of your team\'s buildings and let go on the building you want to attack, help or collect.');
           return;
         }
-        const prob = pathProblem(this.map, d.from.i, to.i, this.uid);
+        const prob = pathProblem(this.map, d.from.i, to.i, this.team);
         if (prob) { this.onHint(prob, true); return; }
         if (d.from.paths.includes(to.i)) return;
         d.from.paths.push(to.i); // optimistic
         this.onCommand({ op: 'path', a: d.from.i, b: to.i });
       } else {
         const swipe = [d.start.x, d.start.y, p.x, p.y];
-        if (Math.hypot(p.x - d.start.x, p.y - d.start.y) < 30) return;
+        if (Math.hypot(p.x - d.start.x, p.y - d.start.y) < 30) {
+          const tapped = near(p, false);
+          if (tapped && tapped.k !== 'gold') this.onHint('That isn\'t your team\'s building. Tap one of YOUR TEAM\'s buildings to answer for troops, or drag from it to march.', true);
+          return;
+        }
         let cut = 0;
         for (const b of this.mine()) {
           for (const ti of [...b.paths]) {
@@ -130,7 +142,6 @@ export class TowerView {
           }
         }
         if (cut) this.cutFlash = { seg: swipe, t: 0.4 };
-        else if (this.map.b.some((b) => b.paths.length && b.owner !== this.uid && b.team === this.team && b.paths.some((ti) => segmentsCross(swipe, [b.x, b.y, this.map.b[ti].x, this.map.b[ti].y])))) this.onHint('That line belongs to a teammate — you can only cut your own.', true);
       }
     };
     st.on('pointerup', end); st.on('pointerupoutside', end);
@@ -141,12 +152,12 @@ export class TowerView {
     this.time += dt;
     if (!this.map) return;
     const m = this.map;
-    m.b.forEach((b, i) => updateBuilding(this.tex, this.views[i], b, { mine: b.owner === this.uid, name: b.owner === this.uid ? 'YOU' : '', time: this.time, big: this.big }));
+    m.b.forEach((b, i) => updateBuilding(this.tex, this.views[i], b, { mine: b.team === this.team && b.k !== 'gold', name: b.owner === this.uid ? 'YOU' : '', time: this.time, big: this.big, soft: true }));
     const g = this.pathG; g.clear();
     for (const b of m.b) {
       for (const ti of b.paths) {
         const t = m.b[ti]; if (!t) continue;
-        const mine = b.owner === this.uid;
+        const mine = b.team === this.team;
         g.lineStyle(mine ? 22 : 14, COLORS[b.team], mine ? 0.55 : 0.32).moveTo(b.x, b.y).lineTo(t.x, t.y);
         const len = Math.hypot(t.x - b.x, t.y - b.y); const ux = (t.x - b.x) / len; const uy = (t.y - b.y) / len;
         const off = (this.time * 90) % 28; g.lineStyle(0);
@@ -161,6 +172,11 @@ export class TowerView {
       dg.lineStyle(0).beginFill(ok ? 0xffc72c : 0xff5a3c).drawCircle(d.cur.x, d.cur.y, 16).endFill();
     } else if (d && d.mode === 'cut') {
       dg.lineStyle(8, 0xffffff, 0.9).moveTo(d.start.x, d.start.y).lineTo(d.cur.x, d.cur.y);
+    }
+    if (this.tapFlash) {
+      this.tapFlash.t -= dt; const b = this.tapFlash.b; const k = 1 - this.tapFlash.t / 0.35;
+      dg.lineStyle(6, 0xffc72c, Math.max(0, 1 - k)).drawCircle(b.x, b.y - 10, (50 + k * 50) * (this.big || 1));
+      if (this.tapFlash.t <= 0) this.tapFlash = null;
     }
     if (this.cutFlash) {
       this.cutFlash.t -= dt; const s = this.cutFlash.seg;

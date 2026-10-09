@@ -103,7 +103,7 @@ export function makeBuilding(tex, b, { counterRotate = 0 } = {}) {
   return v;
 }
 
-export function updateBuilding(tex, v, b, { mine = false, name = '', showRange = true, time = 0, big = 1 } = {}) {
+export function updateBuilding(tex, v, b, { mine = false, name = '', showRange = true, time = 0, big = 1, soft = false } = {}) {
   const k = KINDS[b.k]; const team = b.team || null;
   v.root.visible = !(b.k === 'gold' && b.lv <= 0);
   const key = `${b.k}|${team}|${b.k === 'gold' ? goldSize(b.lv) : tier(b.lv)}|${mine}`;
@@ -131,7 +131,7 @@ export function updateBuilding(tex, v, b, { mine = false, name = '', showRange =
     v.ring.clear();
     if (b.k !== 'gold') {
       const rr = k.r * big;
-      if (mine) v.ring.lineStyle(7 * big, 0xffc72c, 1).drawEllipse(0, 4, rr + 12, (rr + 12) * 0.45);
+      if (mine) v.ring.lineStyle((soft ? 4 : 7) * big, 0xffc72c, 1).drawEllipse(0, 4, rr + 12, (rr + 12) * 0.45);
       v.ring.lineStyle(0).beginFill(COLORS[team], team ? 0.55 : 0.35).drawEllipse(0, 4, rr + 4, (rr + 4) * 0.42).endFill();
     }
     const bw = b.k === 'fort' ? 70 : 52;
@@ -152,7 +152,7 @@ export function updateBuilding(tex, v, b, { mine = false, name = '', showRange =
     v.range.clear();
     if (showR) v.range.lineStyle(3, 0xffffff, 0.55).beginFill(0xffffff, b.k === 'sniper' ? 0.12 : 0.06).drawCircle(0, 0, r).endFill();
   }
-  if (mine) v.ring.alpha = 0.75 + 0.25 * Math.sin(time * 5);
+  if (mine) v.ring.alpha = soft ? 0.85 : 0.75 + 0.25 * Math.sin(time * 5);
 }
 
 const goldSize = (lv) => (lv >= 14 ? 3 : lv >= 7 ? 2 : 1);

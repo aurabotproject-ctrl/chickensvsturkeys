@@ -499,7 +499,7 @@ function handleSub(uid, sub) {
     r.feedback.sg = arena.reward(uid, { correct: r.entry.correct, conf: r.entry.conf, streak: r.feedback.streak });
     r.feedback.eggs = 0; r.feedback.bonus = []; r.feedback.lockMs = r.entry.correct ? 900 : 2500;
   } else if (isTowers()) {
-    r.feedback.tw = arena.reward(uid, { correct: r.entry.correct, conf: r.entry.conf, streak: r.feedback.streak });
+    r.feedback.tw = arena.reward(uid, { correct: r.entry.correct, conf: r.entry.conf, streak: r.feedback.streak, target: sub.tgt });
     r.feedback.eggs = 0; r.feedback.bonus = []; r.feedback.lockMs = r.entry.correct ? 900 : 2500;
   } else if (isFarm()) {
     r.feedback.farm = arena.reward(uid, { correct: r.entry.correct, conf: r.entry.conf, streak: r.feedback.streak });

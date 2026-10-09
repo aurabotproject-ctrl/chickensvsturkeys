@@ -95,7 +95,7 @@ export class TowerArena {
     for (const p of this.players.values()) if (teams[p.team]) teams[p.team].push(p);
     const n = Math.max(teams.chicken.length, teams.turkey.length, 1);
     const m = generateMap(n);
-    m.b.forEach((b, i) => { b.i = i; b.owner = ''; b.paths = []; b.cd = rnd(0, SEND_EVERY); b.fireCd = rnd(0.5, 1.5); b.growT = rnd(0, GROW_EVERY); });
+    m.b.forEach((b, i) => { b.i = i; b.owner = ''; b.paths = []; b.by = {}; b.cd = rnd(0, SEND_EVERY); b.fireCd = rnd(0.5, 1.5); b.growT = rnd(0, GROW_EVERY); });
     for (const team of ['chicken', 'turkey']) {
       m.startIdx[team].forEach((idx, k) => {
         const p = teams[team][k];
@@ -147,30 +147,33 @@ export class TowerArena {
 
   addPath(uid, from, to) {
     const m = this.map;
-    if (pathProblem(m, from, to, uid)) return false;
+    const p = this.players.get(uid); if (!p) return false;
+    if (pathProblem(m, from, to, p.team)) return false;
     const a = m.b[from];
     if (a.paths.includes(to)) return false;
     a.paths.push(to);
+    (a.by ||= {})[to] = uid; // who drew this line (gets the points)
     // drawing towards a building that already sends to you replaces its old line? no — both run (classic tower war)
     return true;
   }
   cutPath(uid, from, to) {
-    const a = this.map.b[from];
-    if (!a || a.owner !== uid) return false;
+    const a = this.map.b[from]; const p = this.players.get(uid);
+    if (!a || !p || a.team !== p.team) return false;
     a.paths = a.paths.filter((t) => t !== to);
     return true;
   }
 
-  /** Correct answer → troops for every building this player owns. */
-  reward(uid, { correct, conf, streak }) {
+  /** Correct answer → troops for the team building the student tapped (or the team's weakest one). */
+  reward(uid, { correct, conf, streak, target }) {
     const p = this.players.get(uid);
     if (!p || !this.map) return null;
     if (!correct) return { troops: 0, buildings: 0 };
     let total = 8 + (conf === 'sure' ? 3 : 0) + (streak && streak % 3 === 0 ? 4 : 0);
     if (this.effects.golden > 0) total *= 2;
-    const mine = this.map.b.filter((b) => b.owner === uid && b.k !== 'gold');
-    let targets = mine; let helper = false;
-    if (!mine.length) { // knocked out → reinforce the team's weakest building
+    const picked = Number.isInteger(+target) ? this.map.b[+target] : null;
+    let targets; let helper = false;
+    if (picked && picked.team === p.team && picked.k !== 'gold') targets = [picked];
+    else { // no building tapped (or it was lost meanwhile) → the team's weakest building
       helper = true;
       targets = this.map.b.filter((b) => b.team === p.team && b.k !== 'gold').sort((a, b) => a.lv - b.lv).slice(0, 1);
     }
@@ -263,7 +266,7 @@ export class TowerArena {
     this.layer.troops.addChild(s);
     const off = rnd(-6, 6);
     this.stats.spawn += value;
-    this.troops.push({ from, to, team: from.team, owner: from.owner, value, tractor, len, ux: dx / len, uy: dy / len, d: KINDS[from.k].r * 0.5, x: from.x, y: from.y, off, s, ph: Math.random() * 6, dead: false });
+    this.troops.push({ from, to, team: from.team, owner: from.by?.[to.i] || from.owner, value, tractor, len, ux: dx / len, uy: dy / len, d: KINDS[from.k].r * 0.5, x: from.x, y: from.y, off, s, ph: Math.random() * 6, dead: false });
   }
 
   /** Walk-cycle frames (new art), or the older sprites as a backup. */
@@ -303,7 +306,7 @@ export class TowerArena {
 
   capture(b, t, p) {
     const prev = b.owner;
-    b.team = t.team; b.owner = t.owner || ''; b.lv = Math.max(0, -b.lv); b.paths = [];
+    b.team = t.team; b.owner = t.owner || ''; b.lv = Math.max(0, -b.lv); b.paths = []; b.by = {};
     if (p) { p.captures += 1; p.score += 10; }
     this.burst('tw_fx_dust', b.x, b.y - 20, 1);
     this.burst(t.team === 'turkey' ? 'tw_fx_bfeath' : 'tw_fx_wfeath', b.x, b.y - 40, 0.8);
@@ -400,7 +403,7 @@ export class TowerArena {
       for (const b of mine) {
         if (b.lv < 4) { b.paths = []; continue; }
         if (b.paths.length >= maxPaths(b)) continue;
-        const options = this.map.b.filter((o) => o !== b && !b.paths.includes(o.i) && !pathProblem(this.map, b.i, o.i, p.uid)
+        const options = this.map.b.filter((o) => o !== b && !b.paths.includes(o.i) && !pathProblem(this.map, b.i, o.i, p.team)
           && (o.k === 'gold' ? o.lv > 0 : o.team !== b.team && o.lv < b.lv * 1.2 + 4));
         options.sort((x, y) => Math.hypot(x.x - b.x, x.y - b.y) + x.lv * 8 - Math.hypot(y.x - b.x, y.y - b.y) - y.lv * 8);
         if (options[0]) this.addPath(p.uid, b.i, options[0].i);
@@ -424,9 +427,9 @@ export class TowerArena {
 
   stateFor(uid) {
     const p = this.players.get(uid); if (!p || !this.map) return null;
-    const mine = this.map.b.filter((b) => b.owner === uid && b.k !== 'gold');
+    const team = this.map.b.filter((b) => b.team === p.team && b.k !== 'gold');
     const tot = this.teamTotals();
-    return { score: p.score, captures: p.captures, buildings: mine.length, troops: mine.reduce((a, b) => a + Math.floor(b.lv), 0), tc: Math.floor(tot.chicken), tt: Math.floor(tot.turkey), golden: this.effects.golden > 0 ? 1 : 0 };
+    return { score: p.score, captures: p.captures, buildings: team.length, troops: team.reduce((a, b) => a + Math.floor(b.lv), 0), tc: Math.floor(tot.chicken), tt: Math.floor(tot.turkey), golden: this.effects.golden > 0 ? 1 : 0 };
   }
 
   // ---------- rendering ----------

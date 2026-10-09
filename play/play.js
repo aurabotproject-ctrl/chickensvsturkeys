@@ -281,6 +281,7 @@ function showView(v) {
 
 function setTab(t) {
   if (isCannon()) return;
+  if (TW.quiz) { TW.quiz = false; document.body.classList.remove('tw-quiz'); }
   L.tab = t;
   $('#tab-answer').classList.toggle('on', t === 'answer');
   $('#tab-fight').classList.toggle('on', t === 'fight');
@@ -335,7 +336,8 @@ function submit(conf) {
   const c = D.cur;
   $('#conf').classList.add('hidden');
   L.answeredN = c.n; L.submittedAt = Date.now();
-  update(G(`sub/${uid}`), { n: c.n, choice: L.picked, conf: conf || '', ms: Date.now() - L.shownAt }).catch((e) => console.error(e));
+  const tgt = isTowers() && TW.quiz ? TW.target : null; // Coop Wars: the building the student tapped
+  update(G(`sub/${uid}`), { n: c.n, choice: L.picked, conf: conf || '', ms: Date.now() - L.shownAt, tgt }).catch((e) => console.error(e));
 }
 
 function drawFeedback() {
@@ -353,7 +355,7 @@ function drawFeedback() {
   const lock = f.lockMs || 1500;
   const readMs = f.correct ? lock : Math.max(lock, 2600);
   const fg = f.farm; const tw = f.tw; const sg = f.sg;
-  const gain = sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team!' : `to your ${tw.buildings} coop${tw.buildings === 1 ? '' : 's'}`}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
+  const gain = sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team\'s weakest building!' : 'sent to the building you tapped!'}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
   box.innerHTML = f.correct
     ? html`<div class="big">CORRECT!</div>${raw(gain)}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
     : html`<div class="big">NOPE!</div><div class="ans-was">Answer: <b>${f.rightText}</b></div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div><div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`;
@@ -365,6 +367,7 @@ function hideFeedback() {
   $('#fb').className = 'fb hidden';
   $('#answers').classList.remove('locked');
   drawQuestion();
+  if (TW.quiz) closeTwQuiz(); // Coop Wars: back to the map after each answer
 }
 
 // ---------------- fight controls ----------------
@@ -690,6 +693,7 @@ function ensureTw() {
       sfx.click(); navigator.vibrate?.(25);
     },
     onHint: (msg, bad) => { twHint(msg, bad ? 'bad' : ''); if (bad) sfx.wrong(); },
+    onTap: (b) => openTwQuiz(b.i),
   });
   TW.view.init().then(() => {
     if (TW.static) TW.view.setStatic(TW.static);
@@ -712,7 +716,7 @@ function drawTwHud() {
   if (L.mapBlocked) return;
   const h = $('#tw-hint');
   if (h.classList.contains('bad') || h.classList.contains('good')) { if (twHintT) return; }
-  if (D.state.phase === 'playing' && ps.buildings === 0) { h.className = 'tw-hint bad'; h.textContent = 'You lost your coops! Answer questions to send troops to your team 💪'; } else if (ps.golden) { h.className = 'tw-hint good'; h.textContent = '🥇 Golden Egg Rush — right answers give DOUBLE troops!'; } else { h.className = 'tw-hint'; h.textContent = 'Drag from YOUR coop (gold ring) to another building. Swipe across your line to cut it. Answer to add troops!'; }
+  if (D.state.phase === 'playing' && ps.buildings === 0) { h.className = 'tw-hint bad'; h.textContent = 'Your team has no buildings left!'; } else if (ps.golden) { h.className = 'tw-hint good'; h.textContent = '🥇 Golden Egg Rush — right answers give DOUBLE troops!'; } else { h.className = 'tw-hint'; h.textContent = 'TAP a team building (gold ring) to answer for troops · HOLD & DRAG from it to march · Swipe across a line to cut it'; }
 }
 setInterval(() => { if (isTowers()) { twHintT = null; drawTwHud(); } }, 4000);
 $('#tw-crate').addEventListener('click', () => { sfx.click(); setTab('answer'); });
@@ -777,4 +781,26 @@ function mapBlocked() {
     el.appendChild(box);
   }
   twHintT = 1; sgHintT = 1; // keep the message up
+}
+
+// Coop Wars: tapping one of your team's buildings opens a question over the map.
+TW.quiz = false; TW.target = null;
+function openTwQuiz(i) {
+  if (D.state.phase !== 'playing' || D.state.paused) return;
+  TW.target = i; TW.quiz = true;
+  document.body.classList.add('tw-quiz');
+  $('#view-answer').classList.remove('hidden');
+  sfx.click(); navigator.vibrate?.(20);
+  drawQuestion();
+}
+function closeTwQuiz() {
+  TW.quiz = false;
+  document.body.classList.remove('tw-quiz');
+  if (L.tab !== 'answer') $('#view-answer').classList.add('hidden');
+}
+{
+  const x = document.createElement('button');
+  x.className = 'tw-quiz-close'; x.textContent = '✕ Back to map';
+  x.onclick = () => { closeTwQuiz(); sfx.click(); };
+  $('#view-answer').prepend(x);
 }

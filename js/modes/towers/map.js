@@ -111,11 +111,11 @@ export function pathClear(a, b, walls) {
   return !walls.some((w) => segmentsCross(seg, w) || distToSeg(w[0], w[1], seg) < 14 || distToSeg(w[2], w[3], seg) < 14);
 }
 
-/** Why a path can't be drawn (or '' if it can). `owner` = uid trying. */
-export function pathProblem(map, from, to, uid) {
+/** Why a path can't be drawn (or '' if it can). `team` = team of the player trying (any team building can be used). */
+export function pathProblem(map, from, to, team) {
   const a = map.b[from]; const b = map.b[to];
   if (!a || !b || from === to) return 'Pick a different building.';
-  if (a.owner !== uid) return 'Start from one of YOUR buildings (gold ring).';
+  if (!a.team || a.team !== team) return 'Start from one of YOUR TEAM\'s buildings.';
   if (!KINDS[a.k].gen) return a.k === 'sniper' ? 'Egg Snipers guard — they don\'t send troops.' : 'That building can\'t send troops.';
   if ((a.paths || []).includes(to)) return '';
   if ((a.paths || []).length >= maxPaths(a)) {
