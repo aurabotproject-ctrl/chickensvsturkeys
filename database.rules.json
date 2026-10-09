@@ -55,6 +55,7 @@
         "standings": { ".read": "auth != null" },
         "tw": { ".read": "auth != null" },
         "sg": { ".read": "auth != null" },
+        "pt": { ".read": "auth != null" },
 
         "players": {
           ".read": "auth != null",

@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f4b">
   <title>Join · Chickens vs Turkeys</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=20261009181929">
-  <link rel="stylesheet" href="../css/ui.css?v=20261009181929">
-  <link rel="stylesheet" href="play.css?v=20261009181929">
+  <link rel="stylesheet" href="../css/tokens.css?v=20261009231922">
+  <link rel="stylesheet" href="../css/ui.css?v=20261009231922">
+  <link rel="stylesheet" href="play.css?v=20261009231922">
   <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
 </head>
 <body>
@@ -98,6 +98,16 @@
       <div class="fm-sheet hidden" id="fm-act"><div class="fm-sheet-box panel light"><div id="fm-act-body"></div><button class="btn grey" id="fm-act-close">Back to farm</button></div></div>
       <div class="fm-sheet hidden" id="fm-research"><div class="fm-sheet-box panel light"><h2>🔬 Research <small>spend golden eggs</small></h2><div id="fm-rs-list" class="fm-rs-list"></div><button class="btn grey" id="fm-rs-close">Back to farm</button></div></div>
     </div>
+    <div id="view-pt" class="view hidden">
+      <div class="pt-wrap" id="pt-scene"></div>
+      <div class="pt-hud">
+        <span class="pt-chip" id="pt-speed">⚡ 5</span>
+        <span class="pt-chip" id="pt-mine">🟩 0%</span>
+        <span class="tw-score"><span class="c"><img class="tico" src="../assets/sprites/ico_chicken.webp" alt=""> <b id="pt-lc">0%</b></span><span class="t"><img class="tico" src="../assets/sprites/ico_turkey.webp" alt=""> <b id="pt-lt">0%</b></span></span>
+      </div>
+      <div class="pt-tip" id="pt-tip">Put your finger down and drag to steer · leave your land, make a loop, get back home!</div>
+      <div class="pt-out hidden" id="pt-out"><b>OUT!</b><span>Someone cut your trail. Watch the big screen — you'll be back next round!</span></div>
+    </div>
     <div id="view-sg" class="view hidden">
       <div class="tw-top">
         <div class="sg-role" id="sg-role">🛡️ DEFEND</div>
@@ -123,6 +133,6 @@
   </section>
 
   <div id="overlay" class="overlay hidden"></div>
-  <script type="module" src="play.js?v=20261009181929"></script>
+  <script type="module" src="play.js?v=20261009231922"></script>
 </body>
 </html>

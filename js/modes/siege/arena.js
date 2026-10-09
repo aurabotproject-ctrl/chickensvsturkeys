@@ -5,12 +5,12 @@
 // traps and bombs on the lawn; attackers buy troops and pick a row.
 // =========================================================
 /* global PIXI */
-import { sprite } from '../../core/assets.js?v=20261009181929';
-import { sfx } from '../../core/sfx.js?v=20261009181929';
+import { sprite } from '../../core/assets.js?v=20261009231922';
+import { sfx } from '../../core/sfx.js?v=20261009231922';
 import {
   ROWS, COLS, W, H, LAWN, LAWN_R, SPAWN_X, cellX, rowY, START_CORN, COOP_HP, CORN_PER_RIGHT,
   DEF, ATT, PTS, defenderFor, other, tc, defArt, attArt, coopArt, mowerArt, SG_ART,
-} from './rules.js?v=20261009181929';
+} from './rules.js?v=20261009231922';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];

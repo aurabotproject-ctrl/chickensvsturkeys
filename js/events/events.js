@@ -38,6 +38,6 @@ export const SIEGE_PHONE = {
 
 export const RANDOM_POOL = ['golden', 'double', 'shield', 'storm', 'fog', 'fox'];
 export const randomEvent = (exclude, mode = 'dodge') => {
-  const pool = RANDOM_POOL.filter((e) => e !== exclude && !(mode === 'cannon' && e === 'fox') && !(mode === 'farm' && (e === 'storm' || e === 'fog')) && !(mode === 'towers' && e === 'fog') && !(mode === 'siege' && (e === 'fog' || e === 'fox')));
+  const pool = RANDOM_POOL.filter((e) => e !== exclude && !(mode === 'cannon' && e === 'fox') && !(mode === 'farm' && (e === 'storm' || e === 'fog')) && !(mode === 'towers' && e === 'fog') && !(mode === 'siege' && (e === 'fog' || e === 'fox')) && mode !== 'paint');
   return pool[Math.floor(Math.random() * pool.length)];
 };

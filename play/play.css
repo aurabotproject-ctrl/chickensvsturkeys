@@ -336,3 +336,16 @@ body.tw-quiz #view-answer .question { min-height: 0; }
 .fm-act-btn.del.off { opacity: .5; }
 .fm-max { display: grid; place-items: center; font-weight: 900; border: 3px dashed var(--ink); border-radius: 12px; padding: 8px; }
 .fm-buy .price { font-size: .8rem; }
+
+/* ---------- Land Grab ---------- */
+body.mode-paint .tabs, body.mode-paint #ko, body.mode-paint .egg-bar, body.mode-paint .egg-count { display: none !important; }
+#view-pt { gap: 6px; position: relative; }
+.pt-wrap { position: relative; flex: 1; min-height: 0; border: 4px solid var(--ink); border-radius: 18px; overflow: hidden; background: #3f7a1f; box-shadow: var(--pop-shadow-sm); }
+.pt-phone { display: block; }
+.pt-hud { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; gap: 6px; align-items: center; pointer-events: none; }
+.pt-hud .tw-score { margin-left: auto; }
+.pt-chip { background: var(--navy-700); border: 3px solid var(--ink); border-radius: 999px; padding: 1px 10px; font-family: var(--font-burst); font-size: 1.2rem; color: #fff; }
+.pt-tip { background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; padding: 4px 10px; font-weight: 900; font-size: .8rem; text-align: center; }
+.pt-out { position: absolute; inset: 30% 8% auto; display: grid; gap: 6px; text-align: center; background: var(--turkey); color: #fff; border: 4px solid var(--ink); border-radius: 18px; padding: 14px; box-shadow: var(--pop-shadow-sm); pointer-events: none; }
+.pt-out b { font-family: var(--font-burst); font-size: 2.6rem; letter-spacing: .05em; text-shadow: 3px 3px 0 var(--ink); }
+.pt-out span { font-weight: 800; }
