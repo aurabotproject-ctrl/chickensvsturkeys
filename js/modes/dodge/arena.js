@@ -5,8 +5,8 @@
 // (a trapezoid: far edge narrower than the near edge).
 // =========================================================
 /* global PIXI */
-import { sprite, DODGE_SPRITES } from '../../core/assets.js?v=20261009145526';
-import { sfx } from '../../core/sfx.js?v=20261009145526';
+import { sprite, DODGE_SPRITES } from '../../core/assets.js?v=20261009153050';
+import { sfx } from '../../core/sfx.js?v=20261009153050';
 
 export const COURT_W = 1600;
 export const COURT_H = 900;

@@ -6,22 +6,22 @@
 import {
   isConfigured, db, ref, get, set, update, remove, onValue, onChildAdded, onChildChanged,
   currentUser, isTeacher, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261009145526';
-import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep } from '../js/core/ui.js?v=20261009145526';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009145526';
-import { playUrl } from '../js/core/games.js?v=20261009145526';
-import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261009145526';
-import { loadBankByKey } from '../js/quiz/banks.js?v=20261009145526';
-import { QuizEngine } from '../js/quiz/engine.js?v=20261009145526';
-import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261009145526';
-import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261009145526';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261009145526';
-import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261009145526';
-import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261009145526';
-import { TowerArena } from '../js/modes/towers/arena.js?v=20261009145526';
-import { SiegeArena } from '../js/modes/siege/arena.js?v=20261009145526';
-import { defenderFor } from '../js/modes/siege/rules.js?v=20261009145526';
-import { EVENTS, randomEvent } from '../js/events/events.js?v=20261009145526';
+} from '../js/core/firebase.js?v=20261009153050';
+import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep } from '../js/core/ui.js?v=20261009153050';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009153050';
+import { playUrl } from '../js/core/games.js?v=20261009153050';
+import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261009153050';
+import { loadBankByKey } from '../js/quiz/banks.js?v=20261009153050';
+import { QuizEngine } from '../js/quiz/engine.js?v=20261009153050';
+import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261009153050';
+import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261009153050';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261009153050';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261009153050';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261009153050';
+import { TowerArena } from '../js/modes/towers/arena.js?v=20261009153050';
+import { SiegeArena } from '../js/modes/siege/arena.js?v=20261009153050';
+import { defenderFor } from '../js/modes/siege/rules.js?v=20261009153050';
+import { EVENTS, randomEvent } from '../js/events/events.js?v=20261009153050';
 
 const gameId = params.get('g');
 const G = (p = '') => ref(db, `games/${gameId}${p ? '/' + p : ''}`);
@@ -419,7 +419,7 @@ function showRoundOverlay(standings) {
       <div class="vs-burst burst">VS</div>
       <div class="round-team turkey"><img src="${sprite(ts.turkey >= ts.chicken ? 'turkey_win' : 'turkey_dizzy')}" alt=""><div class="big">${showScore(ts.turkey)}</div><div class="lbl">TURKEYS</div></div>
     </div>
-    <div class="top5">${raw(standings.slice(0, 5).map((p, i) => html`<div class="who"><img src="${avatar(p.av)}" alt=""><b>${i + 1}. ${p.name}</b><span>${showScore(p.score)} ${UNIT()}</span></div>`).join(''))}</div>
+    <div class="top5">${raw(standings.slice(0, 5).map((p, i) => html`<div class="who"><img src="${avatar(p.av)}" alt=""><b>${i + 1}. ${p.name}</b><span class="nowrap">${CORRECT(p)} ✅</span></div>`).join(''))}</div>
     <div class="next-row"><button class="btn big" id="ov-next">${isSiege() ? 'SECOND HALF ▶' : 'NEXT ROUND ▶'}</button><span id="ov-auto"></span></div></div>`;
   let n = 25;
   const tick = () => {
@@ -454,7 +454,7 @@ async function finalScreen() {
     <img class="win-banner" src="${sprite(winner === 'chicken' ? 'win_chicken' : winner === 'turkey' ? 'win_turkey' : 'win_tie')}" alt="${winner} wins">
     <div class="final-scores"><div style="background:var(--chicken)">${raw(teamIco('chicken'))} ${showScore(ts.chicken)}</div><div style="background:var(--turkey)">${raw(teamIco('turkey'))} ${showScore(ts.turkey)}</div></div>
     <div class="podium-wrap"><img class="podium" src="${sprite('podium')}" alt="">
-      ${raw(top.map((p, i) => html`<div class="podium-spot p${i + 1}" style="animation-delay:${0.3 + (2 - i) * 0.35}s"><img class="av" src="${avatar(p.av)}" alt=""><img class="medal" src="${sprite(['medal_gold', 'medal_silver', 'medal_bronze'][i])}" alt=""><b>${p.name}</b><span>${showScore(p.score)} ${UNIT()}</span></div>`).join(''))}
+      ${raw(top.map((p, i) => html`<div class="podium-spot p${i + 1}" style="animation-delay:${0.3 + (2 - i) * 0.35}s"><img class="av" src="${avatar(p.av)}" alt=""><img class="medal" src="${sprite(['medal_gold', 'medal_silver', 'medal_bronze'][i])}" alt=""><b>${p.name}</b><span class="nowrap">${CORRECT(p)} ✅</span></div>`).join(''))}
     </div>
     <div class="final-btns">
       <button class="img-btn" id="f-again" title="Play again"><img src="${sprite('btn_playagain')}" alt="Play again"></button>
@@ -561,10 +561,16 @@ function teamScores() {
 function computeStandings() {
   if (!arena) return [];
   return [...arena.players.values()]
-    .map((p) => ({ uid: p.uid, name: p.name, team: p.team, score: p.score, av: players.get(p.uid)?.av, bot: p.bot }))
-    .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+    .map((p) => {
+      const info = players.get(p.uid);
+      const st = p.bot ? { correct: p.correct ?? info?.correct ?? 0, answered: p.answered ?? info?.answered ?? 0 } : engine.stats(p.uid);
+      return { uid: p.uid, name: p.name, team: p.team, score: p.score, av: info?.av, bot: p.bot, correct: st.correct || 0, answered: st.answered || 0 };
+    })
+    // Individual places = most questions correct (then fewest wrong, then game points). The TEAM result still uses the game.
+    .sort((a, b) => b.correct - a.correct || (a.answered - a.correct) - (b.answered - b.correct) || b.score - a.score || a.name.localeCompare(b.name));
 }
-const slim = (p) => ({ name: p.name, team: p.team, score: p.score, av: Number.isInteger(p.av) ? p.av : 0 });
+const slim = (p) => ({ name: p.name, team: p.team, score: p.score, correct: p.correct, av: Number.isInteger(p.av) ? p.av : 0 });
+const CORRECT = (p) => `${p.correct} correct`;
 
 let lastTeams = { chicken: -1, turkey: -1 };
 function bumpScores() {
@@ -579,10 +585,10 @@ function bumpScores() {
 let lastStandings = '';
 function drawStandings() {
   const st = computeStandings().slice(0, 8);
-  const key = st.map((p) => p.uid + showScore(p.score)).join();
+  const key = st.map((p) => p.uid + p.correct).join();
   if (key === lastStandings) return;
   lastStandings = key;
-  $('#standings').innerHTML = st.map((p, i) => html`<li class="${p.team}"><span class="rk">${i + 1}</span><img src="${avatar(Number.isInteger(p.av) ? p.av : AVATARS[p.team][0])}" alt=""><span class="nm">${p.name}</span><span class="sc">${showScore(p.score)}</span></li>`).join('');
+  $('#standings').innerHTML = st.map((p, i) => html`<li class="${p.team}"><span class="rk">${i + 1}</span><img src="${avatar(Number.isInteger(p.av) ? p.av : AVATARS[p.team][0])}" alt=""><span class="nm">${p.name}</span><span class="sc">✅${p.correct}</span></li>`).join('');
   const ts = teamScores();
   $('#team-scores').innerHTML = `<div class="chicken"><span>${teamIco('chicken')} Chickens</span><b>${showScore(ts.chicken)}</b></div><div class="turkey"><span>${teamIco('turkey')} Turkeys</span><b>${showScore(ts.turkey)}</b></div>`;
   bumpScores();
@@ -681,7 +687,7 @@ $('#c-scores').onclick = () => {
   const st = computeStandings();
   modal({
     title: 'Scores', wide: true,
-    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>${isCannon() ? 'Target points' : isFarm() ? 'Money earned' : isTowers() || isSiege() ? 'Battle points' : 'KO points'}</th><th>Correct</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${teamIco(p.team)}</td><td>${showScore(p.score)}</td><td>${p.bot ? '—' : `${engine.stats(p.uid).correct}/${engine.stats(p.uid).answered}`}</td></tr>`).join('')}</tbody></table>`,
+    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>Correct ✅</th><th>${isCannon() ? 'Target points' : isFarm() ? 'Money earned' : isTowers() || isSiege() ? 'Battle points' : 'KO points'}</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${teamIco(p.team)}</td><td><b>${p.correct}</b>/${p.answered}</td><td>${showScore(p.score)}</td></tr>`).join('')}</tbody></table>`,
     buttons: [{ label: 'Close', value: null }],
   });
 };
