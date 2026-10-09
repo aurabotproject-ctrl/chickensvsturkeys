@@ -61,6 +61,7 @@ export function newFarm() {
     coops: [1, 0, 0, 0], trucks: [1, 0, 0, 0], machine: 0,
     research: { hatch: 0, hens: 0, feed: 0, stampede: 0, fence: 0 },
     coopBuys: 0, truckBuys: 0, boostUntil: 0, hatched: 0,
+    coopSpent: [0, 0, 0, 0], truckSpent: [0, 0, 0, 0], machineSpent: 0,
   };
 }
 
@@ -124,11 +125,58 @@ export function hatch(f, n) {
 export function buy(f, kind) {
   const c = nextCosts(f)[kind];
   if (!c || f.cash < c.cash) return null;
-  f.cash -= c.cash;
-  if (kind === 'coop') { f.coops[c.slot] += 1; f.coopBuys += 1; }
-  else if (kind === 'truck') { f.trucks[c.slot] += 1; f.truckBuys += 1; }
-  else if (kind === 'machine') f.machine += 1;
+  return act(f, { op: 'upgrade', kind, slot: c.slot, level: c.level }) ? c : null;
+}
+
+// ---------- tap-a-building actions: build / upgrade / destroy ----------
+export const REFUND = 0.5; // destroying gives back half of what was spent on it
+export const MAXLV = { coop: 5, truck: 4, machine: 4 };
+const ensureSpent = (f) => { f.coopSpent ||= [0, 0, 0, 0]; f.truckSpent ||= [0, 0, 0, 0]; f.machineSpent ||= 0; };
+export const levelOf = (f, kind, slot) => (kind === 'coop' ? f.coops[slot] : kind === 'truck' ? f.trucks[slot] : f.machine) || 0;
+export const infoOf = (kind, lv) => (kind === 'coop' ? COOP_LV : kind === 'truck' ? TRUCK_LV : MACHINE_LV)[lv];
+/** Cost to take a building from its current level up to level `to`. */
+export function costTo(f, kind, slot, to) {
+  const cur = levelOf(f, kind, slot); let c = 0;
+  for (let k = 1; k <= to - cur; k++) c += kind === 'coop' ? coopCost(f.coopBuys + k) : kind === 'truck' ? truckCost(f.truckBuys + k) : MACHINE_COST[cur + k];
   return c;
+}
+export function refundOf(f, kind, slot) {
+  ensureSpent(f);
+  const spent = kind === 'coop' ? f.coopSpent[slot] : kind === 'truck' ? f.truckSpent[slot] : f.machineSpent;
+  return Math.floor((spent || 0) * REFUND);
+}
+/** Why a destroy isn't allowed ('' = allowed). */
+export function destroyProblem(f, kind, slot) {
+  if (!levelOf(f, kind, slot)) return 'Nothing to destroy.';
+  if (kind === 'coop' && f.coops.filter(Boolean).length <= 1) return 'You need at least one coop.';
+  if (kind === 'truck' && f.trucks.filter(Boolean).length <= 1) return 'You need at least one truck.';
+  return '';
+}
+/** a = { op: 'build'|'upgrade'|'destroy', kind: 'coop'|'truck'|'machine', slot, level } */
+export function act(f, a) {
+  ensureSpent(f);
+  const kind = a.kind; const slot = kind === 'machine' ? 0 : Math.max(0, Math.min(SLOTS - 1, Math.floor(+a.slot || 0)));
+  if (!MAXLV[kind]) return null;
+  const cur = levelOf(f, kind, slot);
+  if (a.op === 'destroy') {
+    if (destroyProblem(f, kind, slot)) return null;
+    const back = refundOf(f, kind, slot);
+    const name = infoOf(kind, cur).name;
+    f.cash += back;
+    if (kind === 'coop') { f.coops[slot] = 0; f.coopSpent[slot] = 0; f.chickens = Math.min(f.chickens, capacity(f)); }
+    else if (kind === 'truck') { f.trucks[slot] = 0; f.truckSpent[slot] = 0; }
+    else { f.machine = 0; f.machineSpent = 0; }
+    return { op: 'destroy', kind, slot, level: 0, cash: -back, name };
+  }
+  const to = a.op === 'upgrade' ? cur + 1 : Math.floor(+a.level || 0);
+  if (to <= cur || to > MAXLV[kind]) return null;
+  const cost = costTo(f, kind, slot, to);
+  if (f.cash < cost) return null;
+  f.cash -= cost;
+  if (kind === 'coop') { f.coops[slot] = to; f.coopBuys += to - cur; f.coopSpent[slot] += cost; }
+  else if (kind === 'truck') { f.trucks[slot] = to; f.truckBuys += to - cur; f.truckSpent[slot] += cost; }
+  else { f.machine = to; f.machineSpent += cost; }
+  return { op: cur ? 'upgrade' : 'build', kind, slot, level: to, cash: cost, name: infoOf(kind, to).name };
 }
 export function research(f, key) {
   const c = researchCost(f, key);

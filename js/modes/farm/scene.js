@@ -5,8 +5,8 @@
 // the road, balloons to pop and the occasional sneaky fox.
 // =========================================================
 /* global PIXI */
-import { sprite } from '../../core/assets.js?v=20261009140635';
-import { COOP_LV, TRUCK_LV, MACHINE_LV } from './economy.js?v=20261009140635';
+import { sprite } from '../../core/assets.js?v=20261009143757';
+import { COOP_LV, TRUCK_LV, MACHINE_LV } from './economy.js?v=20261009143757';
 
 const MAP_W = 900; const MAP_H = 1350;
 export const PLOTS = [{ x: 330, y: 470 }, { x: 715, y: 610 }, { x: 560, y: 245 }, { x: 470, y: 950 }];
@@ -22,10 +22,11 @@ const SPRITES = ['farm_ground', 'chicken_idle', 'chicken_run', 'turkey_idle', 't
   'fm_bag', 'fm_goldegg', 'fox', 'egg', 'puff', 'sparkle', 'feathers', 'word_bok', 'word_gobble', 'word_pow'];
 
 export class FarmScene {
-  constructor(el, { team, onBalloon, onFox } = {}) {
+  constructor(el, { team, onBalloon, onFox, onTap } = {}) {
     this.el = el; this.team = team || 'chicken';
     this.onBalloon = onBalloon || (() => {});
     this.onFox = onFox || (() => {});
+    this.onTap = onTap || (() => {}); // tap a coop / the machine / the trucks
     this.runners = []; this.queue = 0; this.trucks = []; this.balloons = []; this.fx = [];
     this.state = null; this.time = 0;
     this.nextBalloon = 8 + Math.random() * 6; this.nextFox = 45 + Math.random() * 25;
@@ -65,6 +66,19 @@ export class FarmScene {
     });
     this.machine = deco('fm_conveyor', MACHINE_AT.x, MACHINE_AT.y, 150); this.machine.visible = false;
     this.machineLabel = this.label('', MACHINE_AT.x, MACHINE_AT.y + 34, 28);
+    // empty machine spot
+    this.machineSpot = new PIXI.Graphics();
+    this.machineSpot.lineStyle(5, 0xffffff, 0.75).beginFill(0xffffff, 0.12).drawRoundedRect(MACHINE_AT.x - 85, MACHINE_AT.y - 75, 170, 110, 22).endFill();
+    this.layer.ground.addChild(this.machineSpot);
+    this.machineSign = this.label('🔨 BUILD\nMACHINE', MACHINE_AT.x, MACHINE_AT.y - 20, 30);
+    // truck garage sign by the road
+    this.garage = this.label('🚚 TRUCKS', 150, roadY(150) - 70, 34);
+    // green "upgrade available" arrows
+    this.arrows = {};
+    const arrow = (x, y) => { const t = this.label('⬆', x, y, 64, 0x7ed321); t.visible = false; t.baseY = y; return t; };
+    this.plots.forEach((p) => { this.arrows[`coop${p.i}`] = arrow(p.x + 95, p.y - 110); });
+    this.arrows.machine = arrow(MACHINE_AT.x + 80, MACHINE_AT.y - 110);
+    this.arrows.truck = arrow(150 + 110, roadY(150) - 75);
     this.depotSign = this.label('📦 TRUCKS FULL!', DEPOT.x, DEPOT.y - 80, 36, 0xff5a3c); this.depotSign.visible = false;
     this.layout();
     this.app.renderer.on('resize', () => this.layout());
@@ -73,6 +87,33 @@ export class FarmScene {
     // tapping balloons + fox
     this.app.stage.eventMode = 'static';
     this.app.stage.hitArea = new PIXI.Rectangle(0, 0, 4000, 4000);
+    window.cvtFarm = this; // handy for debugging
+    this.app.stage.on('pointertap', (e) => {
+      if (e.target !== this.app.stage) return; // balloons and the fox handle their own taps
+      const p = this.world.toLocal(e.global);
+      const hit = this.hitTest(p.x, p.y);
+      if (hit) { this.tapRing(hit.x, hit.y); this.onTap(hit); }
+    });
+  }
+
+  /** Which building is at this map point? */
+  hitTest(x, y) {
+    for (const p of this.plots) if (Math.abs(x - p.x) / 135 + Math.abs(y - (p.y - 40)) / 120 <= 1) return { kind: 'coop', slot: p.i, x: p.x, y: p.y };
+    if (Math.abs(x - MACHINE_AT.x) < 110 && y > MACHINE_AT.y - 140 && y < MACHINE_AT.y + 60) return { kind: 'machine', slot: 0, x: MACHINE_AT.x, y: MACHINE_AT.y };
+    if (Math.abs(y - (roadY(x) - 20)) < 80 || (Math.abs(x - 150) < 110 && Math.abs(y - (roadY(150) - 70)) < 45)) return { kind: 'truck', slot: 0, x, y: roadY(x) - 20 };
+    for (const tr of this.trucks) if (tr.spr?.visible && Math.hypot(x - tr.spr.x, y - tr.spr.y + 30) < 90) return { kind: 'truck', slot: 0, x: tr.spr.x, y: tr.spr.y };
+    return null;
+  }
+  tapRing(x, y) {
+    const g = new PIXI.Graphics(); g.position.set(x, y - 30);
+    g.lineStyle(8, 0xffc72c, 1).drawCircle(0, 0, 60);
+    g.base = 1; g.scale.set(1); g.maxLife = 0.35; g.life = 0.35;
+    this.layer.fx.addChild(g); this.fx.push(g);
+  }
+  /** Show green arrows over things the student can afford to upgrade or build. */
+  setAffordable(map) {
+    this.afford = map || {};
+    for (const [k, t] of Object.entries(this.arrows || {})) t.visible = !!this.afford[k];
   }
 
   label(text, x, y, size = 22, color = 0xffffff) {
@@ -113,6 +154,7 @@ export class FarmScene {
     this.machine.visible = !!m.sprite;
     if (m.sprite) { this.machine.texture = this.tex[m.sprite]; this.machine.scale.set(150 / this.machine.texture.width); this.machine.tint = st.machine >= 4 ? 0xffe066 : 0xffffff; }
     this.machineLabel.text = m.sprite ? m.name : '';
+    this.machineSpot.visible = !m.sprite; this.machineSign.visible = !m.sprite;
     // trucks on the road
     const owned = (st.trucks || []).filter(Boolean).length;
     while (this.trucks.length < owned) this.trucks.push({ x: -200 - this.trucks.length * 260, wait: this.trucks.length * 1.5, spr: null });
@@ -296,6 +338,8 @@ export class FarmScene {
       if (s.isWord) { const pop = k < 0.2 ? (k / 0.2) * 1.2 : 1.2 - Math.min(0.2, (k - 0.2)); s.scale.set(s.base * pop); s.alpha = k > 0.75 ? 1 - (k - 0.75) / 0.25 : 1; s.y -= dt * 20; } else if (s.isText) { s.y -= dt * 70; s.alpha = 1 - k; } else { s.scale.set(s.base * (0.6 + k)); s.alpha = 1 - k; }
       return true;
     });
+    // bobbing upgrade arrows
+    for (const t of Object.values(this.arrows || {})) if (t.visible) t.y = t.baseY + Math.sin(this.time * 6) * 8;
     // hatchery pulse + shake
     const pulse = this.queue > 0 ? 1 + Math.sin(this.time * 30) * 0.05 : 1;
     this.hatchery.scale.set((110 / this.hatchery.texture.width) * pulse);

@@ -1,5 +1,5 @@
 // Question banks: premade (static JSON files) + teacher banks (Realtime Database).
-import { db, ref, set, push, remove, get, onValue } from '../core/firebase.js?v=20261009140635';
+import { db, ref, set, push, remove, get, onValue } from '../core/firebase.js?v=20261009143757';
 
 const DATA = new URL('../../data/', import.meta.url).href;
 

@@ -71,7 +71,7 @@ Create Game → **Egg Cannon**. Each round: students answer 5 questions (each ri
 ## Egg Farm (Egg Inc style)
 Create Game → **Egg Farm** → 5, 8 or 12 minutes. Each student runs a farm on their device:
 - **Hold HATCH** → chicks run from the hatchery into your coops (the ring shows hatch charge).
-- **Build coops** on the 4 plots and upgrade them; **buy trucks** (they drive the road and limit how many eggs you can sell); **egg machines** make eggs worth more.
+- **Tap any building** (coop, truck, egg machine) to see its level and choose **⬆ Upgrade** (shows the price) or **💥 Destroy** (gives back half what you paid). Tap **🔨 BUILD** on an empty plot or the machine spot to choose what to build, with prices. A green ⬆ means you can afford an upgrade. The Coops / Trucks / Egg Machine buttons at the bottom open the same choices.
 - **Answer questions** (❓ QUIZ or the mystery crate) → a **STAMPEDE** of free chicks, cash, golden eggs and a ⚡×3 boost.
 - **Golden eggs** buy **Research** upgrades. Tap **balloons** for bonuses; tap the **fox** 3 times before it reaches a coop.
 The big screen shows the live team race. Most money earned wins.

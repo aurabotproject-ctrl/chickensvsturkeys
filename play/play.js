@@ -3,16 +3,16 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261009140635';
-import { $, $$, html, raw, esc, params } from '../js/core/ui.js?v=20261009140635';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009140635';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261009140635';
-import { sfx } from '../js/core/sfx.js?v=20261009140635';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261009140635';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261009140635';
-import { TowerView } from '../js/modes/towers/view.js?v=20261009140635';
-import * as FE from '../js/modes/farm/economy.js?v=20261009140635';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261009140635';
+} from '../js/core/firebase.js?v=20261009143757';
+import { $, $$, html, raw, esc, params } from '../js/core/ui.js?v=20261009143757';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261009143757';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261009143757';
+import { sfx } from '../js/core/sfx.js?v=20261009143757';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261009143757';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261009143757';
+import { TowerView } from '../js/modes/towers/view.js?v=20261009143757';
+import * as FE from '../js/modes/farm/economy.js?v=20261009143757';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261009143757';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -543,7 +543,9 @@ function startMeter() {
 })();
 
 // ---------------- Egg Farm ----------------
-const FM = { scene: null, hatchReq: 0, hatchLocal: 0, holding: false, buySeq: 0, rsSeq: 0, balloonSeq: 0, foxSeq: 0, adjCash: 0, shopHtml: '', rsHtml: '', lastHatched: 0, lastChicks: 0, sendT: null };
+// action counters start from the clock so they keep going up even if the page is reloaded mid-game
+const SEQ0 = Date.now();
+const FM = { scene: null, hatchReq: 0, hatchLocal: 0, holding: false, buySeq: SEQ0, rsSeq: SEQ0, balloonSeq: SEQ0, foxSeq: SEQ0, adjCash: 0, shopHtml: '', rsHtml: '', lastHatched: 0, lastChicks: 0, sendT: null };
 
 function ensureScene() {
   if (!isFarm() || !D.me?.team) return;
@@ -556,6 +558,7 @@ function ensureScene() {
       FM.scene.floatText(kind === 'gold' ? '+1 🥇' : `+${fmt(Math.max(30, (D.ps.lay ? Math.min(D.ps.lay, D.ps.ship) * D.ps.value : 1) * 20))}`, x, y);
       sendFarm({ balloonSeq: FM.balloonSeq, balloon: kind });
     },
+    onTap: (hit) => { if (D.state.phase === 'playing') openAct(hit.kind, hit.kind === 'coop' ? hit.slot : null); },
     onFox: (ate) => {
       if (ate) { FM.foxSeq += 1; sfx.wrong(); navigator.vibrate?.([100, 60, 100]); sendFarm({ foxSeq: FM.foxSeq, foxAte: true }); } else { sfx.correct(); }
     },
@@ -627,22 +630,23 @@ function drawFarm() {
   const al = $('#fm-alert');
   const shipFull = (ps.lay || 0) > (ps.ship || 0) + 0.01;
   const coopsFull = pr.chickens >= (ps.cap || 20);
-  if (ps.fox === 'danger') { al.className = 'fm-alert danger'; al.textContent = '🦊 FOX RAID! Answer a question correctly NOW to protect your cash!'; } else if (ps.fox === 'safe') { al.className = 'fm-alert safe'; al.textContent = '🛡️ Your farm is safe from the fox!'; } else if (boosting) { al.className = 'fm-alert boost'; al.textContent = `⚡ BOOST ×${BOOST_MULT} — ${Math.ceil((ps.boostUntil - serverNow()) / 1000)}s left · answer again to add more!`; } else if (shipFull) { al.className = 'fm-alert warn'; al.textContent = '📦 Your trucks are full — eggs are going to waste! Buy a truck.'; } else if (coopsFull) { al.className = 'fm-alert warn'; al.textContent = '🏠 Your coops are full! Build or upgrade a coop.'; } else { al.className = 'fm-alert hidden'; }
-  // shop
-  const c = FE.nextCosts({ ...ps, coops: ps.coops || [1, 0, 0, 0], trucks: ps.trucks || [1, 0, 0, 0], machine: ps.machine || 0, coopBuys: ps.coopBuys || 0, truckBuys: ps.truckBuys || 0 });
-  const t = team === 'chicken' ? 'c' : 't';
+  if (ps.fox === 'danger') { al.className = 'fm-alert danger'; al.textContent = '🦊 FOX RAID! Answer a question correctly NOW to protect your cash!'; } else if (ps.fox === 'safe') { al.className = 'fm-alert safe'; al.textContent = '🛡️ Your farm is safe from the fox!'; } else if (boosting) { al.className = 'fm-alert boost'; al.textContent = `⚡ BOOST ×${BOOST_MULT} — ${Math.ceil((ps.boostUntil - serverNow()) / 1000)}s left · answer again to add more!`; } else if (shipFull) { al.className = 'fm-alert warn'; al.textContent = '📦 Your trucks are full — eggs are going to waste! Tap 🚚 TRUCKS to add or upgrade one.'; } else if (coopsFull) { al.className = 'fm-alert warn'; al.textContent = '🏠 Your coops are full! Tap a coop to upgrade it, or tap 🔨 BUILD.'; } else { al.className = 'fm-alert'; al.textContent = '👆 Tap any coop, truck or machine to upgrade it · tap 🔨 BUILD to build · green ⬆ = you can afford it'; }
+  // bottom buttons: open the build / upgrade sheets
+  const fm = farmNow(ps);
+  const afford = (kind, slot) => { const lv = FE.levelOf(fm, kind, slot); return lv < FE.MAXLV[kind] && pr.cash >= FE.costTo(fm, kind, slot, lv + 1); };
+  const aff = { machine: afford('machine', 0), truck: [0, 1, 2, 3].some((i) => afford('truck', i)) };
+  [0, 1, 2, 3].forEach((i) => { aff[`coop${i}`] = afford('coop', i); });
+  FM.scene?.setAffordable?.(aff);
+  const anyCoop = [0, 1, 2, 3].some((i) => aff[`coop${i}`]);
   const anyRs = Object.keys(FE.RESEARCH).some((k) => { const rc = FE.researchCost({ research: ps.research || {} }, k); return rc != null && (ps.gold || 0) >= rc; });
-  const items = [
-    ['coop', c.coop ? `fm_coop_${t}${c.coop.level}` : `fm_coop_${t}5`, c.coop ? (c.coop.level === 1 ? 'New Coop' : c.coop.name) : 'Coops', c.coop ? `+room` : '', c.coop, coopsFull],
-    ['truck', c.truck ? FE.TRUCK_LV[c.truck.level].sprite : 'fm_truck', c.truck ? (c.truck.level === 1 ? 'New Van' : c.truck.name) : 'Trucks', c.truck ? `sell faster` : '', c.truck, shipFull],
-    ['machine', c.machine ? FE.MACHINE_LV[(ps.machine || 0) + 1].sprite : 'fm_packer', c.machine ? c.machine.name : 'Machine', c.machine ? 'eggs worth more' : '', c.machine, false],
-  ];
-  let html2 = items.map(([k, icon, title, sub, cost, need]) => {
-    const can = cost && pr.cash >= cost.cash;
-    return `<button class="fm-buy ${!cost ? 'max' : can ? 'can' : need ? 'need no' : 'no'}" data-buy="${k}" ${cost ? '' : 'disabled'}><img src="${sprite(icon)}" alt=""><b>${esc(title)}</b><small>${esc(sub)}</small><span class="price">${cost ? esc(fmt(cost.cash)) : 'MAX'}</span></button>`;
-  }).join('');
+  const t = team === 'chicken' ? 'c' : 't';
+  const btn = (k, icon, title, sub, can, need) => `<button class="fm-buy ${can ? 'can' : need ? 'need no' : 'no'}" data-open="${k}"><img src="${sprite(icon)}" alt=""><b>${title}</b><small>${sub}</small>${can ? '<span class="price">⬆ ready</span>' : ''}</button>`;
+  let html2 = btn('coop', `fm_coop_${t}3`, 'Coops', 'build · upgrade', anyCoop, coopsFull)
+    + btn('truck', 'fm_truck', 'Trucks', 'sell more eggs', aff.truck, shipFull)
+    + btn('machine', FE.MACHINE_LV[Math.max(1, ps.machine || 0)].sprite, 'Egg Machine', 'eggs worth more', aff.machine, false);
   html2 += `<button class="fm-buy ${anyRs ? 'can' : ''}" data-buy="research"><img src="${sprite('fm_goldegg')}" alt=""><b>Research</b><small>golden eggs</small><span class="price" style="color:#b8860b">🔬 ${ps.gold || 0}</span></button>`;
   if (FM.shopHtml !== html2) { FM.shopHtml = html2; $('#fm-shop').innerHTML = html2; }
+  if (!$('#fm-act').classList.contains('hidden')) drawAct();
   if (!$('#fm-research').classList.contains('hidden')) drawResearch();
 }
 
@@ -677,7 +681,8 @@ hatchBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 setInterval(() => { if (isFarm() && D.state.phase === 'playing') drawFarm(); }, 250);
 $('#fm-crate').addEventListener('click', () => { sfx.click(); setTab('answer'); });
 $('#fm-shop').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-buy]'); if (!b || b.disabled || D.state.phase !== 'playing') return;
+  const b = e.target.closest('[data-buy], [data-open]'); if (!b || b.disabled || D.state.phase !== 'playing') return;
+  if (b.dataset.open) { openAct(b.dataset.open, null); return; }
   const k = b.dataset.buy;
   if (k === 'research') { $('#fm-research').classList.remove('hidden'); FM.rsHtml = ''; drawResearch(); sfx.click(); return; }
   if (!b.classList.contains('can')) { sfx.wrong(); b.animate([{ transform: 'translateX(-4px)' }, { transform: 'translateX(4px)' }, { transform: 'none' }], { duration: 200 }); return; }
@@ -825,3 +830,78 @@ function closeTwQuiz() {
   x.onclick = () => { closeTwQuiz(); sfx.click(); };
   $('#view-answer').prepend(x);
 }
+
+// ---------- Egg Farm: tap a building → build / upgrade / destroy ----------
+/** The farm numbers the phone needs for prices (from the host's last update). */
+function farmNow(ps = D.ps) {
+  return {
+    coops: [...(ps.coops || [1, 0, 0, 0])], trucks: [...(ps.trucks || [1, 0, 0, 0])], machine: ps.machine || 0,
+    coopBuys: ps.coopBuys || 0, truckBuys: ps.truckBuys || 0,
+    coopSpent: [...(ps.coopSpent || [0, 0, 0, 0])], truckSpent: [...(ps.truckSpent || [0, 0, 0, 0])], machineSpent: ps.machineSpent || 0,
+  };
+}
+FM.act = null; FM.confirm = '';
+function openAct(kind, slot) {
+  FM.act = { kind, slot }; FM.confirm = ''; FM.actHtml = '';
+  $('#fm-act').classList.remove('hidden');
+  sfx.click(); drawAct();
+}
+function closeAct() { FM.act = null; $('#fm-act').classList.add('hidden'); }
+const KIND_TXT = {
+  coop: { title: 'Coop', icon: (lv, t) => `fm_coop_${t}${Math.max(1, lv)}`, stat: (lv) => `🐔 room for ${FE.fmtN(FE.COOP_LV[lv].cap)} chickens` },
+  truck: { title: 'Truck', icon: (lv) => FE.TRUCK_LV[Math.max(1, lv)].sprite, stat: (lv) => `📦 sells ${FE.fmtN(FE.TRUCK_LV[lv].cap)} eggs a second` },
+  machine: { title: 'Egg Machine', icon: (lv) => FE.MACHINE_LV[Math.max(1, lv)].sprite, stat: (lv) => `🥚 eggs worth ×${FE.MACHINE_LV[lv].mult}` },
+};
+function actCard(kind, slot) {
+  const f = farmNow(); const cash = predicted().cash; const T = KIND_TXT[kind]; const t = D.me?.team === 'turkey' ? 't' : 'c';
+  const lv = FE.levelOf(f, kind, slot); const max = FE.MAXLV[kind];
+  const where = kind === 'coop' ? `Plot ${slot + 1}` : kind === 'truck' ? `Truck spot ${slot + 1}` : 'Machine spot';
+  if (!lv) { // empty → choose what to build
+    const opts = [];
+    for (let to = 1; to <= max; to++) {
+      const cost = FE.costTo(f, kind, slot, to); const can = cash >= cost;
+      opts.push(`<button class="fm-opt ${can ? 'can' : ''}" data-act="build" data-kind="${kind}" data-slot="${slot}" data-level="${to}"><img src="${sprite(T.icon(to, t))}" alt=""><span><b>${esc(FE.infoOf(kind, to).name)}</b><small>${T.stat(to)}</small></span><span class="cost">${esc(FE.fmt(cost))}${can ? '' : `<small>need ${esc(FE.fmt(cost - cash))} more</small>`}</span></button>`);
+    }
+    return `<div class="fm-card"><h3>🔨 Build — ${where}</h3><p class="hint">Choose what to build. Bigger ones cost more but do more.</p><div class="fm-opts">${opts.join('')}</div></div>`;
+  }
+  const info = FE.infoOf(kind, lv);
+  const up = lv < max ? { cost: FE.costTo(f, kind, slot, lv + 1), next: FE.infoOf(kind, lv + 1) } : null;
+  const back = FE.refundOf(f, kind, slot); const prob = FE.destroyProblem(f, kind, slot);
+  const confirming = FM.confirm === `${kind}${slot}`;
+  return `<div class="fm-card"><div class="fm-card-head"><img src="${sprite(T.icon(lv, t))}" alt=""><div><h3>${esc(info.name)}</h3><small>${where} · Level ${lv}/${max}</small><div class="stat">${T.stat(lv)}</div></div></div>
+    <div class="fm-acts">
+      ${up ? `<button class="fm-act-btn up ${cash >= up.cost ? 'can' : ''}" data-act="upgrade" data-kind="${kind}" data-slot="${slot}"><b>⬆ Upgrade to ${esc(up.next.name)}</b><small>${T.stat(lv + 1)}</small><span class="cost">${esc(FE.fmt(up.cost))}${cash >= up.cost ? '' : ` · need ${esc(FE.fmt(up.cost - cash))} more`}</span></button>` : '<div class="fm-max">⭐ Fully upgraded!</div>'}
+      <button class="fm-act-btn del ${prob ? 'off' : ''} ${confirming ? 'confirm' : ''}" data-act="destroy" data-kind="${kind}" data-slot="${slot}"><b>${confirming ? '⚠️ Tap again to destroy' : '💥 Destroy'}</b><small>${prob ? esc(prob) : `get ${esc(FE.fmt(back))} back (half what you paid)`}</small></button>
+    </div></div>`;
+}
+function drawAct() {
+  if (!FM.act) return;
+  const { kind, slot } = FM.act;
+  const slots = slot != null || kind === 'machine' ? [slot || 0] : [0, 1, 2, 3];
+  const title = { coop: '🏠 Coops', truck: '🚚 Trucks', machine: '⚙️ Egg Machine' }[kind];
+  const html2 = `<h2>${title} <small>💰 ${esc(fmt(predicted().cash))}</small></h2><div class="fm-cards">${slots.map((i) => actCard(kind, i)).join('')}</div>`;
+  if (FM.actHtml !== html2) { FM.actHtml = html2; $('#fm-act-body').innerHTML = html2; }
+}
+$('#fm-act-close').addEventListener('click', () => { closeAct(); sfx.click(); });
+$('#fm-act').addEventListener('click', (e) => {
+  if (e.target.id === 'fm-act') { closeAct(); return; } // tapped outside the box
+  const b = e.target.closest('[data-act]'); if (!b || D.state.phase !== 'playing') return;
+  const a = { op: b.dataset.act, kind: b.dataset.kind, slot: +b.dataset.slot || 0, level: +b.dataset.level || 0 };
+  const shake = () => { sfx.wrong(); b.animate([{ transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' }, { transform: 'none' }], { duration: 220 }); };
+  const f = farmNow();
+  if (a.op === 'destroy') {
+    if (FE.destroyProblem(f, a.kind, a.slot)) { shake(); return; }
+    if (FM.confirm !== `${a.kind}${a.slot}`) { FM.confirm = `${a.kind}${a.slot}`; sfx.click(); drawAct(); return; }
+    FM.adjCash += FE.refundOf(f, a.kind, a.slot);
+  } else {
+    const lv = FE.levelOf(f, a.kind, a.slot);
+    const cost = FE.costTo(f, a.kind, a.slot, a.op === 'upgrade' ? lv + 1 : a.level);
+    if (predicted().cash < cost) { shake(); return; }
+    FM.adjCash -= cost;
+  }
+  FM.confirm = '';
+  FM.buySeq += 1;
+  sendFarm({ act: a });
+  a.op === 'destroy' ? sfx.splat() : sfx.join(); navigator.vibrate?.(30);
+  closeAct(); drawFarm();
+});

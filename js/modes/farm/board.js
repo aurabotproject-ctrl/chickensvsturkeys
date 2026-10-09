@@ -3,9 +3,9 @@
 // nobody can cheat from a phone) and draws the live race board
 // on the projector.
 // =========================================================
-import { sprite, avatar, AVATARS } from '../../core/assets.js?v=20261009140635';
-import { esc } from '../../core/ui.js?v=20261009140635';
-import * as E from './economy.js?v=20261009140635';
+import { sprite, avatar, AVATARS } from '../../core/assets.js?v=20261009143757';
+import { esc } from '../../core/ui.js?v=20261009143757';
+import * as E from './economy.js?v=20261009143757';
 
 const coopSprite = (team, lvl) => `fm_coop_${team === 'chicken' ? 'c' : 't'}${Math.max(1, lvl)}`;
 const article = (w) => (/^[AEIOU]/i.test(w) ? 'an' : 'a');
@@ -71,7 +71,7 @@ export class FarmBoard {
       lay: +E.layRate(f).toFixed(2), ship: E.shipCap(f), value: +E.eggValue(f).toFixed(2),
       rate: +this.rate(p).toFixed(2), mult: this.mult(p),
       coops: [...f.coops], trucks: [...f.trucks], machine: f.machine, research: { ...f.research },
-      coopBuys: f.coopBuys, truckBuys: f.truckBuys, boostUntil: f.boostUntil, hatched: f.hatched, t: this.now(),
+      coopBuys: f.coopBuys, truckBuys: f.truckBuys, coopSpent: [...(f.coopSpent || [0, 0, 0, 0])], truckSpent: [...(f.truckSpent || [0, 0, 0, 0])], machineSpent: f.machineSpent || 0, boostUntil: f.boostUntil, hatched: f.hatched, t: this.now(),
       golden: this.effects.golden > 0 ? 1 : 0, catchup: this.effects.catchup > 0 && this.effects.catchupTeam === p.team ? 1 : 0,
       fox: fx && fx.team === p.team ? (fx.safe.has(uid) ? 'safe' : 'danger') : '',
     };
@@ -82,10 +82,17 @@ export class FarmBoard {
   handleInput(uid, inp) {
     const p = this.players.get(uid); if (!p || !this.running || this.paused) return;
     const L = p.last; const f = p.farm;
-    const seen = (k) => { const v = +inp[k] || 0; if (L[k] === undefined) { L[k] = v; return 0; } const d = v - L[k]; if (d > 0) L[k] = v; return Math.max(0, d); };
+    // counters only go up; the first time we see one, its newest step still counts (except hatching, which is a running total)
+    const seen = (k) => { const v = +inp[k] || 0; if (L[k] === undefined) { L[k] = (k === 'buySeq' && (inp.act || inp.buy)) || (k === 'rsSeq' && E.RESEARCH[inp.rs]) ? v - 1 : v; } const d = v - L[k]; if (d > 0) L[k] = v; return Math.max(0, d); };
     const h = seen('hatch'); if (h) { E.hatch(f, h); this.onChange(p); }
-    if (seen('buySeq')) { const c = E.buy(f, inp.buy); if (c && inp.buy !== 'truck') this.announce(p, inp.buy, c); this.onChange(p); }
-    if (seen('rsSeq')) { if (E.research(f, inp.rs)) this.feedItem(p, `researched <b>${esc(E.RESEARCH[inp.rs]?.name || '')}</b> 🔬`, E.RESEARCH[inp.rs]?.icon); this.onChange(p); }
+    if (seen('buySeq')) {
+      if (inp.act && typeof inp.act === 'object') { // tap-a-building: build / upgrade / destroy
+        const r = E.act(f, inp.act);
+        if (r && r.op !== 'destroy' && r.kind !== 'truck') this.announce(p, r.kind, r);
+      } else { const c = E.buy(f, inp.buy); if (c && inp.buy !== 'truck') this.announce(p, inp.buy, c); }
+      this.onChange(p);
+    }
+    if (seen('rsSeq') && E.RESEARCH[inp.rs]) { if (E.research(f, inp.rs)) this.feedItem(p, `researched <b>${esc(E.RESEARCH[inp.rs]?.name || '')}</b> 🔬`, E.RESEARCH[inp.rs]?.icon); this.onChange(p); }
     if (seen('balloonSeq') && this.now() - p.balloonAt > 6000) {
       p.balloonAt = this.now();
       if (inp.balloon === 'gold') f.gold += 1;
