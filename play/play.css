@@ -256,3 +256,32 @@ body.mode-siege .egg-bar, body.mode-siege .egg-count { display: none; }
 .sg-hp i { display: block; height: 10px; border: 2px solid var(--ink); border-radius: 99px; background: linear-gradient(90deg, var(--grass) var(--hp, 100%), #333 var(--hp, 100%)); margin-top: 2px; }
 .map-blocked { position: absolute; inset: 12%; z-index: 5; display: grid; place-content: center; gap: 8px; text-align: center; background: #fff; color: var(--ink); border: 4px solid var(--ink); border-radius: 18px; padding: 16px; font-weight: 900; box-shadow: var(--pop-shadow-sm); }
 .map-blocked b { font-family: var(--font-burst); font-size: 1.8rem; color: var(--turkey); }
+
+/* Coop Wars is played in landscape */
+.rotate-msg { display: none; }
+@media (orientation: portrait) {
+  body.mode-towers #view-tw .rotate-msg { display: grid; place-content: center; justify-items: center; gap: 10px; position: fixed; inset: 0; z-index: 60; background: var(--navy-900, #0b1a3d); color: #fff; text-align: center; padding: 24px; }
+  .rotate-msg b { font-family: var(--font-burst); font-size: 2.2rem; letter-spacing: .03em; color: var(--yolk); text-shadow: 3px 3px 0 var(--ink); }
+  .rotate-msg span { font-weight: 800; max-width: 22em; }
+  .rotate-ico { font-size: 5rem; animation: tilt 1.6s ease-in-out infinite; }
+}
+@keyframes tilt { 0%, 30% { transform: rotate(0deg); } 60%, 100% { transform: rotate(-90deg); } }
+/* short landscape screens (phones): tighten the HUD so the map gets the room */
+@media (orientation: landscape) and (max-height: 560px) {
+  body.mode-towers #view-tw { gap: 4px; }
+  body.mode-towers #view-tw .tw-hint { font-size: .7rem; padding: 2px 8px; }
+  body.mode-towers #view-tw .tw-stat img { height: 22px; }
+}
+@media (orientation: landscape) and (max-height: 560px) {
+  body.mode-towers #play { gap: 4px; padding-top: 4px; padding-bottom: 4px; }
+  body.mode-towers .ph { padding: 2px 8px; min-height: 0; }
+  body.mode-towers .ph .me-av { width: 30px; height: 30px; }
+  body.mode-towers .ph .me-info small { display: none; }
+  body.mode-towers .ph .me-stat { padding: 0 8px; }
+  body.mode-towers .tab { font-size: 1rem; padding: 3px 4px; border-width: 2px; }
+  body.mode-towers #view-tw .tw-hint { display: none; }
+  body.mode-towers #view-tw .tw-top { position: absolute; top: 6px; left: 6px; right: 6px; z-index: 3; pointer-events: none; }
+  body.mode-towers #view-tw .tw-stat, body.mode-towers #view-tw .tw-score { transform: scale(.85); transform-origin: left top; }
+  body.mode-towers #view-tw .tw-score { transform-origin: right top; }
+  body.mode-towers #view-tw .tw-wrap { border-width: 3px; }
+}

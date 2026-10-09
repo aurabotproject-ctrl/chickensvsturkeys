@@ -76,7 +76,7 @@ The big screen shows the live team race. Most money earned wins.
 
 ## Coop Wars (Tower War style)
 Create Game → **Coop Wars** → 5, 8 or 12 minutes, and choose **Troop growth** (Auto / Questions only / Slow + questions).
-- Every student starts with their own coop (gold ring on their device, their name on the big screen). Your team is always at the bottom of your device.
+- Every student starts with their own coop (gold ring on their device, their name on the big screen). Devices show the same landscape map as the big screen (chickens left, turkeys right) and ask students to turn sideways if held upright.
 - **Drag** from your coop to any building to march troops along a line. Troops lower enemy and grey buildings — at **0** the building is **captured** and becomes yours. Troops sent to your team's buildings raise their level.
 - **Swipe** across one of your lines to cut it. Level **10** unlocks a 2nd line and level **20** a 3rd (max level 63).
 - **Answer questions** (QUIZ tab or the crate) → +8 troops spread across all your coops (more for streaks and confident answers). Lost all your coops? Your answers reinforce your team.

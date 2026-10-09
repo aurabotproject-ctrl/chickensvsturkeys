@@ -1,6 +1,6 @@
 // =========================================================
 // COOP WARS — the student's map on their phone (PixiJS v7).
-// The map is turned so YOUR team is at the bottom.
+// Landscape, exactly like the big screen (chickens left, turkeys right).
 //   drag from one of your coops (gold ring) → to any building = march
 //   swipe across one of your lines = cut it
 // =========================================================
@@ -21,8 +21,7 @@ export class TowerView {
     this.el.appendChild(this.app.view);
     this.tex = await loadTextures();
     this.world = new PIXI.Container(); this.app.stage.addChild(this.world);
-    this.rot = this.team === 'turkey' ? Math.PI / 2 : -Math.PI / 2;
-    this.world.rotation = this.rot;
+    this.rot = 0; // same orientation as the projector
     this.layer = {};
     ['bg', 'range', 'paths', 'buildings', 'draw'].forEach((k) => { const c = new PIXI.Container(); this.layer[k] = c; this.world.addChild(c); });
     this.layer.buildings.sortableChildren = true;
@@ -37,15 +36,14 @@ export class TowerView {
   }
 
   layout() {
-    // rotated map is MAP_H wide × MAP_W tall
+    // same landscape map as the big screen, with a little of the painted border showing
     const w = this.el.clientWidth; const h = this.el.clientHeight;
-    const s = Math.min(w / MAP_H, h / MAP_W);
+    const PW = MAP_W + 60; const PH = MAP_H + 40;
+    const s = Math.min(w / PW, h / PH);
     this.scale = s; this.world.scale.set(s);
-    this.big = Math.max(1, Math.min(1.7, 0.6 / s)); // small screens: draw buildings bigger so they're easy to tap
+    this.big = Math.max(1, Math.min(1.5, 0.55 / s)); // small screens: draw buildings bigger so they're easy to tap
     if (this.views) this.views.forEach((v) => { v.last.key = ''; });
-    const ox = (w - MAP_H * s) / 2; const oy = (h - MAP_W * s) / 2;
-    if (this.team === 'turkey') this.world.position.set(ox + MAP_H * s, oy); // (x,y) → (H - y, x)
-    else this.world.position.set(ox, oy + MAP_W * s); // (x,y) → (y, W - x)
+    this.world.position.set((w - MAP_W * s) / 2, (h - MAP_H * s) / 2);
   }
 
   setStatic(st) {
@@ -57,7 +55,7 @@ export class TowerView {
     this.layer.bg.addChild(drawBackground(this.tex, this.map.seed, b, this.map.walls, this.rot));
     this.views = b.map((bb) => {
       const v = makeBuilding(this.tex, bb, { counterRotate: -this.rot });
-      v.root.zIndex = bb.x * (this.team === 'turkey' ? 1 : -1);
+      v.root.zIndex = bb.y;
       this.layer.buildings.addChild(v.root);
       this.layer.range.addChild(v.range); v.range.position.set(bb.x, bb.y);
       return v;
