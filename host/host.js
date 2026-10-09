@@ -6,24 +6,24 @@
 import {
   isConfigured, db, ref, get, set, update, remove, onValue, onChildAdded, onChildChanged,
   currentUser, isTeacher, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010110737';
-import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261010110737';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010110737';
-import { playUrl } from '../js/core/games.js?v=20261010110737';
-import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261010110737';
-import { loadBankByKey } from '../js/quiz/banks.js?v=20261010110737';
-import { QuizEngine } from '../js/quiz/engine.js?v=20261010110737';
-import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261010110737';
-import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261010110737';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261010110737';
-import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261010110737';
-import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261010110737';
-import { TowerArena } from '../js/modes/towers/arena.js?v=20261010110737';
-import { PaintArena } from '../js/modes/paint/arena.js?v=20261010110737';
-import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261010110737';
-import { SiegeArena } from '../js/modes/siege/arena.js?v=20261010110737';
-import { defenderFor } from '../js/modes/siege/rules.js?v=20261010110737';
-import { EVENTS, randomEvent } from '../js/events/events.js?v=20261010110737';
+} from '../js/core/firebase.js?v=20261010111459';
+import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261010111459';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010111459';
+import { playUrl } from '../js/core/games.js?v=20261010111459';
+import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261010111459';
+import { loadBankByKey } from '../js/quiz/banks.js?v=20261010111459';
+import { QuizEngine } from '../js/quiz/engine.js?v=20261010111459';
+import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261010111459';
+import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261010111459';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261010111459';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261010111459';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261010111459';
+import { TowerArena } from '../js/modes/towers/arena.js?v=20261010111459';
+import { PaintArena } from '../js/modes/paint/arena.js?v=20261010111459';
+import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261010111459';
+import { SiegeArena } from '../js/modes/siege/arena.js?v=20261010111459';
+import { defenderFor } from '../js/modes/siege/rules.js?v=20261010111459';
+import { EVENTS, randomEvent } from '../js/events/events.js?v=20261010111459';
 
 const gameId = params.get('g');
 const G = (p = '') => ref(db, `games/${gameId}${p ? '/' + p : ''}`);
@@ -444,15 +444,30 @@ function showRoundOverlay(standings) {
     <div class="next-row"><button class="btn big" id="ov-next">${isSiege() ? 'SECOND HALF ▶' : 'NEXT ROUND ▶'}</button><span id="ov-auto"></span></div></div>`;
   let n = 25;
   const tick = () => {
+    if (peeking) { $('#ov-auto').textContent = 'paused'; nextTimer = setTimeout(tick, 1000); return; } // wait while the teacher looks at the board
     $('#ov-auto').textContent = `starts in ${n}s`;
     if (n-- <= 0) { hideOverlay(); startRound(); return; }
     nextTimer = setTimeout(tick, 1000);
   };
   tick();
   $('#ov-next').onclick = () => { clearTimeout(nextTimer); hideOverlay(); startRound(); };
+  showPeekButton();
 }
 
-function hideOverlay() { const ov = $('#overlay'); ov.className = 'overlay hidden'; ov.innerHTML = ''; }
+function hideOverlay() { const ov = $('#overlay'); ov.className = 'overlay hidden'; ov.innerHTML = ''; setPeek(false); $('#peek-btn')?.classList.add('hidden'); }
+
+// "Hide results" lets everyone see the game board as it was at the end of the round.
+let peeking = false;
+function setPeek(on) {
+  peeking = on;
+  $('#overlay').classList.toggle('peek', on);
+  const b = $('#peek-btn'); if (b) b.textContent = on ? '📊 Show results' : '👀 Hide results';
+}
+function showPeekButton() {
+  let b = $('#peek-btn');
+  if (!b) { b = document.createElement('button'); b.id = 'peek-btn'; b.className = 'btn yellow peek-btn'; b.onclick = () => setPeek(!peeking); document.body.appendChild(b); }
+  b.classList.remove('hidden'); setPeek(false);
+}
 
 async function finalScreen() {
   clearTimeout(nextTimer);
@@ -483,6 +498,7 @@ async function finalScreen() {
       <a class="btn grey" href="../teacher/">🏠 Teacher HQ</a>
     </div></div>`;
   $('#f-again').onclick = playAgain;
+  showPeekButton();
   $('#f-results').onclick = () => window.open(`../teacher/report.html?r=${encodeURIComponent(`${gameId}-${playIndex}`)}`, '_blank');
 }
 
