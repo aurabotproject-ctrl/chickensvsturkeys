@@ -5,12 +5,12 @@
 // traps and bombs on the lawn; attackers buy troops and pick a row.
 // =========================================================
 /* global PIXI */
-import { sprite } from '../../core/assets.js?v=20261009153050';
-import { sfx } from '../../core/sfx.js?v=20261009153050';
+import { sprite } from '../../core/assets.js?v=20261009174320';
+import { sfx } from '../../core/sfx.js?v=20261009174320';
 import {
   ROWS, COLS, W, H, LAWN, LAWN_R, SPAWN_X, cellX, rowY, START_CORN, COOP_HP, CORN_PER_RIGHT,
   DEF, ATT, PTS, defenderFor, other, tc, defArt, attArt, coopArt, mowerArt, SG_ART,
-} from './rules.js?v=20261009153050';
+} from './rules.js?v=20261009174320';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pickOne = (arr) => arr[Math.floor(Math.random() * arr.length)];
@@ -242,10 +242,14 @@ export class SiegeArena {
     this.roundTime += dt;
     if (this.effects.golden > 0) this.effects.golden -= dt;
     // a trickle of wild raiders keeps the defenders busy (gets faster as the half goes on)
+    // Wild raiders head for rows that have defences but nothing to shoot at, so every egg shooter gets action.
     this.ambientT -= dt;
     if (this.ambientT <= 0) {
-      this.ambientT = Math.max(7, 16 - this.roundTime / 20);
-      this.spawn(Math.random() < 0.15 ? 'h' : 'r', Math.floor(Math.random() * ROWS), '', this.att);
+      this.ambientT = Math.max(4, 9 - this.roundTime / 40);
+      const busy = (r) => this.atts.some((u) => u.r === r && u.hp > 0);
+      const guarded = [...Array(ROWS).keys()].filter((r) => this.grid.some((d) => d && d.r === r && (DEF[d.k].fire || DEF[d.k].trap || DEF[d.k].fuse)) && !busy(r));
+      const r = guarded.length && Math.random() < 0.8 ? guarded[Math.floor(Math.random() * guarded.length)] : Math.floor(Math.random() * ROWS);
+      this.spawn(Math.random() < 0.15 ? 'h' : 'r', r, '', this.att);
     }
     const lane = (r) => this.atts.filter((u) => u.r === r && u.hp > 0);
     // defences
@@ -265,14 +269,26 @@ export class SiegeArena {
           d.cd = info.fire;
           for (let s = 0; s < (info.shots || 1); s++) this.fireEgg(d, s * 46);
           d.kick = 0.15;
+          this.burst('tw_fx_dust', cellX(d.c) + 46, rowY(d.r) - 14, 0.18);
         }
       }
       if (info.trap) {
-        for (const u of lane(d.r)) if (Math.abs(u.x - cellX(d.c)) < LAWN.cw * 0.5) { this.hurt(u, info.trap * dt, d.owner); }
+        for (const u of lane(d.r)) {
+          if (Math.abs(u.x - cellX(d.c)) >= LAWN.cw * 0.5) continue;
+          (d.popped ||= new Set());
+          if (!d.popped.has(u.id)) { // first step on it → SPLAT
+            d.popped.add(u.id);
+            this.hurt(u, info.pop, d.owner); u.slow = Math.max(u.slow || 0, 2.5); d.kick = 0.25;
+            this.burst('tw_fx_splat', cellX(d.c), rowY(d.r) + 20, 0.7);
+            this.word('word_splat', cellX(d.c), rowY(d.r) - 50, 120, 0.8);
+          }
+          this.hurt(u, info.trap * dt, d.owner);
+        }
       }
       if (info.fuse) {
-        d.fuse -= dt;
-        if (d.fuse <= 0) this.explode(d);
+        // armed mine: waits for an attacker within about a square, then a short fuse
+        if (!d.lit && this.atts.some((u) => u.hp > 0 && Math.abs(u.r - d.r) <= 0 && Math.abs(u.x - cellX(d.c)) < LAWN.cw * 1.3)) d.lit = true;
+        if (d.lit) { d.fuse -= dt; if (d.fuse <= 0) this.explode(d); }
       }
     }
     // eggs
@@ -294,7 +310,7 @@ export class SiegeArena {
       if (u.slow > 0) u.slow -= dt;
       const f = u.slow > 0 ? 0.5 : 1;
       const front = u.x - 40;
-      const block = this.grid.filter((d) => d && d.r === u.r && !DEF[d.k].fuse && (!DEF[d.k].trap || info.smash) && Math.abs(cellX(d.c) - front) < 34).sort((a, b) => b.c - a.c)[0];
+      const block = this.grid.filter((d) => d && d.r === u.r && !DEF[d.k].fuse && !DEF[d.k].trap && Math.abs(cellX(d.c) - front) < 34).sort((a, b) => b.c - a.c)[0];
       u.eating = !!block;
       if (block) {
         if (info.jump && !u.jumped && !DEF[block.k].trap) {
@@ -540,7 +556,7 @@ export class SiegeArena {
       if (!d) continue;
       const v = d.view; const info = DEF[d.k];
       if (d.kick > 0) { d.kick -= dt; v.spr.scale.set(v.baseScale * (1 + d.kick * 0.6), v.baseScale * (1 - d.kick * 0.4)); } else v.spr.scale.set(v.baseScale, v.baseScale * (1 + Math.sin(t * 3 + d.i) * 0.02));
-      if (info.fuse) { v.spr.scale.set(v.baseScale * (1 + (1 - d.fuse) * 0.5)); v.spr.tint = Math.sin(t * 40) > 0 ? 0xff6040 : 0xffffff; }
+      if (info.fuse) { if (d.lit) { v.spr.scale.set(v.baseScale * (1 + (1 - d.fuse / info.fuse) * 0.5)); v.spr.tint = Math.sin(t * 40) > 0 ? 0xff6040 : 0xffffff; } else v.spr.scale.set(v.baseScale * (1 + Math.sin(t * 3 + d.i) * 0.04)); }
       if (d.hurt > 0) { d.hurt -= dt; v.spr.x = Math.sin(t * 60) * 2; } else v.spr.x = 0;
       v.bar.clear();
       if (info.hp && info.hp < 99999 && d.hp < d.max) v.bar.beginFill(0x111111).drawRect(-34, -4, 68, 9).endFill().beginFill(d.hp / d.max > 0.4 ? 0x7ed321 : 0xff5a3c).drawRect(-33, -3, 66 * Math.max(0, d.hp / d.max), 7).endFill();

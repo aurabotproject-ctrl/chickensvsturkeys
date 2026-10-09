@@ -32,8 +32,8 @@ export const DEF = {
   W: { key: 'wall', name: 'Hay Wall', cost: 50, hp: 2000, info: 'Tough wall — stops attackers.' },
   D: { key: 'double', name: 'Double Shooter', cost: 200, hp: 300, fire: 1.4, dmg: 20, shots: 2, info: 'Fires 2 eggs at a time.' },
   F: { key: 'frost', name: 'Frost Egger', cost: 175, hp: 300, fire: 1.4, dmg: 20, slow: 3, info: 'Icy eggs slow attackers down.' },
-  T: { key: 'spikes', name: 'Rotten Egg Trap', cost: 100, hp: 99999, trap: 20, info: 'Hurts everyone who walks over it. Can\'t be eaten.' },
-  B: { key: 'bomb', name: 'Egg Bomb', cost: 150, fuse: 1, blast: 1800, info: 'BOOM! Blasts the 3 × 3 squares around it.' },
+  T: { key: 'spikes', name: 'Rotten Egg Trap', cost: 100, hp: 99999, trap: 30, pop: 140, info: 'SPLAT! Each attacker that steps on it takes a big hit and is slowed. Can\'t be eaten.' },
+  B: { key: 'bomb', name: 'Egg Bomb', cost: 150, fuse: 0.7, blast: 1800, info: 'Waits until an attacker comes close, then BOOM — blasts the 3 × 3 squares around it.' },
 };
 export const DEF_ORDER = ['S', 'C', 'W', 'T', 'F', 'D', 'B'];
 
