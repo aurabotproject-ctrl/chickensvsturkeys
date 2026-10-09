@@ -43,7 +43,7 @@ const isCannon = () => meta?.mode === 'cannon';
 const isFarm = () => meta?.mode === 'farm';
 const isTowers = () => meta?.mode === 'towers';
 const isSiege = () => meta?.mode === 'siege';
-const teamPick = () => (meta?.settings?.teams || 'auto') === 'choose';
+const teamPick = () => (meta?.settings?.teams || 'choose') === 'choose'; // older games without the setting: students choose
 const isTimed = () => isFarm() || isTowers() || isSiege();
 const showScore = (n) => (isFarm() ? fmt(n) : isTowers() || isSiege() ? Math.floor(n) : Math.round(n));
 const UNIT = () => (isCannon() || isSiege() ? 'pts' : isFarm() ? '' : 'KO');
