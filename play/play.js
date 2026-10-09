@@ -5,7 +5,7 @@ import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
 } from '../js/core/firebase.js';
 import { $, $$, html, raw, esc, params } from '../js/core/ui.js';
-import { sprite, avatar, AVATARS, TEAM } from '../js/core/assets.js';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js';
 import { lookupCode, cleanCode } from '../js/core/games.js';
 import { sfx } from '../js/core/sfx.js';
 import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js';
@@ -208,7 +208,7 @@ function showRoundEnd() {
   ov.innerHTML = html`<div class="box">
     <h1 class="comic-title slant">ROUND ${D.state.round} OVER!</h1>
     ${raw(ps.rank ? `<div>You're</div><div class="rank">#${ps.rank}</div><div>out of ${ps.of}</div>` : '')}
-    <div class="scores"><div style="background:var(--chicken)">🐔 ${SCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">🦃 ${SCORE(D.teams.turkey)}</div></div>
+    <div class="scores"><div style="background:var(--chicken)">${raw(teamIco('chicken'))} ${SCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">${raw(teamIco('turkey'))} ${SCORE(D.teams.turkey)}</div></div>
     <p>💥 ${SCORE(ps.score)} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} correct</p>
     <img src="${sprite(isFarm() ? `fm_coop_${me.team === 'chicken' ? 'c' : 't'}${ps.coop || 1}` : (isCannon() ? 'c_' : '') + me.team + '_idle')}" alt="" style="width:${isFarm() ? 200 : 120}px">
     <p>${isSiege() ? `HALF TIME! Teams swap — next half you ${ps.role === 'def' ? 'ATTACK ⚔️' : 'DEFEND 🛡️'}.` : 'Next round soon — watch the big screen!'}</p></div>`;
@@ -223,7 +223,7 @@ function showFinal() {
     <img src="${sprite(tie || won ? me.team + '_win' : me.team + '_dizzy')}" alt="" style="width:150px">
     <h2 class="comic-title">${tie ? 'IT\'S A DRAW!' : won ? 'YOUR TEAM WON!' : 'SO CLOSE!'}</h2>
     ${raw(ps.rank ? `<div class="rank">#${ps.rank}</div><div>out of ${ps.of} players</div>` : '')}
-    <div class="scores"><div style="background:var(--chicken)">🐔 ${SCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">🦃 ${SCORE(D.teams.turkey)}</div></div>
+    <div class="scores"><div style="background:var(--chicken)">${raw(teamIco('chicken'))} ${SCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">${raw(teamIco('turkey'))} ${SCORE(D.teams.turkey)}</div></div>
     <p>💥 ${SCORE(ps.score)} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} questions right</p></div>`;
   if (won || tie) sfx.win();
 }
@@ -353,7 +353,7 @@ function drawFeedback() {
   const lock = f.lockMs || 1500;
   const readMs = f.correct ? lock : Math.max(lock, 2600);
   const fg = f.farm; const tw = f.tw; const sg = f.sg;
-  const gain = sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team!' : `to your ${tw.buildings} coop${tw.buildings === 1 ? '' : 's'}`}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>🐔 +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
+  const gain = sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team!' : `to your ${tw.buildings} coop${tw.buildings === 1 ? '' : 's'}`}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
   box.innerHTML = f.correct
     ? html`<div class="big">CORRECT!</div>${raw(gain)}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
     : html`<div class="big">NOPE!</div><div class="ans-was">Answer: <b>${f.rightText}</b></div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div><div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`;
@@ -754,7 +754,7 @@ function drawSgHud() {
   const r = $('#sg-role'); r.textContent = role === 'def' ? '🛡️ DEFEND' : '⚔️ ATTACK'; r.classList.toggle('att', role === 'att');
   if (info) {
     const pct = Math.round((info.hp / info.max) * 100);
-    $('#sg-hp').innerHTML = `${info.def === 'chicken' ? '🐔 Chicken coop' : '🦃 Turkey barn'}: ${info.hp}/${info.max} 🥚<i style="--hp:${pct}%"></i>`;
+    $('#sg-hp').innerHTML = `${info.def === 'chicken' ? `${teamIco('chicken')} Chicken coop` : `${teamIco('turkey')} Turkey barn`}: ${info.hp}/${info.max} 🥚<i style="--hp:${pct}%"></i>`;
   }
   SG.view?.setRole({ team: D.me?.team, role, corn });
   if (sgHintT || L.mapBlocked) return;

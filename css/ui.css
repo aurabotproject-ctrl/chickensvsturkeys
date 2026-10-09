@@ -108,3 +108,4 @@
   .side .me { margin: 0; }
   .side .me span { display: none; }
 }
+.tico { height: 1.2em; width: auto; vertical-align: -0.25em; display: inline-block; filter: drop-shadow(1px 1px 0 rgba(0,0,0,.35)); }

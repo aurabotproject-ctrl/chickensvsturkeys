@@ -3,7 +3,7 @@ import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
 } from '../js/core/firebase.js';
 import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js';
-import { sprite, subjectIcon } from '../js/core/assets.js';
+import { sprite, subjectIcon, teamIco } from '../js/core/assets.js';
 import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js';
 import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js';
 import { renderBanks } from './banks-ui.js';
@@ -164,7 +164,7 @@ function renderCreate(main) {
 // ---------------- Results ----------------
 function resultRow(r) {
   const d = r.finishedAt ? new Date(r.finishedAt) : null;
-  const winner = r.winner === 'tie' ? 'Tie' : r.winner === 'chicken' ? '🐔 Chickens won' : r.winner === 'turkey' ? '🦃 Turkeys won' : '';
+  const winner = r.winner === 'tie' ? 'Tie' : r.winner === 'chicken' ? raw(`${teamIco('chicken')} Chickens won`) : r.winner === 'turkey' ? raw(`${teamIco('turkey')} Turkeys won`) : '';
   return html`<div class="list-row card" data-result="${r.id}" style="cursor:pointer">
     <img class="icon" src="${subjectIcon(r.bankSubject)}" alt="">
     <div class="grow"><div class="title">${r.bankTitle || 'Game'}</div>
@@ -190,11 +190,11 @@ function showResult(r) {
     .sort((a, b) => (b.score || 0) - (a.score || 0));
   const rows = players.map((p) => {
     const acc = p.answered ? Math.round((p.correct / p.answered) * 100) : 0;
-    return html`<tr><td>${p.name}</td><td>${p.team === 'chicken' ? '🐔' : '🦃'}</td><td>${p.score || 0}</td><td>${p.correct || 0}/${p.answered || 0}</td><td>${acc}%</td><td>${p.blindSpots || 0}</td></tr>`;
+    return html`<tr><td>${p.name}</td><td>${raw(teamIco(p.team))}</td><td>${p.score || 0}</td><td>${p.correct || 0}/${p.answered || 0}</td><td>${acc}%</td><td>${p.blindSpots || 0}</td></tr>`;
   }).join('');
   modal({
     title: r.bankTitle || 'Game result', wide: true,
-    body: html`<p><b>🐔 Chickens ${r.teams?.chicken ?? 0}</b> vs <b>🦃 Turkeys ${r.teams?.turkey ?? 0}</b> · class accuracy <b>${r.accuracy ?? 0}%</b></p>
+    body: html`<p><b>${raw(teamIco('chicken'))} Chickens ${r.teams?.chicken ?? 0}</b> vs <b>${raw(teamIco('turkey'))} Turkeys ${r.teams?.turkey ?? 0}</b> · class accuracy <b>${r.accuracy ?? 0}%</b></p>
       <table class="table"><thead><tr><th>Student</th><th>Team</th><th>KO points</th><th>Correct</th><th>Accuracy</th><th>Blind spots</th></tr></thead><tbody>${raw(rows || '<tr><td colspan="6">No students</td></tr>')}</tbody></table>
       <p class="hint">Blind spot = answered 🔥 Sure but got it wrong.</p>`,
     buttons: [{ label: 'Close', value: null }],

@@ -3,6 +3,8 @@
 const BASE = new URL('../../assets/sprites/', import.meta.url).href;
 
 export const sprite = (name) => `${BASE}${name}.webp`;
+/** Matching chicken / turkey head icon (use instead of the 🐔 🦃 emojis). */
+export const teamIco = (team) => `<img class="tico" src="${BASE}ico_${team === 'turkey' ? 'turkey' : 'chicken'}.webp" alt="${team === 'turkey' ? 'Turkeys' : 'Chickens'}">`;
 
 export const AVATARS = {
   chicken: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],

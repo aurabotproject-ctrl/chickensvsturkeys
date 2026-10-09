@@ -8,7 +8,7 @@ import {
   currentUser, isTeacher, serverNow, explainError,
 } from '../js/core/firebase.js';
 import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep } from '../js/core/ui.js';
-import { sprite, avatar, AVATARS, TEAM } from '../js/core/assets.js';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js';
 import { playUrl } from '../js/core/games.js';
 import { sfx, setMuted, isMuted } from '../js/core/sfx.js';
 import { loadBankByKey } from '../js/quiz/banks.js';
@@ -267,7 +267,7 @@ async function startRound() {
   await writeState();
   arena.startRound(S.round);
   for (const uid of arena.players.keys()) dirty.add(uid);
-  if (isSiege()) { const d = defenderFor(S.round); phaseBanner(`<b>${S.round === 1 ? 'FIRST HALF' : 'SECOND HALF'}: ${d === 'chicken' ? '🐔 CHICKENS DEFEND · 🦃 TURKEYS ATTACK' : '🦃 TURKEYS DEFEND · 🐔 CHICKENS ATTACK'}</b><small>Answer questions for corn 🌽 — defenders build on the lawn, attackers pick a row!</small>`, 6000); }
+  if (isSiege()) { const d = defenderFor(S.round); phaseBanner(`<b>${S.round === 1 ? 'FIRST HALF' : 'SECOND HALF'}: ${d === 'chicken' ? `${teamIco('chicken')} CHICKENS DEFEND · ${teamIco('turkey')} TURKEYS ATTACK` : `${teamIco('turkey')} TURKEYS DEFEND · ${teamIco('chicken')} CHICKENS ATTACK`}</b><small>Answer questions for corn 🌽 — defenders build on the lawn, attackers pick a row!</small>`, 6000); }
   $('#round-label').textContent = isSiege() ? `HALF ${S.round} / 2` : `ROUND ${S.round} / ${meta.settings.rounds}`;
   const ms = meta.settings.roundSeconds * 1000;
   $('#timer').textContent = meta.settings.roundSeconds >= 60 ? `${Math.floor(meta.settings.roundSeconds / 60)}:${String(meta.settings.roundSeconds % 60).padStart(2, '0')}` : meta.settings.roundSeconds;
@@ -383,7 +383,7 @@ function answerLoop() {
   const loaded = { chicken: 0, turkey: 0 };
   for (const p of arena.players.values()) loaded[p.team] += p.eggs;
   const b = $('#phase-banner small');
-  if (b) b.textContent = `${done} / ${humans.length} finished · 🐔 ${loaded.chicken} eggs loaded · 🦃 ${loaded.turkey} eggs loaded`;
+  if (b) b.innerHTML = `${done} / ${humans.length} finished · ${teamIco('chicken')} ${loaded.chicken} eggs loaded · ${teamIco('turkey')} ${loaded.turkey} eggs loaded`;
   const botsOnly = !humans.length && serverNow() - (S.endsAt - meta.settings.roundSeconds * 1000) > 4000;
   if (left <= 0 || botsOnly || (humans.length && done === humans.length)) { phaseBanner(''); startBattle(); }
 }
@@ -408,7 +408,7 @@ function showRoundOverlay(standings) {
   const ov = $('#overlay');
   ov.className = 'overlay';
   ov.innerHTML = html`<div class="round-box">
-    ${raw(isSiege() ? `<img class="halftime-img" src="${sprite('sg_halftime')}" alt="Half time!">` : `<h1 class="comic-title slant">ROUND ${S.round} COMPLETE!</h1>`)}${raw(isSiege() ? `<p class="swap-note">Teams swap! ${defenderFor(S.round + 1) === 'chicken' ? '🐔 Chickens defend · 🦃 Turkeys attack' : '🦃 Turkeys defend · 🐔 Chickens attack'}</p>` : '')}
+    ${raw(isSiege() ? `<img class="halftime-img" src="${sprite('sg_halftime')}" alt="Half time!">` : `<h1 class="comic-title slant">ROUND ${S.round} COMPLETE!</h1>`)}${raw(isSiege() ? `<p class="swap-note">Teams swap! ${defenderFor(S.round + 1) === 'chicken' ? `${teamIco('chicken')} Chickens defend · ${teamIco('turkey')} Turkeys attack` : `${teamIco('turkey')} Turkeys defend · ${teamIco('chicken')} Chickens attack`}</p>` : '')}
     <div class="round-teams">
       <div class="round-team chicken"><img src="${sprite(ts.chicken >= ts.turkey ? 'chicken_win' : 'chicken_dizzy')}" alt=""><div class="big">${showScore(ts.chicken)}</div><div class="lbl">CHICKENS</div></div>
       <div class="vs-burst burst">VS</div>
@@ -447,7 +447,7 @@ async function finalScreen() {
   ov.innerHTML = html`<div class="final">
     <img class="burst-bg" src="${sprite(winner === 'chicken' ? 'burst_blue' : winner === 'turkey' ? 'burst_red' : 'burst_gold')}" alt="">
     <img class="win-banner" src="${sprite(winner === 'chicken' ? 'win_chicken' : winner === 'turkey' ? 'win_turkey' : 'win_tie')}" alt="${winner} wins">
-    <div class="final-scores"><div style="background:var(--chicken)">🐔 ${showScore(ts.chicken)}</div><div style="background:var(--turkey)">🦃 ${showScore(ts.turkey)}</div></div>
+    <div class="final-scores"><div style="background:var(--chicken)">${raw(teamIco('chicken'))} ${showScore(ts.chicken)}</div><div style="background:var(--turkey)">${raw(teamIco('turkey'))} ${showScore(ts.turkey)}</div></div>
     <div class="podium-wrap"><img class="podium" src="${sprite('podium')}" alt="">
       ${raw(top.map((p, i) => html`<div class="podium-spot p${i + 1}" style="animation-delay:${0.3 + (2 - i) * 0.35}s"><img class="av" src="${avatar(p.av)}" alt=""><img class="medal" src="${sprite(['medal_gold', 'medal_silver', 'medal_bronze'][i])}" alt=""><b>${p.name}</b><span>${showScore(p.score)} ${UNIT()}</span></div>`).join(''))}
     </div>
@@ -579,7 +579,7 @@ function drawStandings() {
   lastStandings = key;
   $('#standings').innerHTML = st.map((p, i) => html`<li class="${p.team}"><span class="rk">${i + 1}</span><img src="${avatar(Number.isInteger(p.av) ? p.av : AVATARS[p.team][0])}" alt=""><span class="nm">${p.name}</span><span class="sc">${showScore(p.score)}</span></li>`).join('');
   const ts = teamScores();
-  $('#team-scores').innerHTML = `<div class="chicken"><span>🐔 Chickens</span><b>${showScore(ts.chicken)}</b></div><div class="turkey"><span>🦃 Turkeys</span><b>${showScore(ts.turkey)}</b></div>`;
+  $('#team-scores').innerHTML = `<div class="chicken"><span>${teamIco('chicken')} Chickens</span><b>${showScore(ts.chicken)}</b></div><div class="turkey"><span>${teamIco('turkey')} Turkeys</span><b>${showScore(ts.turkey)}</b></div>`;
   bumpScores();
 }
 
@@ -676,7 +676,7 @@ $('#c-scores').onclick = () => {
   const st = computeStandings();
   modal({
     title: 'Scores', wide: true,
-    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>${isCannon() ? 'Target points' : isFarm() ? 'Money earned' : isTowers() || isSiege() ? 'Battle points' : 'KO points'}</th><th>Correct</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${p.team === 'chicken' ? '🐔' : '🦃'}</td><td>${showScore(p.score)}</td><td>${p.bot ? '—' : `${engine.stats(p.uid).correct}/${engine.stats(p.uid).answered}`}</td></tr>`).join('')}</tbody></table>`,
+    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>${isCannon() ? 'Target points' : isFarm() ? 'Money earned' : isTowers() || isSiege() ? 'Battle points' : 'KO points'}</th><th>Correct</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${teamIco(p.team)}</td><td>${showScore(p.score)}</td><td>${p.bot ? '—' : `${engine.stats(p.uid).correct}/${engine.stats(p.uid).answered}`}</td></tr>`).join('')}</tbody></table>`,
     buttons: [{ label: 'Close', value: null }],
   });
 };
