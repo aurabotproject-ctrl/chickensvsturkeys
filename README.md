@@ -90,7 +90,7 @@ Create Game → **Coop Wars** → 5, 8 or 12 minutes, and choose **Troop growth*
 ## Land Grab (paper.io style)
 Create Game → **Land Grab** → number of rounds, and the answer time per round (45 / 60 / 90 s — 60 s recommended).
 - **Each round = 1 minute of questions, then 30 seconds of land grab.** Every right answer in the question minute makes your character faster in the land grab (speed 5, +1 per right answer, up to 14).
-- Everyone starts with a small patch of land (chickens on the left, turkeys on the right). Each student is their avatar, with their own colour shade.
+- Everyone starts with a small patch of land. **Starting spots** (Create Game): *Separate sides* = chickens on the left, turkeys on the right; *Mixed* = everyone scattered across the field (harder, more competitive). Each student is their avatar, with their own colour shade.
 - **Put a finger down and drag** to steer (arrow keys work on a computer). Leave your land to draw a trail; get back to your land to claim the loop and everything inside it. You can carve into other players' land.
 - **If an enemy runs over your trail before you get home, you're OUT** — all your land disappears and you watch until the end of that round. (Teammates can't cut your trail.)
 - **Team score each round = the % of the field the whole team covers.** The rounds are added together; the team with the biggest total wins.

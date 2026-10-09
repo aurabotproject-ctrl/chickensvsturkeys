@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261009233647';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261009233647';
-import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261009233647';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261009233647';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261009233647';
-import { renderBanks } from './banks-ui.js?v=20261009233647';
+} from '../js/core/firebase.js?v=20261010110737';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010110737';
+import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261010110737';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010110737';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010110737';
+import { renderBanks } from './banks-ui.js?v=20261010110737';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -115,6 +115,7 @@ const MODES = [
 
 function renderCreate(main) {
   const s = ctx.createState ||= { mode: 'dodge', bankKey: '', settings: { ...DEFAULT_SETTINGS } };
+  for (const [k, v] of Object.entries(DEFAULT_SETTINGS)) if (s.settings[k] === undefined) s.settings[k] = v;
   const bankOpts = [
     ...ctx.mine.map((b) => ({ key: `mine:${b.id}`, label: `${b.title} (${b.questions.length} Qs · yours)` })),
     ...ctx.premade.map((b) => ({ key: `premade:${b.id}`, label: `${b.title} (${b.count} Qs · premade)` })),
@@ -135,6 +136,7 @@ function renderCreate(main) {
         <div class="field"><span>${s.mode === 'cannon' || s.mode === 'paint' ? 'Answer time per round' : s.mode === 'farm' || s.mode === 'towers' ? 'Game length' : s.mode === 'siege' ? 'Length of each half' : 'Round length'}</span>${raw(seg('roundSeconds', s.mode === 'farm' || s.mode === 'towers' ? [[300, '5 min'], [480, '8 min'], [720, '12 min']] : s.mode === 'siege' ? [[150, '2½ min'], [210, '3½ min'], [300, '5 min']] : [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}${raw(s.mode === 'cannon' ? '<span class="hint">Students answer 5 questions, then a 45-second battle.</span>' : s.mode === 'paint' ? '<span class="hint">Every right answer = more speed. Then a 30-second land grab.</span>' : s.mode === 'siege' ? '<span class="hint">2 halves — the teams swap between defending and attacking at half time.</span>' : '')}</div>
         <div class="field"><span>Teams</span>${raw(seg('teams', [['choose', 'Students choose'], ['auto', 'Auto-balance']]))}<span class="hint">Students choose = they tap Chickens or Turkeys when they join. You can still move anyone in the lobby.</span></div>
         <div class="field"><span>Confidence check</span>${raw(seg('confidence', [['every', 'Every question'], ['third', 'Every 3rd'], ['off', 'Off']]))}<span class="hint">Students tap 🔥 Sure / 🤔 Think so / 🎲 Guessing — powers the blind-spot report.</span></div>
+        <div class="field ${s.mode !== 'paint' ? 'hidden' : ''}"><span>Starting spots</span>${raw(seg('landLayout', [['split', 'Separate sides'], ['mixed', 'Mixed']]))}<span class="hint">Separate = chickens start on the left, turkeys on the right. Mixed = everyone starts scattered across the field — harder and more competitive!</span></div>
         <div class="field ${s.mode !== 'towers' ? 'hidden' : ''}"><span>Troop growth</span>${raw(seg('growth', [['auto', 'Auto'], ['questions', 'Questions only'], ['slow', 'Slow + questions']]))}<span class="hint">Auto = slow growth for 4 or fewer students, questions-only for bigger classes.</span></div>
         <div class="field ${s.mode !== 'dodge' ? 'hidden' : ''}"><span>When hit by an egg</span>${raw(seg('koMode', [['respawn', 'Back in 5 s'], ['out', 'Out for the round']]))}</div>
         <div class="field"><span>Random events</span>${raw(seg('events', [['auto', 'Automatic'], ['manual', 'I\'ll trigger them'], ['off', 'Off']]))}</div>

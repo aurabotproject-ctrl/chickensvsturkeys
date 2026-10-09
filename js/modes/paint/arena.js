@@ -7,16 +7,17 @@
 //   • you can carve into other players' land
 // Speed for the 30-second battle comes from the 1-minute question phase.
 // =========================================================
-import { avatar } from '../../core/assets.js?v=20261009233647';
-import { sfx } from '../../core/sfx.js?v=20261009233647';
-import { GW, GH, START_R, BATTLE_MS, MAX_PLAYERS, speedFor, encode, paintGrid, makePalette } from './common.js?v=20261009233647';
+import { avatar } from '../../core/assets.js?v=20261010110737';
+import { sfx } from '../../core/sfx.js?v=20261010110737';
+import { GW, GH, START_R, BATTLE_MS, MAX_PLAYERS, speedFor, encode, paintGrid, makePalette } from './common.js?v=20261010110737';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
 const TURN = 9; // radians per second (snappy steering)
 
 export class PaintArena {
-  constructor(el, { onChange, onSync } = {}) {
+  constructor(el, { onChange, onSync, layout = 'split' } = {}) {
+    this.mixed = layout === 'mixed'; // mixed = chickens and turkeys start scattered all over the field
     this.el = el;
     this.onChange = onChange || (() => {});
     this.onSync = onSync || (() => {});
@@ -113,11 +114,11 @@ export class PaintArena {
     const left = p.team === 'chicken';
     let best = null; let bestD = -1;
     for (let tries = 0; tries < 80; tries++) {
-      const x = Math.floor(left ? rnd(6, GW / 2 - 8) : rnd(GW / 2 + 8, GW - 6)); const y = Math.floor(rnd(6, GH - 6));
+      const x = Math.floor(this.mixed ? rnd(6, GW - 6) : left ? rnd(6, GW / 2 - 8) : rnd(GW / 2 + 8, GW - 6)); const y = Math.floor(rnd(6, GH - 6));
       let d = 1e9;
       for (const q of this.players.values()) if (q !== p && q.alive) d = Math.min(d, Math.hypot(q.x - x, q.y - y));
       if (d > bestD) { bestD = d; best = { x, y }; }
-      if (d > 22) break;
+      if (d > (this.mixed ? 26 : 22)) break;
     }
     for (let dy = -START_R; dy <= START_R; dy++) for (let dx = -START_R; dx <= START_R; dx++) this.own[(best.y + dy) * GW + best.x + dx] = p.i;
     p.x = best.x + 0.5; p.y = best.y + 0.5; p.ang = left ? 0 : Math.PI; p.want = p.ang;
@@ -296,8 +297,7 @@ export class PaintArena {
     ctx.fillStyle = '#8fd14f'; ctx.fillRect(ox, oy, fw, fh);
     ctx.fillStyle = 'rgba(255,255,255,.07)';
     for (let y = 0; y < GH; y += 6) for (let x = (y / 6) % 2 ? 6 : 0; x < GW; x += 12) ctx.fillRect(ox + x * cell, oy + y * cell, 6 * cell, 6 * cell);
-    ctx.fillStyle = 'rgba(30,111,224,.06)'; ctx.fillRect(ox, oy, fw / 2, fh);
-    ctx.fillStyle = 'rgba(224,64,42,.06)'; ctx.fillRect(ox + fw / 2, oy, fw / 2, fh);
+    if (!this.mixed) { ctx.fillStyle = 'rgba(30,111,224,.06)'; ctx.fillRect(ox, oy, fw / 2, fh); ctx.fillStyle = 'rgba(224,64,42,.06)'; ctx.fillRect(ox + fw / 2, oy, fw / 2, fh); }
     // territory: dark copy shifted down for a chunky 3-D edge, then the colours
     if (this.round) {
       const gctx = this.gridC.getContext('2d'); const dctx = this.darkC.getContext('2d');

@@ -1,5 +1,5 @@
 // Creating games + join codes.
-import { db, ref, set, get, push, runTransaction, serverTimestamp } from './firebase.js?v=20261009233647';
+import { db, ref, set, get, push, runTransaction, serverTimestamp } from './firebase.js?v=20261010110737';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I/L
 export const randomCode = (n = 6) => Array.from({ length: n }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS = {
   koMode: 'respawn',   // respawn | out
   events: 'auto',      // auto | manual | off
   growth: 'auto',      // Coop Wars: auto | questions | slow
+  landLayout: 'split', // Land Grab: split (chickens left, turkeys right) | mixed (scattered)
   teams: 'choose',     // choose = students pick Chickens or Turkeys when joining · auto = balanced automatically
 };
 
