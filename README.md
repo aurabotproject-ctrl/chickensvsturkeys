@@ -103,3 +103,6 @@ Create Game → **Coop Siege** → each half lasts 2½, 3½ or 5 minutes. There 
 ⚠️ This update changes `database.rules.json` again (Coop Siege adds `sg`) — paste it into Firebase → Realtime Database → Rules → **Publish**.
 
 **Next:** Phase 13 — polish & classroom hardening.
+
+## Updating the code
+Before committing a change, run `python3 tools/stamp_version.py`. It adds a version tag (`?v=…`) to every script and stylesheet link so browsers and iPads load the new files straight away instead of an old cached copy.
