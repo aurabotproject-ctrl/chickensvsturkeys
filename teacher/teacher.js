@@ -5,7 +5,7 @@ import {
 import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js';
 import { sprite, subjectIcon } from '../js/core/assets.js';
 import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js';
-import { loadStrands, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js';
 import { renderBanks } from './banks-ui.js';
 
 const app = $('#app');
@@ -16,7 +16,7 @@ let unsubs = [];
 async function boot() {
   if (!isConfigured) { app.innerHTML = '<p class="loading">Firebase is not configured — see README.md.</p>'; return; }
   try {
-    [ctx.strands, ctx.premade] = await Promise.all([loadStrands(), listPremade()]);
+    [ctx.strands, ctx.premade, ctx.curricula] = await Promise.all([loadStrands(), listPremade(), loadCurricula()]);
   } catch (e) { console.error(e); }
   watchUser((u) => {
     unsubs.forEach((f) => f()); unsubs = [];

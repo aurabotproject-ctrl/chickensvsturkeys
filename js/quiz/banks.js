@@ -13,6 +13,23 @@ export async function loadStrands() {
   return json;
 }
 
+let curriculaCache = null;
+/** All curricula (data/curricula.json). New Zealand's subjects come from strands.json. */
+export async function loadCurricula() {
+  if (curriculaCache) return curriculaCache;
+  const [res, nz] = await Promise.all([fetch(DATA + 'curricula.json'), loadStrands()]);
+  const json = await res.json();
+  delete json._note;
+  for (const c of Object.values(json.curricula)) if (c.subjects === 'strands.json') c.subjects = nz;
+  json.order = (json.order || Object.keys(json.curricula)).filter((id) => json.curricula[id]);
+  curriculaCache = json;
+  return json;
+}
+/** Subject → strands map for a curriculum (falls back to New Zealand). */
+export function subjectsFor(curricula, id) {
+  return (curricula?.curricula?.[id] || curricula?.curricula?.nz)?.subjects || {};
+}
+
 export async function listPremade() {
   const res = await fetch(DATA + 'premade/index.json');
   return res.json();
@@ -82,6 +99,7 @@ export function normalizeBank(b) {
     id: b.id,
     premade: !!b.premade,
     title: String(b.title || 'Untitled bank').trim(),
+    curriculum: String(b.curriculum || 'nz'),
     subject: String(b.subject || 'General Knowledge'),
     yearLevels: asArray(b.yearLevels).map(Number).filter(Boolean),
     source: String(b.source || ''),
@@ -95,7 +113,7 @@ function stripForSave(b) {
   const n = normalizeBank(b);
   return {
     cvtBank: 1,
-    title: n.title, subject: n.subject, yearLevels: n.yearLevels, source: n.source,
+    title: n.title, curriculum: n.curriculum, subject: n.subject, yearLevels: n.yearLevels, source: n.source,
     strands: [...new Set(n.questions.map((q) => q.strand).filter(Boolean))],
     questions: n.questions.map((q) => ({ ...q, page: q.page ?? '' })),
   };

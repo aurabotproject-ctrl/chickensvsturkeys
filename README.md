@@ -35,6 +35,7 @@ Host controls (bottom of the arena, appears on hover): pause · end round / next
 
 ## Making question banks
 - **✨ Build with Claude:** fill in the topic (or choose *attached file* + the pages to focus on), year level and number of questions → **Copy prompt** → paste into a new Claude chat (attach the file there if using one) → copy Claude's whole reply → **Next** → paste → **Check questions** → **Open in editor & save**.
+- **Curriculum:** pick New Zealand, Australia, England, Scotland, Wales, Northern Ireland, Ireland, USA (Common Core/NGSS, Texas TEKS, Florida B.E.S.T., Virginia SOL), Canada (Ontario, BC), Singapore, South Africa (CAPS), India (CBSE), IB PYP or Cambridge Primary. The subjects, strands, Year/Grade wording, spelling and examples in the prompt change to match. Your last choice is remembered. Edit `data/curricula.json` to tweak strands or add a curriculum.
 - **➕ New bank** to type questions yourself, **📄 Import CSV**, or **Copy & edit** a premade bank.
 - Every question needs an explanation and a NZ Curriculum strand (they power the Phase 8 Teacher Diagnostic). Strand lists live in `data/strands.json` — edit them freely.
 

@@ -1,0 +1,315 @@
+{
+  "_note": "Curricula for Build with Claude and the question-bank editor. Each curriculum lists its subjects and the strand names questions are tagged with (they power the Teacher Diagnostic). New Zealand's strands live in strands.json. Strand names are simplified for classroom reporting — check them against the official documents and edit freely.",
+  "order": ["nz", "au", "eng", "sco", "wal", "ni", "ie", "us-ccss", "us-tx", "us-fl", "us-va", "ca-on", "ca-bc", "sg", "za", "in", "ib-pyp", "cam"],
+  "curricula": {
+    "nz": {
+      "name": "New Zealand Curriculum (Te Mātaiaho)",
+      "short": "NZ",
+      "levels": "Year",
+      "defaultLevel": "Year 5–6 (ages 9–11)",
+      "spelling": "New Zealand English",
+      "context": "Use te reo Māori words with correct macrons where appropriate and include Aotearoa New Zealand contexts. Be culturally respectful.",
+      "teacher": "New Zealand primary/intermediate teacher",
+      "subjects": "strands.json"
+    },
+    "au": {
+      "name": "Australian Curriculum (v9.0)",
+      "short": "Australia",
+      "levels": "Year",
+      "defaultLevel": "Year 5–6 (ages 10–12)",
+      "spelling": "Australian English",
+      "context": "Use Australian contexts and examples. Be respectful of Aboriginal and Torres Strait Islander histories and cultures.",
+      "teacher": "Australian primary school teacher",
+      "subjects": {
+        "Mathematics": ["Number", "Algebra", "Measurement", "Space", "Statistics", "Probability"],
+        "English": ["Language", "Literature", "Literacy"],
+        "Science": ["Biological Sciences", "Chemical Sciences", "Earth & Space Sciences", "Physical Sciences", "Science as a Human Endeavour", "Science Inquiry"],
+        "HASS (Humanities & Social Sciences)": ["History", "Geography", "Civics & Citizenship", "Economics & Business"],
+        "Health & Physical Education": ["Personal, Social & Community Health", "Movement & Physical Activity"],
+        "Technologies": ["Design & Technologies", "Digital Technologies"],
+        "The Arts": ["Dance", "Drama", "Media Arts", "Music", "Visual Arts"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "eng": {
+      "name": "England — National Curriculum",
+      "short": "England",
+      "levels": "Year",
+      "defaultLevel": "Year 5–6 (ages 9–11, Key Stage 2)",
+      "spelling": "British English",
+      "context": "Use UK contexts, units and examples (pounds and pence, metric units).",
+      "teacher": "primary school teacher in England",
+      "subjects": {
+        "Mathematics": ["Number & Place Value", "Addition & Subtraction", "Multiplication & Division", "Fractions, Decimals & Percentages", "Ratio & Proportion", "Algebra", "Measurement", "Geometry – Properties of Shapes", "Geometry – Position & Direction", "Statistics"],
+        "English": ["Spoken Language", "Reading – Word Reading", "Reading – Comprehension", "Writing – Spelling", "Writing – Composition", "Vocabulary, Grammar & Punctuation"],
+        "Science": ["Working Scientifically", "Plants", "Animals including Humans", "Living Things & Their Habitats", "Evolution & Inheritance", "Materials", "Rocks", "Light", "Sound", "Forces & Magnets", "Electricity", "Earth & Space", "Seasonal Changes"],
+        "History": ["British History", "Local History", "Ancient Civilisations", "World History", "Historical Enquiry"],
+        "Geography": ["Locational Knowledge", "Place Knowledge", "Human & Physical Geography", "Geographical Skills & Fieldwork"],
+        "Computing": ["Computer Science", "Information Technology", "Digital Literacy & Online Safety"],
+        "Physical Education": ["Games", "Athletics", "Gymnastics", "Dance", "Swimming", "Outdoor & Adventurous Activity"],
+        "PSHE & RSE": ["Health & Wellbeing", "Relationships", "Living in the Wider World"],
+        "Art, Music and D&T": ["Art & Design", "Music", "Design & Technology"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "sco": {
+      "name": "Scotland — Curriculum for Excellence",
+      "short": "Scotland",
+      "levels": "P",
+      "defaultLevel": "P5–P7 (Second Level, ages 8–11)",
+      "spelling": "British English",
+      "context": "Use Scottish contexts and examples where helpful.",
+      "teacher": "primary school teacher in Scotland",
+      "subjects": {
+        "Numeracy & Mathematics": ["Estimation & Rounding", "Number & Number Processes", "Multiples, Factors & Primes", "Fractions, Decimals & Percentages", "Money", "Time", "Measurement", "Patterns & Relationships", "Expressions & Equations", "Properties of 2D Shapes & 3D Objects", "Angle, Symmetry & Transformation", "Data & Analysis", "Ideas of Chance & Uncertainty"],
+        "Literacy & English": ["Listening & Talking", "Reading", "Writing"],
+        "Sciences": ["Planet Earth", "Forces, Electricity & Waves", "Biological Systems", "Materials", "Topical Science"],
+        "Social Studies": ["People, Past Events & Societies", "People, Place & Environment", "People in Society, Economy & Business"],
+        "Health & Wellbeing": ["Mental, Emotional, Social & Physical Wellbeing", "Physical Education & Activity", "Food & Health", "Relationships & Safety"],
+        "Technologies": ["Digital Literacy", "Computing Science", "Food & Textiles", "Craft, Design & Engineering"],
+        "Expressive Arts": ["Art & Design", "Dance", "Drama", "Music"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "wal": {
+      "name": "Wales — Curriculum for Wales",
+      "short": "Wales",
+      "levels": "Year",
+      "defaultLevel": "Year 5–6 (Progression Step 3, ages 9–11)",
+      "spelling": "British English",
+      "context": "Use Welsh contexts (Cynefin) and occasional Welsh words where helpful.",
+      "teacher": "primary school teacher in Wales",
+      "subjects": {
+        "Mathematics & Numeracy": ["Number", "Algebra", "Geometry", "Statistics & Probability"],
+        "Languages, Literacy & Communication": ["Listening", "Reading", "Speaking", "Writing", "Literature"],
+        "Science & Technology": ["Being Curious & Enquiring", "Design & Engineering", "Computation", "Matter & the Natural World", "Forces & Energy", "Living Things & Ecosystems"],
+        "Humanities": ["History", "Geography", "Religion, Values & Ethics", "Business & Social Studies"],
+        "Health & Well-being": ["Physical Health & Well-being", "Mental Health & Emotional Well-being", "Decision-making", "Healthy Relationships"],
+        "Expressive Arts": ["Art", "Dance", "Drama", "Film & Digital Media", "Music"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "ni": {
+      "name": "Northern Ireland Curriculum",
+      "short": "Northern Ireland",
+      "levels": "P",
+      "defaultLevel": "P5–P7 (Key Stage 2, ages 8–11)",
+      "spelling": "British English",
+      "context": "Use Northern Ireland and UK contexts where helpful.",
+      "teacher": "primary school teacher in Northern Ireland",
+      "subjects": {
+        "Mathematics & Numeracy": ["Number", "Measures", "Shape & Space", "Handling Data", "Processes in Mathematics"],
+        "Language & Literacy": ["Talking & Listening", "Reading", "Writing"],
+        "The World Around Us": ["Interdependence", "Place", "Movement & Energy", "Change over Time"],
+        "Personal Development & Mutual Understanding": ["Personal Understanding & Health", "Mutual Understanding in the Local & Wider Community"],
+        "The Arts": ["Art & Design", "Drama", "Music"],
+        "Physical Education": ["Athletics", "Dance", "Games", "Gymnastics", "Swimming"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "ie": {
+      "name": "Ireland — Primary Curriculum",
+      "short": "Ireland",
+      "levels": "Class",
+      "defaultLevel": "4th–5th Class (ages 9–11)",
+      "spelling": "Irish/British English",
+      "context": "Use Irish contexts and examples where helpful (euro, metric units).",
+      "teacher": "primary school teacher in Ireland",
+      "subjects": {
+        "Mathematics": ["Number", "Algebra", "Measures", "Shape & Space", "Data & Chance"],
+        "English": ["Oral Language", "Reading", "Writing"],
+        "Science": ["Living Things", "Energy & Forces", "Materials", "Environmental Awareness & Care", "Working Scientifically"],
+        "History": ["Story", "Early People & Ancient Societies", "Life, Society, Work & Culture in the Past", "Local Studies", "Politics, Conflict & Society"],
+        "Geography": ["Human Environments", "Natural Environments", "Environmental Awareness & Care"],
+        "SPHE": ["Myself", "Myself & Others", "Myself & the Wider World"],
+        "Physical Education": ["Athletics", "Dance", "Gymnastics", "Games", "Outdoor & Adventure", "Aquatics"],
+        "Arts Education": ["Visual Arts", "Music", "Drama"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "us-ccss": {
+      "name": "USA — Common Core (Math & ELA) + NGSS + C3 Social Studies",
+      "short": "USA (Common Core)",
+      "levels": "Grade",
+      "defaultLevel": "Grade 4–5 (ages 9–11)",
+      "spelling": "American English",
+      "context": "Use US contexts, customary units where appropriate, and dollars and cents.",
+      "teacher": "US elementary school teacher",
+      "subjects": {
+        "Math": ["Counting & Cardinality", "Operations & Algebraic Thinking", "Number & Operations in Base Ten", "Number & Operations – Fractions", "Measurement & Data", "Geometry", "Ratios & Proportional Relationships", "The Number System", "Expressions & Equations", "Statistics & Probability"],
+        "English Language Arts": ["Reading: Literature", "Reading: Informational Text", "Reading: Foundational Skills", "Writing", "Speaking & Listening", "Language"],
+        "Science (NGSS)": ["Physical Sciences", "Life Sciences", "Earth & Space Sciences", "Engineering, Technology & Applications of Science"],
+        "Social Studies (C3)": ["Civics", "Economics", "Geography", "History"],
+        "Health & PE": ["Health Education", "Physical Education"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "us-tx": {
+      "name": "USA — Texas (TEKS)",
+      "short": "Texas (TEKS)",
+      "levels": "Grade",
+      "defaultLevel": "Grade 4–5 (ages 9–11)",
+      "spelling": "American English",
+      "context": "Use US and Texas contexts where helpful, customary units where appropriate, and dollars and cents.",
+      "teacher": "Texas elementary school teacher",
+      "subjects": {
+        "Mathematics": ["Number & Operations", "Algebraic Reasoning", "Geometry & Measurement", "Data Analysis", "Personal Financial Literacy"],
+        "English Language Arts & Reading": ["Foundational Language Skills", "Comprehension", "Response Skills", "Multiple Genres", "Author's Purpose & Craft", "Composition", "Inquiry & Research"],
+        "Science": ["Scientific & Engineering Practices", "Matter & Energy", "Force, Motion & Energy", "Earth & Space", "Organisms & Environments"],
+        "Social Studies": ["History", "Geography", "Economics", "Government", "Citizenship", "Culture", "Science, Technology & Society"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "us-fl": {
+      "name": "USA — Florida (B.E.S.T. + NGSSS Science)",
+      "short": "Florida (B.E.S.T.)",
+      "levels": "Grade",
+      "defaultLevel": "Grade 4–5 (ages 9–11)",
+      "spelling": "American English",
+      "context": "Use US and Florida contexts where helpful, customary units where appropriate, and dollars and cents.",
+      "teacher": "Florida elementary school teacher",
+      "subjects": {
+        "Mathematics": ["Number Sense & Operations", "Algebraic Reasoning", "Measurement", "Geometric Reasoning", "Data Analysis & Probability", "Financial Literacy"],
+        "English Language Arts": ["Foundations", "Reading", "Communication", "Vocabulary"],
+        "Science": ["Nature of Science", "Earth & Space Science", "Physical Science", "Life Science"],
+        "Social Studies": ["American History", "World History", "Geography", "Economics", "Civics & Government"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "us-va": {
+      "name": "USA — Virginia (SOL)",
+      "short": "Virginia (SOL)",
+      "levels": "Grade",
+      "defaultLevel": "Grade 4–5 (ages 9–11)",
+      "spelling": "American English",
+      "context": "Use US and Virginia contexts where helpful, customary units where appropriate, and dollars and cents.",
+      "teacher": "Virginia elementary school teacher",
+      "subjects": {
+        "Mathematics": ["Number & Number Sense", "Computation & Estimation", "Measurement & Geometry", "Probability & Statistics", "Patterns, Functions & Algebra"],
+        "English": ["Communication & Multimodal Literacies", "Foundations", "Reading", "Writing", "Research"],
+        "Science": ["Scientific & Engineering Practices", "Force, Motion & Energy", "Matter", "Living Systems & Processes", "Earth & Space Systems", "Earth Resources"],
+        "History & Social Science": ["History", "Geography", "Civics", "Economics", "Skills"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "ca-on": {
+      "name": "Canada — Ontario Curriculum",
+      "short": "Ontario",
+      "levels": "Grade",
+      "defaultLevel": "Grade 4–5 (ages 9–11)",
+      "spelling": "Canadian English",
+      "context": "Use Canadian contexts, metric units and dollars. Be respectful of First Nations, Métis and Inuit perspectives.",
+      "teacher": "Ontario elementary school teacher",
+      "subjects": {
+        "Mathematics": ["Number", "Algebra", "Data", "Spatial Sense", "Financial Literacy"],
+        "Language": ["Literacy Connections & Applications", "Foundations of Language", "Comprehension", "Composition"],
+        "Science & Technology": ["STEM Skills & Connections", "Life Systems", "Matter & Energy", "Structures & Mechanisms", "Earth & Space Systems"],
+        "Social Studies": ["Heritage & Identity", "People & Environments"],
+        "Health & Physical Education": ["Active Living", "Movement Competence", "Healthy Living"],
+        "The Arts": ["Dance", "Drama", "Music", "Visual Arts"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "ca-bc": {
+      "name": "Canada — British Columbia Curriculum",
+      "short": "British Columbia",
+      "levels": "Grade",
+      "defaultLevel": "Grade 4–5 (ages 9–11)",
+      "spelling": "Canadian English",
+      "context": "Use Canadian and BC contexts, metric units and dollars. Be respectful of First Peoples' perspectives.",
+      "teacher": "British Columbia elementary school teacher",
+      "subjects": {
+        "Mathematics": ["Number", "Patterns & Relations", "Shape & Space", "Statistics & Probability", "Financial Literacy"],
+        "English Language Arts": ["Comprehend & Connect", "Create & Communicate", "Story & Text", "Language Features & Conventions"],
+        "Science": ["Biology", "Chemistry", "Physics", "Earth & Space Science", "Questioning & Predicting"],
+        "Social Studies": ["Canadian History", "Indigenous Peoples", "Government & Citizenship", "Geography & Resources"],
+        "Physical & Health Education": ["Physical Literacy", "Healthy & Active Living", "Social & Community Health", "Mental Well-being"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "sg": {
+      "name": "Singapore — MOE Primary Syllabus",
+      "short": "Singapore",
+      "levels": "Primary",
+      "defaultLevel": "Primary 4–5 (ages 10–11)",
+      "spelling": "British English",
+      "context": "Use Singapore contexts and examples where helpful (dollars and cents, metric units).",
+      "teacher": "Singapore primary school teacher",
+      "subjects": {
+        "Mathematics": ["Whole Numbers", "Fractions, Decimals & Percentage", "Ratio", "Measurement", "Geometry", "Data Analysis"],
+        "English Language": ["Listening & Viewing", "Reading & Viewing", "Speaking & Representing", "Writing & Representing", "Grammar", "Vocabulary"],
+        "Science": ["Diversity", "Cycles", "Systems", "Interactions", "Energy"],
+        "Social Studies": ["Discovering Self & Society", "Understanding Singapore", "Appreciating the World"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "za": {
+      "name": "South Africa — CAPS",
+      "short": "South Africa",
+      "levels": "Grade",
+      "defaultLevel": "Grade 4–6 (Intermediate Phase, ages 9–12)",
+      "spelling": "South African (British) English",
+      "context": "Use South African contexts, rands and metric units.",
+      "teacher": "South African primary school teacher",
+      "subjects": {
+        "Mathematics": ["Numbers, Operations & Relationships", "Patterns, Functions & Algebra", "Space & Shape (Geometry)", "Measurement", "Data Handling"],
+        "English Home Language": ["Listening & Speaking", "Reading & Viewing", "Writing & Presenting", "Language Structures & Conventions"],
+        "Natural Sciences & Technology": ["Life & Living", "Matter & Materials", "Energy & Change", "Planet Earth & Beyond"],
+        "Social Sciences": ["History", "Geography"],
+        "Life Skills": ["Personal & Social Wellbeing", "Physical Education", "Creative Arts"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "in": {
+      "name": "India — CBSE / NCERT",
+      "short": "India (CBSE)",
+      "levels": "Class",
+      "defaultLevel": "Class 4–5 (ages 9–11)",
+      "spelling": "Indian/British English",
+      "context": "Use Indian contexts, rupees and metric units where helpful.",
+      "teacher": "Indian primary school teacher (CBSE)",
+      "subjects": {
+        "Mathematics": ["Numbers & Operations", "Fractions & Decimals", "Algebra & Patterns", "Geometry", "Measurement & Mensuration", "Data Handling", "Money"],
+        "English": ["Reading Comprehension", "Writing", "Grammar", "Vocabulary", "Listening & Speaking"],
+        "Science / EVS": ["Living World (Plants & Animals)", "Food & Health", "Materials", "Water & Air", "Motion, Force & Energy", "Earth & Environment"],
+        "Social Science": ["History", "Geography", "Civics & Political Life", "Economics"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "ib-pyp": {
+      "name": "International Baccalaureate — PYP",
+      "short": "IB PYP",
+      "levels": "Grade",
+      "defaultLevel": "Grade 4–5 / Year 5–6 (ages 9–11)",
+      "spelling": "International English (choose British or American spelling consistently)",
+      "context": "Keep contexts international-minded, and link to transdisciplinary themes where natural.",
+      "teacher": "IB Primary Years Programme teacher",
+      "subjects": {
+        "Mathematics": ["Number", "Pattern & Function", "Measurement", "Shape & Space", "Data Handling"],
+        "Language": ["Oral Language (Listening & Speaking)", "Visual Language (Viewing & Presenting)", "Written Language – Reading", "Written Language – Writing"],
+        "Science": ["Living Things", "Earth & Space", "Materials & Matter", "Forces & Energy"],
+        "Social Studies": ["Human Systems & Economic Activities", "Social Organization & Culture", "Continuity & Change Through Time", "Human & Natural Environments", "Resources & the Environment"],
+        "Transdisciplinary Themes": ["Who We Are", "Where We Are in Place and Time", "How We Express Ourselves", "How the World Works", "How We Organize Ourselves", "Sharing the Planet"],
+        "PSPE": ["Identity", "Active Living", "Interactions"],
+        "General Knowledge": ["General"]
+      }
+    },
+    "cam": {
+      "name": "Cambridge Primary (International)",
+      "short": "Cambridge Primary",
+      "levels": "Stage",
+      "defaultLevel": "Stage 4–5 (ages 9–11)",
+      "spelling": "British English",
+      "context": "Keep contexts international and accessible to students around the world.",
+      "teacher": "Cambridge Primary teacher",
+      "subjects": {
+        "Mathematics": ["Number", "Geometry & Measure", "Statistics & Probability", "Thinking & Working Mathematically"],
+        "English": ["Reading", "Writing", "Speaking & Listening"],
+        "Science": ["Biology", "Chemistry", "Physics", "Earth & Space", "Thinking & Working Scientifically", "Science in Context"],
+        "Global Perspectives": ["Research", "Analysis", "Evaluation", "Reflection", "Collaboration", "Communication"],
+        "Computing": ["Computational Thinking", "Programming", "Managing Data", "Networks & Digital Communication", "Computer Systems"],
+        "General Knowledge": ["General"]
+      }
+    }
+  }
+}

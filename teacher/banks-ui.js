@@ -3,16 +3,20 @@ import { $, $$, html, raw, esc, toast, modal, confirmBox, copyText } from '../js
 import { subjectIcon } from '../js/core/assets.js';
 import {
   saveBank, deleteBank, getPremade, getMyBank, normalizeBank, normalizeQuestion,
-  questionProblems, bankProblems, parseCSV, toCSV,
+  questionProblems, bankProblems, parseCSV, toCSV, subjectsFor,
 } from '../js/quiz/banks.js';
 import { buildPrompt, extractBank, TEMPLATE } from '../js/quiz/promptBuilder.js';
 import { explainError } from '../js/core/firebase.js';
 
 let filter = { text: '', subject: '' };
+const CUR_KEY = 'cvt-curriculum';
+const lastCurriculum = () => { try { return localStorage.getItem(CUR_KEY) || 'nz'; } catch { return 'nz'; } };
+const rememberCurriculum = (id) => { try { localStorage.setItem(CUR_KEY, id); } catch { /* ignore */ } };
+const curriculumOptions = (ctx, sel) => (ctx.curricula?.order || ['nz']).map((id) => `<option value="${esc(id)}" ${id === sel ? 'selected' : ''}>${esc(ctx.curricula?.curricula[id]?.name || id)}</option>`).join('');
 
 export function renderBanks(main, ctx) {
   if (ctx.view === 'edit') return renderEditor(main, ctx, ctx.data);
-  const subjects = Object.keys(ctx.strands);
+  const subjects = [...new Set([...Object.keys(ctx.strands), ...ctx.mine.map((b) => b.subject)])];
   main.innerHTML = html`<h1 class="page-title">Question Banks</h1>
     <div class="bank-tools">
       <button class="btn yellow" id="build">✨ Build with Claude</button>
@@ -87,13 +91,16 @@ function previewBank(bank) {
 // ---------------- Editor ----------------
 function renderEditor(main, ctx, bank) {
   if (!bank) { ctx.go('banks'); return; }
-  const subjects = Object.keys(ctx.strands);
-  const strandsFor = () => ctx.strands[bank.subject] || [];
+  bank.curriculum ||= 'nz';
+  const map = () => subjectsFor(ctx.curricula, bank.curriculum);
+  const subjectOpts = () => { const subs = Object.keys(map()); if (bank.subject && !subs.includes(bank.subject)) subs.push(bank.subject); return subs.map((s) => `<option ${s === bank.subject ? 'selected' : ''}>${esc(s)}</option>`).join(''); };
+  const strandsFor = () => map()[bank.subject] || [];
   main.innerHTML = html`<h1 class="page-title">${bank.id ? 'Edit bank' : 'New bank'}</h1>
     <section class="panel light">
       <div class="ed-head">
         <label class="field"><span>Title</span><input class="input" id="t" value="${bank.title}" maxlength="60"></label>
-        <label class="field"><span>Subject / learning area</span><select class="select" id="s">${raw(subjects.map((s) => `<option ${s === bank.subject ? 'selected' : ''}>${esc(s)}</option>`).join(''))}</select></label>
+        <label class="field"><span>Curriculum</span><select class="select" id="cur">${raw(curriculumOptions(ctx, bank.curriculum))}</select></label>
+        <label class="field"><span>Subject / learning area</span><select class="select" id="s">${raw(subjectOpts())}</select></label>
         <label class="field"><span>Year levels</span><input class="input" id="y" value="${bank.yearLevels.join(', ')}" placeholder="e.g. 5, 6"></label>
       </div>
       <p class="hint" id="sum"></p>
@@ -129,7 +136,7 @@ function renderEditor(main, ctx, bank) {
   };
   const drawAll = () => {
     cards.innerHTML = bank.questions.map(drawCard).join('');
-    const bad = bankProblems(bank, ctx.strands).length;
+    const bad = bankProblems(bank, map()).length;
     $('#sum').textContent = `${bank.questions.length} questions${bad ? ` · ⚠️ ${bad} need fixing before saving` : ' · ✅ all good'}`;
   };
   const refreshCard = (i) => {
@@ -137,7 +144,7 @@ function renderEditor(main, ctx, bank) {
     const probs = questionProblems(bank.questions[i], strandsFor());
     el.classList.toggle('bad', probs.length > 0);
     el.querySelector('.problems').textContent = probs.join(' · ');
-    const bad = bankProblems(bank, ctx.strands).length;
+    const bad = bankProblems(bank, map()).length;
     $('#sum').textContent = `${bank.questions.length} questions${bad ? ` · ⚠️ ${bad} need fixing before saving` : ' · ✅ all good'}`;
   };
   cards.addEventListener('input', (e) => {
@@ -172,10 +179,15 @@ function renderEditor(main, ctx, bank) {
   $('#t').oninput = (e) => { bank.title = e.target.value; };
   $('#y').oninput = (e) => { bank.yearLevels = e.target.value.split(/[^0-9]+/).map(Number).filter(Boolean); };
   $('#s').onchange = (e) => { bank.subject = e.target.value; drawAll(); };
+  $('#cur').onchange = (e) => {
+    bank.curriculum = e.target.value;
+    if (!map()[bank.subject]) bank.subject = Object.keys(map())[0];
+    $('#s').innerHTML = subjectOpts(); drawAll();
+  };
   $('#add').onclick = () => { bank.questions.push(blankQ()); drawAll(); cards.lastElementChild?.scrollIntoView({ behavior: 'smooth' }); };
   $('#cancel').onclick = () => ctx.go('banks');
   $('#save').onclick = async (e) => {
-    const probs = bankProblems(bank, ctx.strands);
+    const probs = bankProblems(bank, map());
     if (!bank.questions.length) { toast('Add at least one question.', 'warn'); return; }
     if (probs.length) {
       toast(`Fix ${probs.length} question(s) first — they're outlined in red.`, 'warn', 5000);
@@ -194,8 +206,10 @@ function renderEditor(main, ctx, bank) {
 
 // ---------------- Build with Claude ----------------
 function openBuilder(ctx) {
-  const subjects = Object.keys(ctx.strands);
-  const f = { source: 'topic', topic: '', pages: '', subject: subjects[0], yearLevel: 'Year 5–6 (ages 9–11)', count: 20, difficulty: 'balanced', types: 'mc', focus: '' };
+  const curOf = (id) => ctx.curricula?.curricula?.[id] || ctx.curricula?.curricula?.nz || {};
+  const startCur = ctx.curricula?.curricula?.[lastCurriculum()] ? lastCurriculum() : 'nz';
+  const f = { source: 'topic', topic: '', pages: '', curriculum: startCur, subject: Object.keys(subjectsFor(ctx.curricula, startCur))[0], yearLevel: curOf(startCur).defaultLevel || 'Year 5–6 (ages 9–11)', count: 20, difficulty: 'balanced', types: 'mc', focus: '' };
+  const subjectOptions = () => Object.keys(subjectsFor(ctx.curricula, f.curriculum)).map((s) => `<option ${s === f.subject ? 'selected' : ''}>${esc(s)}</option>`).join('');
   const body = document.createElement('div');
   body.innerHTML = html`<div class="steps"><span class="on">1. Make the prompt</span><span>2. Paste Claude's reply</span></div>
   <div class="builder">
@@ -205,8 +219,9 @@ function openBuilder(ctx) {
         <input type="radio" id="src-a" name="src" value="attachment"><label for="src-a">📎 An attached file (PDF, ebook…)</label></div></div>
       <label class="field" id="f-topic"><span>Topic</span><input class="input" data-f="topic" placeholder="e.g. The water cycle, Volcanoes of Aotearoa"></label>
       <label class="field hidden" id="f-pages"><span>Pages / chapters to focus on</span><input class="input" data-f="pages" placeholder="e.g. pages 12–30, or chapters 3–4 (blank = whole file)"></label>
-      <label class="field"><span>Subject / learning area</span><select class="select" data-f="subject">${raw(subjects.map((s) => `<option>${esc(s)}</option>`).join(''))}</select></label>
-      <label class="field"><span>Year level / age</span><input class="input" data-f="yearLevel" value="${f.yearLevel}"></label>
+      <label class="field"><span>Curriculum</span><select class="select" data-f="curriculum" id="b-cur">${raw(curriculumOptions(ctx, f.curriculum))}</select></label>
+      <label class="field"><span>Subject / learning area</span><select class="select" data-f="subject" id="b-subj">${raw(subjectOptions())}</select></label>
+      <label class="field"><span id="b-lvl-label">${curOf(f.curriculum).levels || 'Year'} level / age</span><input class="input" data-f="yearLevel" id="b-lvl" value="${f.yearLevel}"></label>
       <div class="row" style="align-items:end">
         <label class="field" style="width:120px"><span>Questions</span><input class="input" type="number" min="5" max="50" data-f="count" value="20"></label>
         <label class="field" style="flex:1"><span>Difficulty</span><select class="select" data-f="difficulty"><option value="easy">Easy</option><option value="balanced" selected>Balanced</option><option value="challenging">Challenging</option></select></label>
@@ -228,12 +243,21 @@ function openBuilder(ctx) {
     $('#howto', body).innerHTML = f.source === 'attachment'
       ? 'Paste it into a <b>new Claude chat</b> and <b>attach your file</b> (📎) in that same message. When Claude replies, copy its whole answer and come back for step 2.'
       : 'Paste it into a <b>new Claude chat</b>. When Claude replies, copy its whole answer and come back for step 2.';
-    $('#prompt', body).value = buildPrompt(f, ctx.strands);
+    $('#prompt', body).value = buildPrompt(f, subjectsFor(ctx.curricula, f.curriculum), curOf(f.curriculum));
   };
   body.addEventListener('input', (e) => { const k = e.target.dataset.f; if (k) { f[k] = e.target.value; update(); } });
   body.addEventListener('change', (e) => {
     if (e.target.name === 'src') f.source = e.target.value;
     const k = e.target.dataset.f; if (k) f[k] = e.target.value;
+    if (k === 'curriculum') {
+      rememberCurriculum(f.curriculum);
+      f.subject = Object.keys(subjectsFor(ctx.curricula, f.curriculum))[0];
+      $('#b-subj', body).innerHTML = subjectOptions();
+      const c = curOf(f.curriculum);
+      $('#b-lvl-label', body).textContent = `${c.levels || 'Year'} level / age`;
+      if (!f.lvlEdited) { f.yearLevel = c.defaultLevel || f.yearLevel; $('#b-lvl', body).value = f.yearLevel; }
+    }
+    if (k === 'yearLevel') f.lvlEdited = true;
     update();
   });
   update();
@@ -266,8 +290,10 @@ function openPaste(ctx, f = {}) {
         $('#perr', m).textContent = '';
         try {
           parsed = extractBank($('#reply', m).value);
-          if (f.subject && !ctx.strands[parsed.subject]) parsed.subject = f.subject;
-          const probs = bankProblems(parsed, ctx.strands);
+          parsed.curriculum = f.curriculum || parsed.curriculum || 'nz';
+          const cmap = subjectsFor(ctx.curricula, parsed.curriculum);
+          if (f.subject && !cmap[parsed.subject]) parsed.subject = f.subject;
+          const probs = bankProblems(parsed, cmap);
           const bad = new Map(probs.map((p) => [p.i, p.problems]));
           $('#pv', m).innerHTML = parsed.questions.map((q, i) => `<div class="pv ${bad.has(i) ? 'bad' : ''}"><b>${i + 1}. ${esc(q.q)}</b>
             <small>${q.options.map((o, j) => (j === q.correct ? `✔ <b>${esc(o)}</b>` : esc(o))).join(' · ')}</small>
