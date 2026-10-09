@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261009143757';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261009143757';
-import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261009143757';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261009143757';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261009143757';
-import { renderBanks } from './banks-ui.js?v=20261009143757';
+} from '../js/core/firebase.js?v=20261009144451';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261009144451';
+import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261009144451';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261009144451';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261009144451';
+import { renderBanks } from './banks-ui.js?v=20261009144451';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };

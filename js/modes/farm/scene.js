@@ -5,8 +5,8 @@
 // the road, balloons to pop and the occasional sneaky fox.
 // =========================================================
 /* global PIXI */
-import { sprite } from '../../core/assets.js?v=20261009143757';
-import { COOP_LV, TRUCK_LV, MACHINE_LV } from './economy.js?v=20261009143757';
+import { sprite } from '../../core/assets.js?v=20261009144451';
+import { COOP_LV, TRUCK_LV, MACHINE_LV } from './economy.js?v=20261009144451';
 
 const MAP_W = 900; const MAP_H = 1350;
 export const PLOTS = [{ x: 330, y: 470 }, { x: 715, y: 610 }, { x: 560, y: 245 }, { x: 470, y: 950 }];
@@ -15,10 +15,19 @@ const MACHINE_AT = { x: 215, y: 790 };
 const DEPOT = { x: 720, y: 1110 };
 const roadY = (x) => 1128 + 0.4 * x;
 const rnd = (a, b) => a + Math.random() * (b - a);
+// Animated egg machines: empty machine art + eggs moving along belts.
+// Paths are fractions of the (empty) sprite: [x0, y0, x1, y1]. 'in' = eggs going in, 'out' = what comes out.
+const BELTS = {
+  1: { tex: 'fm_conveyor_e', w: 170, out: [0.13, 0.72, 0.79, 0.08], item: 'egg' },
+  2: { tex: 'fm_sorter_e', w: 190, out: [0.55, 0.50, 0.94, 0.71], item: 'egg', glow: [0.25, 0.43] },
+  3: { tex: 'fm_packer_e', w: 205, in: [0.06, 0.33, 0.30, 0.46], out: [0.58, 0.56, 0.95, 0.75], item: 'carton' },
+  4: { tex: 'fm_packer_e', w: 215, in: [0.06, 0.33, 0.30, 0.46], out: [0.58, 0.56, 0.95, 0.75], item: 'carton', gold: true },
+};
 
 const SPRITES = ['farm_ground', 'chicken_idle', 'chicken_run', 'turkey_idle', 'turkey_run', 'fm_statue',
   'fm_coop_c1', 'fm_coop_c2', 'fm_coop_c3', 'fm_coop_c4', 'fm_coop_c5', 'fm_coop_t1', 'fm_coop_t2', 'fm_coop_t3', 'fm_coop_t4', 'fm_coop_t5',
   'fm_van', 'fm_truck', 'fm_semi', 'fm_conveyor', 'fm_sorter', 'fm_packer', 'fm_silo', 'fm_trough', 'fm_tractor', 'fm_hopper', 'fm_tower', 'fm_scarecrow',
+  'fm_conveyor_e', 'fm_sorter_e', 'fm_packer_e', 'fm_egg1', 'fm_egg_gold1', 'fm_carton',
   'fm_bag', 'fm_goldegg', 'fox', 'egg', 'puff', 'sparkle', 'feathers', 'word_bok', 'word_gobble', 'word_pow'];
 
 export class FarmScene {
@@ -152,7 +161,13 @@ export class FarmScene {
     // machine
     const m = MACHINE_LV[st.machine || 0];
     this.machine.visible = !!m.sprite;
-    if (m.sprite) { this.machine.texture = this.tex[m.sprite]; this.machine.scale.set(150 / this.machine.texture.width); this.machine.tint = st.machine >= 4 ? 0xffe066 : 0xffffff; }
+    const belt = BELTS[st.machine || 0];
+    if (this.beltLv !== (st.machine || 0)) { this.beltLv = st.machine || 0; this.beltItems?.forEach((it) => it.s.destroy()); if (this.beltItems) this.beltItems = []; }
+    this.belt = belt && this.tex[belt.tex] ? belt : null;
+    if (this.belt) { this.machine.texture = this.tex[belt.tex]; this.machine.scale.set(belt.w / this.machine.texture.width); this.machine.tint = belt.gold ? 0xffe9a0 : 0xffffff; }
+    else if (m.sprite) { this.machine.texture = this.tex[m.sprite]; this.machine.scale.set(150 / this.machine.texture.width); this.machine.tint = st.machine >= 4 ? 0xffe066 : 0xffffff; }
+    if (!this.belt) this.beltItems?.forEach((it) => { it.s.visible = false; });
+    this.beltRate = st.rate || 0;
     this.machineLabel.text = m.sprite ? m.name : '';
     this.machineSpot.visible = !m.sprite; this.machineSign.visible = !m.sprite;
     // trucks on the road
@@ -338,12 +353,52 @@ export class FarmScene {
       if (s.isWord) { const pop = k < 0.2 ? (k / 0.2) * 1.2 : 1.2 - Math.min(0.2, (k - 0.2)); s.scale.set(s.base * pop); s.alpha = k > 0.75 ? 1 - (k - 0.75) / 0.25 : 1; s.y -= dt * 20; } else if (s.isText) { s.y -= dt * 70; s.alpha = 1 - k; } else { s.scale.set(s.base * (0.6 + k)); s.alpha = 1 - k; }
       return true;
     });
+    this.tickBelt(dt);
     // bobbing upgrade arrows
     for (const t of Object.values(this.arrows || {})) if (t.visible) t.y = t.baseY + Math.sin(this.time * 6) * 8;
     // hatchery pulse + shake
     const pulse = this.queue > 0 ? 1 + Math.sin(this.time * 30) * 0.05 : 1;
     this.hatchery.scale.set((110 / this.hatchery.texture.width) * pulse);
     if (this.shake > 0.3) { this.world.pivot.set(rnd(-this.shake, this.shake), rnd(-this.shake, this.shake)); this.shake *= 0.85; } else this.world.pivot.set(0, 0);
+  }
+
+  /** Eggs rolling along the egg machine's belts (faster when the farm earns more). */
+  tickBelt(dt) {
+    const b = this.belt;
+    if (!this.beltLayer) { this.beltLayer = new PIXI.Container(); this.beltLayer.zIndex = MACHINE_AT.y + 1; this.layer.objects.addChild(this.beltLayer); this.beltItems = []; }
+    if (!b || !this.machine.visible) { this.beltItems.forEach((it) => it.s.destroy()); this.beltItems = []; return; }
+    const m = this.machine; const w = m.width; const h = m.height;
+    const at = (fx, fy) => ({ x: MACHINE_AT.x + (fx - 0.5) * w, y: MACHINE_AT.y + (fy - 0.85) * h });
+    const speed = Math.min(2.2, 0.8 + Math.log10(1 + (this.beltRate || 0)) * 0.35); // belt speed grows with income
+    this.beltT = (this.beltT || 0) - dt * speed;
+    if (this.beltT <= 0) {
+      this.beltT = 0.55;
+      const egg = b.gold ? 'fm_egg_gold1' : 'fm_egg1';
+      const add = (path, tex, size, delay = 0) => {
+        if (!path || !this.tex[tex]) return;
+        const s = new PIXI.Sprite(this.tex[tex]); s.anchor.set(0.5, 0.8); s.scale.set(size / s.texture.width); s.alpha = 0;
+        this.beltLayer.addChild(s); this.beltItems.push({ s, path, t: -delay, rot: tex.startsWith('fm_egg') });
+      };
+      if (b.in) add(b.in, egg, 20);
+      this.beltN = (this.beltN || 0) + 1;
+      if (b.item === 'carton') { if (this.beltN % 3 === 0) add(b.out, 'fm_carton', 44, 0.6); } else add(b.out, egg, 20, b.in ? 0.6 : 0);
+    }
+    this.beltItems = this.beltItems.filter((it) => {
+      it.t += dt * 0.55 * speed;
+      if (it.t >= 1) { it.s.destroy(); return false; }
+      if (it.t < 0) { it.s.alpha = 0; return true; }
+      const [x0, y0, x1, y1] = it.path; const p = at(x0 + (x1 - x0) * it.t, y0 + (y1 - y0) * it.t);
+      it.s.position.set(p.x, p.y);
+      it.s.alpha = it.t < 0.12 ? it.t / 0.12 : it.t > 0.88 ? (1 - it.t) / 0.12 : 1; // fade in/out at the belt ends
+      if (it.rot) it.s.rotation = Math.sin(it.t * 40) * 0.12; // little wobble as it rides the belt
+      return true;
+    });
+    // the sorter's window glows as eggs pass through
+    if (b.glow) {
+      if (!this.glow) { this.glow = new PIXI.Graphics(); this.beltLayer.addChild(this.glow); }
+      const p = at(b.glow[0], b.glow[1]);
+      this.glow.clear().beginFill(0xffd34d, 0.25 + 0.2 * Math.sin(this.time * 6)).drawEllipse(p.x, p.y, w * 0.11, h * 0.12).endFill();
+    } else if (this.glow) { this.glow.clear(); }
   }
 
   burst(x, y, name, scale = 1) {
