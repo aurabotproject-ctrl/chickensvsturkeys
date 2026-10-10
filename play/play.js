@@ -3,17 +3,19 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010111459';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010111459';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010111459';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010111459';
-import { sfx } from '../js/core/sfx.js?v=20261010111459';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010111459';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010111459';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010111459';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010111459';
-import * as FE from '../js/modes/farm/economy.js?v=20261010111459';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010111459';
+} from '../js/core/firebase.js?v=20261010131725';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010131725';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010131725';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010131725';
+import { sfx } from '../js/core/sfx.js?v=20261010131725';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010131725';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010131725';
+import { PIECES, COLOURS, legalMoves, blockSpots, pieceSprite, ADV_ART } from '../js/modes/advance/rules.js?v=20261010131725';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010131725';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010131725';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010131725';
+import * as FE from '../js/modes/farm/economy.js?v=20261010131725';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010131725';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -26,7 +28,8 @@ const isFarm = () => D.state.mode === 'farm';
 const isTowers = () => D.state.mode === 'towers';
 const isSiege = () => D.state.mode === 'siege';
 const isPaint = () => D.state.mode === 'paint';
-const hasMap = () => isFarm() || isTowers() || isSiege();
+const isAdv = () => D.state.mode === 'advance';
+const hasMap = () => isFarm() || isTowers() || isSiege() || isAdv();
 const UNIT = () => (isPaint() ? 'of the field' : isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
 const SCORE = (n) => (isFarm() ? fmt(n) : isPaint() ? `${Math.round((n || 0) * 10) / 10}%` : Math.floor(n || 0));
 
@@ -97,6 +100,9 @@ function subscribe() {
   on('tw/own', (v) => { TW.own = v; TW.view?.setOwn(v); });
   on('tw/lv', (v) => { TW.lv = v; TW.view?.setLevels(v); });
   on('tw/p', (v) => { TW.p = v || ''; TW.view?.setPaths(v || ''); });
+  on('players', (v) => { D.all = v || {}; if (isAdv() && D.me && !D.me.pc) renderPiecePick(true); });
+  on('adv/info', (v) => { ADV.info = v; advBuild(); });
+  on('adv/s', (v) => { ADV.s = v || ''; advBuild(); });
   on('pt/info', (v) => { PT.info = v; PT.view?.setInfo(v); });
   on('pt/s/g', (v) => { PT.g = v; PT.view?.setGrid(v || ''); });
   on('pt/s/t', (v) => { PT.t = v; PT.view?.setTrail(v || ''); });
@@ -137,6 +143,7 @@ function render() {
     show('wait'); $('#wait').innerHTML = waitHtml('Sorting teams…', 'Hang tight!'); return;
   }
   if (!Number.isInteger(me.av)) { renderAvatarPick(); return; }
+  if (isAdv() && !me.pc) { renderPiecePick(); return; }
   if (phase === 'lobby') {
     show('wait');
     $('#wait').innerHTML = html`<div class="panel light wait-card stack center">
@@ -200,16 +207,17 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isAdv()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
   document.body.classList.toggle('mode-paint', isPaint());
-  if (isFarm() !== document.body.classList.contains('mode-farm') || isTowers() !== document.body.classList.contains('mode-towers') || isSiege() !== document.body.classList.contains('mode-siege')) {
+  if (isAdv() !== document.body.classList.contains('mode-advance') || isFarm() !== document.body.classList.contains('mode-farm') || isTowers() !== document.body.classList.contains('mode-towers') || isSiege() !== document.body.classList.contains('mode-siege')) {
     document.body.classList.toggle('mode-farm', isFarm());
     document.body.classList.toggle('mode-towers', isTowers());
     document.body.classList.toggle('mode-siege', isSiege());
+    document.body.classList.toggle('mode-advance', isAdv());
     $('#tab-answer').firstChild.textContent = hasMap() ? '❓ QUIZ ⚡' : '❓ ANSWER';
-    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : isTowers() ? '🗺️ MAP ' : isSiege() ? '🏰 BATTLE ' : '🥚 FIGHT ';
+    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : isTowers() ? '🗺️ MAP ' : isSiege() ? '🏰 BATTLE ' : isAdv() ? '♟ BOARD ' : '🥚 FIGHT ';
   }
   if (phase === 'playing' || phase === 'answer') {
     if (s.paused) { ov.className = 'overlay'; ov.innerHTML = '<div class="box"><h1 class="comic-title">PAUSED</h1><p>Eyes on the teacher!</p></div>'; } else if (ov.innerHTML.includes('PAUSED')) ov.className = 'overlay hidden';
@@ -262,6 +270,7 @@ function onPstate() {
   if (isTowers()) drawTwHud();
   if (isSiege()) drawSgHud();
   if (isPaint()) drawPtHud();
+  if (isAdv()) advHud();
   if (isFarm()) {
     farmState();
     if (ps.fox === 'danger' && !L.foxPrompted) { L.foxPrompted = true; setTab('answer'); navigator.vibrate?.([100, 50, 100]); } else if (!ps.fox) L.foxPrompted = false;
@@ -320,6 +329,8 @@ function setTab(t) {
   $('#view-farm').classList.toggle('hidden', t !== 'fight' || !isFarm());
   $('#view-tw').classList.toggle('hidden', t !== 'fight' || !isTowers());
   $('#view-sg').classList.toggle('hidden', t !== 'fight' || !isSiege());
+  $('#view-adv').classList.toggle('hidden', t !== 'fight' || !isAdv());
+  if (isAdv() && t === 'fight') advResize();
   if (isSiege() && t === 'fight') { ensureSg(); SG.view?.layout(); }
   if (isTowers() && t === 'fight') ensureTw();
   if (isFarm() && t === 'fight') { ensureScene(); drawFarm(); if (FM.offscreen && FM.scene?.tex) { FM.scene.stampede(FM.offscreen); FM.offscreen = 0; } }
@@ -385,7 +396,8 @@ function drawFeedback() {
   const lock = f.lockMs || 1500;
   const readMs = f.correct ? lock : Math.max(lock, 2600);
   const fg = f.farm; const tw = f.tw; const sg = f.sg; const pt = f.pt;
-  const gain = pt ? `<div class="farm-gain"><span>⚡ +1 speed</span><span>now speed ${pt.speed}</span></div>` : sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team\'s weakest building!' : 'sent to the building you tapped!'}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
+  const av = f.adv;
+  const gain = av ? `<div class="farm-gain"><span>♟ +1 move!</span><span>${av.stuck ? 'but you are blocked in…' : 'go to the BOARD'}</span></div>` : pt ? `<div class="farm-gain"><span>⚡ +1 speed</span><span>now speed ${pt.speed}</span></div>` : sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team\'s weakest building!' : 'sent to the building you tapped!'}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
   box.innerHTML = f.correct
     ? html`<div class="big">CORRECT!</div>${raw(gain)}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
     : html`<div class="big">NOPE!</div><div class="ans-was">Answer: <b>${f.rightText}</b></div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div><div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`;
@@ -395,6 +407,7 @@ function drawFeedback() {
 
 function hideFeedback() {
   $('#fb').className = 'fb hidden';
+  if (isAdv() && (D.ps.moves || 0) > 0 && D.state.phase === 'playing') setTimeout(() => { if ((D.ps.moves || 0) > 0 && L.tab === 'answer') setTab('fight'); }, 50);
   $('#answers').classList.remove('locked');
   drawQuestion();
   if (TW.quiz) closeTwQuiz(); // Coop Wars: back to the map after each answer
@@ -948,4 +961,115 @@ function drawPtHud() {
   $('#pt-mine').textContent = `🏳️ ${ps.pct || 0}%`;
   $('#pt-lc').textContent = `${ps.lc ?? 0}%`; $('#pt-lt').textContent = `${ps.lt ?? 0}%`;
   $('#pt-out').classList.toggle('hidden', !(ps.out && D.state.phase === 'playing'));
+}
+
+// ---------------- Advance ----------------
+const ADV = { info: null, s: '', board: null, mode: 'move', seq: Date.now(), q: [], layout: null, pending: 0 };
+function renderPiecePick(refresh = false) {
+  const me = D.me; if (!me || !me.team) return;
+  if (refresh && !$('#wait .piece-pick')) return;
+  show('wait');
+  const team = me.team;
+  const taken = new Set(Object.entries(D.all || {}).filter(([u, p]) => u !== uid && p && p.team === team && p.pc).map(([, p]) => p.pc));
+  const cell = (p, c) => {
+    const pc = `${p.id}${c.id}`; const art = pieceSprite(team, pc); const off = taken.has(pc);
+    const face = ADV_ART.has(art) ? `<img src="${sprite(art)}" alt="">` : `<span class="pp-token" style="background:${c.fill};color:${c.ink}">${p.glyph}</span>`;
+    return `<button class="pp ${off ? 'taken' : ''}" data-pc="${pc}" ${off ? 'disabled' : ''} title="${c.name} ${p.name}">${face}<small>${off ? 'taken' : `${c.name}<br>${p.name}`}</small></button>`;
+  };
+  $('#wait').innerHTML = html`<div class="piece-pick">
+    <h1 class="comic-title slant">PICK YOUR PIECE!</h1>
+    <p style="margin:0">Choose a piece and colour. Faded ones are already taken by a teammate.</p>
+    <div class="pp-grid">${raw(COLOURS[team].map((c) => PIECES.map((p) => cell(p, c)).join('')).join(''))}</div></div>`;
+  $$('[data-pc]').forEach((b) => { b.onclick = () => { sfx.click(); $$('[data-pc]').forEach((x) => { x.disabled = true; }); update(G(`players/${uid}`), { pc: b.dataset.pc }).catch((e) => { console.error(e); renderPiecePick(); }); }; });
+}
+/** Turn the synced strings into a board object (pieces keep their slide positions). */
+function advBuild() {
+  const info = ADV.info; if (!info) return;
+  const [ps = '', bs = ''] = String(ADV.s || '').split('|');
+  const old = new Map((ADV.board?.pieces || []).map((p) => [p.uid, p]));
+  const meta = new Map((info.players || []).map(([u, team, pc, name]) => [u, { team, pc, name }]));
+  const pieces = ps.split(';').filter(Boolean).map((t) => {
+    const [u, r, c, h] = t.split('.'); const m = meta.get(u) || { team: 'chicken', pc: 'pw', name: '' };
+    const o = old.get(u) || {};
+    return { uid: u, team: m.team, pc: m.pc, name: m.name, r: +r, c: +c, home: h === '1', dx: o.dx, dy: o.dy };
+  });
+  const blocks = bs.split(';').filter(Boolean).map((t) => { const [r, c, left, owner] = t.split('.'); return { r: +r, c: +c, left: +left, owner }; });
+  ADV.board = { W: info.W, L: info.L, pieces, blocks };
+  ADV.pending = 0;
+  ensureAdvCanvas();
+  advHud();
+}
+function ensureAdvCanvas() {
+  if (ADV.canvas) return;
+  const el = $('#adv-scene');
+  ADV.canvas = document.createElement('canvas'); ADV.canvas.className = 'adv-canvas'; el.appendChild(ADV.canvas);
+  ADV.ctx = ADV.canvas.getContext('2d');
+  new ResizeObserver(advResize).observe(el); advResize();
+  const frame = () => { advDraw(); requestAnimationFrame(frame); }; requestAnimationFrame(frame);
+  ADV.canvas.addEventListener('pointerdown', (e) => advTap(e));
+  // debug/test hook: screen position of the first highlighted square
+  window.cvtAdv = { target: () => { const m = advMarks()[0]; const Ly = ADV.layout; if (!m || !Ly) return null; const rect = ADV.canvas.getBoundingClientRect(); const c = Ly.flip ? Ly.W - 1 - m.c : m.c; const r = Ly.flip ? Ly.L - 1 - m.r : m.r; return { x: rect.left + Ly.ox + (c + 0.5) * Ly.cell, y: rect.top + Ly.oy + (r + 0.5) * Ly.cell }; } };
+}
+function advResize() {
+  if (!ADV.canvas) return;
+  const el = $('#adv-scene'); const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  ADV.canvas.width = Math.round(el.clientWidth * dpr); ADV.canvas.height = Math.round(el.clientHeight * dpr);
+  ADV.canvas.style.width = `${el.clientWidth}px`; ADV.canvas.style.height = `${el.clientHeight}px`; ADV.dpr = dpr;
+}
+function myPiece() { return ADV.board?.pieces.find((p) => p.uid === uid); }
+function advMarks() {
+  const me = myPiece(); if (!me || me.home || (D.ps.moves || 0) - ADV.pending <= 0 || D.state.phase !== 'playing') return [];
+  if (ADV.mode === 'block') return blockSpots(ADV.board, me).map(([r, c]) => ({ r, c, kind: 'block' }));
+  return legalMoves(ADV.board, me).map(([r, c]) => ({ r, c, kind: 'move' }));
+}
+function advDraw() {
+  if (!ADV.board || !ADV.ctx || $('#view-adv').classList.contains('hidden')) return;
+  const ctx = ADV.ctx; const dpr = ADV.dpr; const W = ADV.canvas.width / dpr; const H = ADV.canvas.height / dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
+  ADV.layout = drawBoard(ctx, ADV.board, 6, 10, W - 12, H - 20, { flip: D.me?.team === 'turkey', me: uid, marks: advMarks() });
+}
+function advTap(e) {
+  if (D.state.phase !== 'playing' || D.state.paused) return;
+  const rect = ADV.canvas.getBoundingClientRect();
+  const sq = hitSquare(ADV.layout, e.clientX - rect.left, e.clientY - rect.top); if (!sq) return;
+  const mark = advMarks().find((m) => m.r === sq.r && m.c === sq.c);
+  if (!mark) {
+    const left = (D.ps.moves || 0) - ADV.pending;
+    advHint(left <= 0 ? 'No moves left — answer a question on the QUIZ tab!' : ADV.mode === 'block' ? 'Tap an orange square next to you to drop a block.' : 'Tap a green square to move there.', 'bad');
+    sfx.wrong(); return;
+  }
+  ADV.seq += 1; ADV.q.push({ s: ADV.seq, op: ADV.mode, r: sq.r, c: sq.c }); ADV.q = ADV.q.slice(-6);
+  ADV.pending += 1;
+  update(G(`inputs/${uid}`), { q: ADV.q }).catch(() => {});
+  if (ADV.mode === 'move') { const me = myPiece(); if (me) { me.r = sq.r; me.c = sq.c; } } // optimistic
+  sfx.click(); navigator.vibrate?.(25);
+  advHint(ADV.mode === 'block' ? '🧱 Block placed! It lasts for your next 2 answers.' : '♟ Moved!', 'good');
+  if (ADV.mode === 'block') setAdvMode('move');
+  if ((D.ps.moves || 0) - ADV.pending <= 0) setTimeout(() => setTab('answer'), 650);
+}
+function setAdvMode(m) {
+  ADV.mode = m;
+  $$('#adv-modes [data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === m));
+}
+$('#adv-modes').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-mode]'); if (!b || b.disabled) return;
+  setAdvMode(b.dataset.mode); sfx.click();
+});
+let advHintT = null;
+function advHint(msg, cls = '') { const h = $('#adv-hint'); h.textContent = msg; h.className = `tw-hint ${cls}`; clearTimeout(advHintT); advHintT = setTimeout(() => { advHintT = null; advHud(); }, 2400); }
+function advHud() {
+  if (!isAdv()) return;
+  const ps = D.ps; const left = Math.max(0, (ps.moves || 0) - ADV.pending);
+  $('#adv-moves').textContent = ps.home ? '⭐ You made it across!' : left ? `♟ ${left} move${left > 1 ? 's' : ''} ready!` : 'No moves — answer a question';
+  $('#adv-moves').classList.toggle('ready', !!left && !ps.home);
+  $('#adv-ac').textContent = `${ps.ac ?? 0}%`; $('#adv-at').textContent = `${ps.at ?? 0}%`;
+  const blockBtn = $('#adv-modes [data-mode="block"]');
+  $('#adv-modes').classList.toggle('hidden', !ps.blockSmall);
+  blockBtn.disabled = !ps.canBlock; if (!ps.canBlock && ADV.mode === 'block') setAdvMode('move');
+  if (left && L.tab === 'answer' && !L.lockUntil && D.state.phase === 'playing') $('#tab-fight').classList.add('nudge');
+  if (advHintT) return;
+  const h = $('#adv-hint'); h.className = 'tw-hint';
+  h.textContent = ps.home ? '⭐ You\'re home! Keep answering — your right answers still count for your place on the leaderboard.'
+    : left ? (ADV.mode === 'block' ? 'Tap an orange square next to you to drop a hay-bale block.' : 'Tap a green square: forward, diagonal or sideways.')
+      : 'Answer questions on the QUIZ tab. Each right answer = 1 move.';
 }

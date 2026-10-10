@@ -201,7 +201,7 @@ body.mode-towers .stage { background: radial-gradient(circle at 50% 55%, #4f8f26
 .tp-sub { display: block; font-family: var(--font-body, sans-serif); font-size: .55em; letter-spacing: 0; opacity: .8; text-transform: none; }
 .nowrap { white-space: nowrap; }
 .pt-canvas { position: absolute; inset: 0; display: block; }
-.round-box .swap-note { margin-top: 1.2vh; }
+.round-box .swap-note { margin-top: 3.2vh; }
 /* teacher can hide the results to show the final game board */
 .overlay.peek { background: transparent; backdrop-filter: none; pointer-events: none; }
 .overlay.peek > * { opacity: 0; pointer-events: none; }

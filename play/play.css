@@ -349,3 +349,27 @@ body.mode-paint .tabs, body.mode-paint #ko, body.mode-paint .egg-bar, body.mode-
 .pt-out { position: absolute; inset: 30% 8% auto; display: grid; gap: 6px; text-align: center; background: var(--turkey); color: #fff; border: 4px solid var(--ink); border-radius: 18px; padding: 14px; box-shadow: var(--pop-shadow-sm); pointer-events: none; }
 .pt-out b { font-family: var(--font-burst); font-size: 2.6rem; letter-spacing: .05em; text-shadow: 3px 3px 0 var(--ink); }
 .pt-out span { font-weight: 800; }
+
+/* ---------- Advance ---------- */
+body.mode-advance .egg-bar, body.mode-advance .egg-count { display: none; }
+.piece-pick { display: grid; gap: 10px; justify-items: center; text-align: center; width: 100%; max-width: 720px; }
+.pp-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 100%; }
+.pp { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 2px; padding: 6px 2px; background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; box-shadow: var(--pop-shadow-sm); }
+.pp img { width: 100%; max-width: 70px; aspect-ratio: 1; object-fit: contain; }
+.pp small { font-size: .62rem; font-weight: 900; line-height: 1.1; }
+.pp-token { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--team, #1e6fe0); outline: 2px solid var(--ink); font-size: 1.8rem; font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", serif; }
+.team-turkey .pp-token { border-color: #e0402a; }
+.pp.taken { opacity: .25; filter: grayscale(1); cursor: not-allowed; }
+.pp:not(.taken):active { transform: scale(.95); }
+#view-adv { gap: 6px; }
+.adv-top { display: flex; align-items: center; gap: 6px; }
+.adv-top .tw-score { margin-left: auto; }
+.adv-moves { background: var(--navy-700); border: 3px solid var(--ink); border-radius: 999px; padding: 2px 12px; font-weight: 900; }
+.adv-moves.ready { background: var(--grass, #7ed321); color: var(--ink); animation: pulse 1s ease-in-out infinite; }
+.adv-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.adv-modes button { all: unset; cursor: pointer; text-align: center; padding: 6px; border: 3px solid var(--ink); border-radius: 12px; background: #ddd; color: var(--ink); font-weight: 900; }
+.adv-modes button.on { background: var(--yolk); }
+.adv-modes button:disabled { opacity: .4; cursor: not-allowed; }
+.adv-wrap { position: relative; flex: 1; min-height: 0; border-radius: 16px; overflow: hidden; touch-action: manipulation; }
+.adv-canvas { display: block; }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }

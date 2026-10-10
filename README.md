@@ -89,6 +89,17 @@ Create Game → **Coop Wars** → 5, 8 or 12 minutes, and choose **Troop growth*
 - The team with the most buildings at the end wins (or wipe out the other team early).
 - Art: dedicated Coop Wars sprites (`assets/sprites/tw_*.webp`). Prompts: `COOP_WARS_IMAGE_PROMPTS.md`.
 
+## Advance (chessboard race)
+Create Game → **Advance** → number of rounds, and the longest a round can last (1 min / 90 s / 2 min).
+- Before the game each student picks a **chess piece + colour** (King, Queen, Rook, Bishop, Knight, Pawn × 4 colours). A combination a teammate has already picked fades out.
+- The board is square: as wide as the bigger team, and at least **10 × 10**. Chickens start on the bottom row, turkeys on the top row.
+- Every **right answer = 1 move**: forward, forward-diagonal, or one step sideways — never onto a square with a piece or a block. Students answer on the **QUIZ** tab and move on the **BOARD** tab (it opens by itself after a right answer and shows green squares to tap). Turkeys see the board turned round so they always move "up".
+- **Blocks** (only when a team has fewer than 10 players): instead of moving, drop a hay bale on any empty square next to you. Nobody can move onto it. It disappears after your next 2 answers. One block at a time.
+- A round ends when a whole team reaches the far side (they win the round), or when time runs out — then the team that is further across **on average** wins. Each round won = 1 point; most rounds wins the game (ties broken by total distance).
+- Image prompts for the chicken/turkey chess pieces: `ADVANCE_IMAGE_PROMPTS.md` (round tokens are used until then).
+
+⚠️ Advance adds `pc` (piece choice) and `adv` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
+
 ## Land Grab (paper.io style)
 Create Game → **Land Grab** → number of rounds, and the answer time per round (45 / 60 / 90 s — 60 s recommended).
 - **Each round = 1 minute of questions, then 30 seconds of land grab.** Every right answer in the question minute makes your character faster in the land grab (speed 5, +1 per right answer, up to 14).

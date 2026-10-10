@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261010111459';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010111459';
-import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261010111459';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010111459';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010111459';
-import { renderBanks } from './banks-ui.js?v=20261010111459';
+} from '../js/core/firebase.js?v=20261010131725';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010131725';
+import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261010131725';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010131725';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010131725';
+import { renderBanks } from './banks-ui.js?v=20261010131725';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -110,6 +110,7 @@ const MODES = [
   { id: 'towers', name: 'Coop Wars', img: 'mode_towers', desc: 'Draw lines from your coops to march troops and capture the map. Right answers send reinforcements!' },
   { id: 'siege', name: 'Coop Siege', img: 'mode_siege', desc: 'Two halves: defend your coop with egg shooters and hay walls, then swap and attack! Right answers earn corn to spend.' },
   { id: 'paint', name: 'Land Grab', img: 'chicken_run', desc: 'Answer for 1 minute to power up your speed, then 30 seconds to grab land — loop back home, and don\'t let anyone cut your trail!' },
+  { id: 'advance', name: 'Advance', img: 'c_chicken_idle', desc: 'A giant chessboard race! Every right answer = 1 move. First team to get everyone to the other side wins the round.' },
   { id: 'farm', name: 'Egg Farm', img: 'fm_coop_c4', desc: 'Grow the richest egg farm — every right answer boosts your farm.' },
 ];
 
@@ -133,7 +134,7 @@ function renderCreate(main) {
     <section class="panel light" style="margin-top:18px"><h3>3. Settings</h3>
       <div class="settings-grid">
         <div class="field ${s.mode === 'farm' || s.mode === 'towers' || s.mode === 'siege' ? 'hidden' : ''}"><span>Rounds</span>${raw(seg('rounds', [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']]))}</div>
-        <div class="field"><span>${s.mode === 'cannon' || s.mode === 'paint' ? 'Answer time per round' : s.mode === 'farm' || s.mode === 'towers' ? 'Game length' : s.mode === 'siege' ? 'Length of each half' : 'Round length'}</span>${raw(seg('roundSeconds', s.mode === 'farm' || s.mode === 'towers' ? [[300, '5 min'], [480, '8 min'], [720, '12 min']] : s.mode === 'siege' ? [[150, '2½ min'], [210, '3½ min'], [300, '5 min']] : [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}${raw(s.mode === 'cannon' ? '<span class="hint">Students answer 5 questions, then a 45-second battle.</span>' : s.mode === 'paint' ? '<span class="hint">Every right answer = more speed. Then a 30-second land grab.</span>' : s.mode === 'siege' ? '<span class="hint">2 halves — the teams swap between defending and attacking at half time.</span>' : '')}</div>
+        <div class="field"><span>${s.mode === 'cannon' || s.mode === 'paint' ? 'Answer time per round' : s.mode === 'farm' || s.mode === 'towers' ? 'Game length' : s.mode === 'siege' ? 'Length of each half' : 'Round length'}</span>${raw(seg('roundSeconds', s.mode === 'farm' || s.mode === 'towers' ? [[300, '5 min'], [480, '8 min'], [720, '12 min']] : s.mode === 'siege' ? [[150, '2½ min'], [210, '3½ min'], [300, '5 min']] : s.mode === 'advance' ? [[60, '1 min'], [90, '90 s'], [120, '2 min']] : [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}${raw(s.mode === 'cannon' ? '<span class="hint">Students answer 5 questions, then a 45-second battle.</span>' : s.mode === 'advance' ? '<span class="hint">The longest each round can last. A round ends early if a team gets everyone across.</span>' : s.mode === 'paint' ? '<span class="hint">Every right answer = more speed. Then a 30-second land grab.</span>' : s.mode === 'siege' ? '<span class="hint">2 halves — the teams swap between defending and attacking at half time.</span>' : '')}</div>
         <div class="field"><span>Teams</span>${raw(seg('teams', [['choose', 'Students choose'], ['auto', 'Auto-balance']]))}<span class="hint">Students choose = they tap Chickens or Turkeys when they join. You can still move anyone in the lobby.</span></div>
         <div class="field"><span>Confidence check</span>${raw(seg('confidence', [['every', 'Every question'], ['third', 'Every 3rd'], ['off', 'Off']]))}<span class="hint">Students tap 🔥 Sure / 🤔 Think so / 🎲 Guessing — powers the blind-spot report.</span></div>
         <div class="field ${s.mode !== 'paint' ? 'hidden' : ''}"><span>Starting spots</span>${raw(seg('landLayout', [['split', 'Separate sides'], ['mixed', 'Mixed']]))}<span class="hint">Separate = chickens start on the left, turkeys on the right. Mixed = everyone starts scattered across the field — harder and more competitive!</span></div>
@@ -145,7 +146,7 @@ function renderCreate(main) {
     </section>`;
   $$('.mode-card', main).forEach((c) => {
     c.onclick = () => { if (c.classList.contains('soon')) { toast('That game is coming in a later phase!', 'warn'); return; } s.mode = c.dataset.mode;
-      if (s.mode === 'farm' || s.mode === 'towers') { s.settings.rounds = 1; if (![300, 480, 720].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 480; } else if (s.mode === 'siege') { s.settings.rounds = 2; if (![150, 210, 300].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 210; } else if (s.settings.roundSeconds > 90) s.settings.roundSeconds = 60;
+      if (s.mode === 'farm' || s.mode === 'towers') { s.settings.rounds = 1; if (![300, 480, 720].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 480; } else if (s.mode === 'advance') { if (![60, 90, 120].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 120; } else if (s.mode === 'siege') { s.settings.rounds = 2; if (![150, 210, 300].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 210; } else if (s.settings.roundSeconds > 90) s.settings.roundSeconds = 60;
       renderCreate(main); };
   });
   $('#tobanks').onclick = (e) => { e.preventDefault(); go('banks'); };
