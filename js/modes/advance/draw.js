@@ -1,6 +1,6 @@
 // ADVANCE — board drawing shared by the big screen and the phones (Canvas 2D).
-import { sprite } from '../../core/assets.js?v=20261010131725';
-import { pieceOf, colourOf, pieceSprite, ADV_ART } from './rules.js?v=20261010131725';
+import { sprite } from '../../core/assets.js?v=20261010133712';
+import { pieceOf, colourOf, pieceSprite, ADV_ART, ADV_REF_H } from './rules.js?v=20261010133712';
 
 const imgs = new Map();
 export function img(name) {
@@ -72,9 +72,15 @@ export function drawPiece(ctx, p, px, py, cell, { me = false, name = false } = {
   const col = colourOf(p.team, p.pc);
   if (me) { ctx.fillStyle = 'rgba(255,199,44,.55)'; ctx.beginPath(); ctx.arc(cx, cy, cell * 0.5, 0, Math.PI * 2); ctx.fill(); }
   if (ADV_ART.has(art) && ready(img(art))) {
-    const im = img(art); const s = cell * 0.95; const ar = im.naturalWidth / im.naturalHeight;
-    const dw = ar >= 1 ? s : s * ar; const dh = ar >= 1 ? s / ar : s;
-    ctx.drawImage(im, cx - dw / 2, cy - dh / 2 - cell * 0.04, dw, dh);
+    // stand the piece on its square at true relative size (pawns shorter than kings)
+    const im = img(art);
+    ctx.fillStyle = TEAM[p.team]; ctx.globalAlpha = 0.7;
+    ctx.beginPath(); ctx.ellipse(cx, py + cell * 0.86, cell * 0.36, cell * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+    let k = (cell * 1.05) / ADV_REF_H;
+    if (im.naturalWidth * k > cell) k = cell / im.naturalWidth;
+    const dw = im.naturalWidth * k; const dh = im.naturalHeight * k;
+    ctx.drawImage(im, cx - dw / 2, py + cell * 0.9 - dh, dw, dh);
   } else {
     // stand-in: coloured chess token with the piece symbol and the team's bird
     ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(cx, cy + cell * 0.32, cell * 0.36, cell * 0.12, 0, 0, Math.PI * 2); ctx.fill();

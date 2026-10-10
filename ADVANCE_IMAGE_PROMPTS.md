@@ -1,6 +1,6 @@
 # ADVANCE — ChatGPT Image Prompts (chess-piece chickens & turkeys)
 
-Advance is **already playable**. Until these images exist, each player is shown as a round chess token in their colour with the chess symbol (♚ ♛ ♜ ♝ ♞ ♟) and a small chicken or turkey badge.
+✔ **Art received and wired in.** All 48 pieces (6 pieces × 4 colours × 2 teams) and the game-card icon are sliced into `assets/sprites/adv_*.webp` and `mode_advance.webp`. The prompts below are kept in case you want to remake any of them.
 
 These prompts make proper **chess pieces that are chickens and turkeys**: 6 pieces × 4 colours for each team (48 pieces), on 4 sheets plus a game-card icon.
 

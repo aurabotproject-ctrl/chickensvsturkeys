@@ -42,7 +42,10 @@ export const colourOf = (team, pc) => COLOURS[team === 'turkey' ? 'turkey' : 'ch
 /** Sprite name for the dedicated art (ADVANCE_IMAGE_PROMPTS.md), e.g. adv_c_k_w */
 export const pieceSprite = (team, pc) => `adv_${team === 'turkey' ? 't' : 'c'}_${String(pc || 'pw')[0]}_${String(pc || 'pw')[1]}`;
 /** Dedicated piece sprites that exist (filled in when the art is sliced). */
-export const ADV_ART = new Set([]);
+export const ADV_ART = new Set([
+  'adv_c_k_w', 'adv_c_q_w', 'adv_c_r_w', 'adv_c_b_w', 'adv_c_n_w', 'adv_c_p_w', 'adv_c_k_g', 'adv_c_q_g', 'adv_c_r_g', 'adv_c_b_g', 'adv_c_n_g', 'adv_c_p_g', 'adv_c_k_k', 'adv_c_q_k', 'adv_c_r_k', 'adv_c_b_k', 'adv_c_n_k', 'adv_c_p_k', 'adv_c_k_t', 'adv_c_q_t', 'adv_c_r_t', 'adv_c_b_t', 'adv_c_n_t', 'adv_c_p_t', 'adv_t_k_w', 'adv_t_q_w', 'adv_t_r_w', 'adv_t_b_w', 'adv_t_n_w', 'adv_t_p_w', 'adv_t_k_g', 'adv_t_q_g', 'adv_t_r_g', 'adv_t_b_g', 'adv_t_n_g', 'adv_t_p_g', 'adv_t_k_k', 'adv_t_q_k', 'adv_t_r_k', 'adv_t_b_k', 'adv_t_n_k', 'adv_t_p_k', 'adv_t_k_t', 'adv_t_q_t', 'adv_t_r_t', 'adv_t_b_t', 'adv_t_n_t', 'adv_t_p_t',
+]);
+export const ADV_REF_H = 216; // height of the tallest piece sprite (the kings) — keeps pawns smaller than kings
 
 /** Rows run 0 (top) … L-1 (bottom). Chickens start at the bottom and head up. */
 export const dirOf = (team) => (team === 'turkey' ? 1 : -1);

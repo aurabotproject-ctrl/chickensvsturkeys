@@ -3,19 +3,19 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010131725';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010131725';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010131725';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010131725';
-import { sfx } from '../js/core/sfx.js?v=20261010131725';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010131725';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010131725';
-import { PIECES, COLOURS, legalMoves, blockSpots, pieceSprite, ADV_ART } from '../js/modes/advance/rules.js?v=20261010131725';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010131725';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010131725';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010131725';
-import * as FE from '../js/modes/farm/economy.js?v=20261010131725';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010131725';
+} from '../js/core/firebase.js?v=20261010133712';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010133712';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010133712';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010133712';
+import { sfx } from '../js/core/sfx.js?v=20261010133712';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010133712';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010133712';
+import { PIECES, COLOURS, legalMoves, blockSpots, pieceSprite, ADV_ART } from '../js/modes/advance/rules.js?v=20261010133712';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010133712';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010133712';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010133712';
+import * as FE from '../js/modes/farm/economy.js?v=20261010133712';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010133712';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
