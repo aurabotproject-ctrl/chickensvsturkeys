@@ -5,13 +5,13 @@
 //   flingers: inputs/{uid}.q  = [{ s, x, y }] (fling an egg at x, y)
 // and get the stall back through et/info + et/s.
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010145950';
-import { allCombos } from '../advance/rules.js?v=20261010145950';
+import { sfx } from '../../core/sfx.js?v=20261010153644';
+import { allCombos } from '../advance/rules.js?v=20261010153644';
 import {
   GW, LANES, X_MIN, X_MAX, SPEED, FLIGHT, EGGS_PER_CORRECT, COOLDOWN, LANE_Y,
   targetScale, attackerFor, other, targetCentre, launchX, findHit, eggAt,
-} from './rules.js?v=20261010145950';
-import { drawGallery } from './draw.js?v=20261010145950';
+} from './rules.js?v=20261010153644';
+import { drawGallery } from './draw.js?v=20261010153644';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -73,7 +73,7 @@ export class EggTossArena {
   placeDefender(p) {
     const n = new Array(LANES).fill(0);
     for (const q of this.defenders()) if (q !== p) n[q.lane] += 1;
-    p.lane = n.indexOf(Math.min(...n)); p.x = rnd(X_MIN + 60, X_MAX - 60); p.out = false; p.d = 0; p.ts = targetScale(p.rc);
+    p.lane = n.indexOf(Math.min(...n)); p.x = rnd(X_MIN + 60, X_MAX - 60); p.tx = null; p.out = false; p.d = 0; p.ts = targetScale(p.rc);
   }
 
   // ---------- rounds ----------
@@ -83,7 +83,7 @@ export class EggTossArena {
     this.eggs = []; this.splats = []; this.fx = []; this.lastCmd.clear();
     this.roundHits = { chicken: 0, turkey: 0 };
     this.running = false; this.ending = 0; this.idleT = 0;
-    for (const p of this.players.values()) { p.eggs = 0; p.rc = 0; p.ts = 1; p.out = false; p.d = 0; p.cool = 0; p.roundHits = 0; if (!p.pc) p.pc = this.freePiece(p.team, p.uid); }
+    for (const p of this.players.values()) { p.eggs = 0; p.rc = 0; p.ts = 1; p.out = false; p.d = 0; p.tx = null; p.cool = 0; p.roundHits = 0; if (!p.pc) p.pc = this.freePiece(p.team, p.uid); }
     // dodgers: shuffled over the 4 rails, spread out along each rail
     const def = this.defenders().sort(() => Math.random() - 0.5);
     def.forEach((p, i) => { p.lane = LANES - 1 - (i % LANES); });
@@ -133,7 +133,7 @@ export class EggTossArena {
   // ---------- input ----------
   handleInput(uid, inp) {
     const p = this.players.get(uid); if (!p || !inp) return;
-    if (p.team !== this.att) { if (inp.d != null && !p.out) p.d = Math.max(-1, Math.min(1, Math.round(+inp.d) || 0)); return; }
+    if (p.team !== this.att) { if (inp.x != null && !p.out && Number.isFinite(+inp.x)) p.tx = Math.max(X_MIN, Math.min(X_MAX, +inp.x)); return; }
     const last = this.lastCmd.get(uid) || 0;
     const q = Object.values(inp.q || {}).filter((c) => c && c.s > last).sort((a, b) => a.s - b.s);
     for (const c of q) { this.lastCmd.set(uid, c.s); this.fling(p, +c.x, +c.y); }
@@ -155,8 +155,11 @@ export class EggTossArena {
       if (p.cool > 0) p.cool -= dt;
       if (p.team === this.att) { if (p.bot) this.botFling(p, dt); continue; }
       if (p.out) continue;
-      if (p.bot) this.botDodge(p, dt);
-      p.x += p.d * SPEED * dt;
+      if (p.bot) { this.botDodge(p, dt); p.x += p.d * SPEED * dt; } else if (p.tx != null) {
+        // follow where the student's device says their piece is (capped so nobody can teleport)
+        const gap = p.tx - p.x; const max = SPEED * 1.4 * dt;
+        p.x += Math.abs(gap) <= max ? gap : Math.sign(gap) * max;
+      }
       if (p.x < X_MIN) { p.x = X_MIN; if (p.bot) p.d = 1; }
       if (p.x > X_MAX) { p.x = X_MAX; if (p.bot) p.d = -1; }
     }

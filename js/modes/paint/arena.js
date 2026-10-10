@@ -7,9 +7,9 @@
 //   • you can carve into other players' land
 // Speed for the 30-second battle comes from the 1-minute question phase.
 // =========================================================
-import { avatar } from '../../core/assets.js?v=20261010145950';
-import { sfx } from '../../core/sfx.js?v=20261010145950';
-import { GW, GH, START_R, BATTLE_MS, MAX_PLAYERS, speedFor, encode, paintGrid, makePalette } from './common.js?v=20261010145950';
+import { avatar } from '../../core/assets.js?v=20261010153644';
+import { sfx } from '../../core/sfx.js?v=20261010153644';
+import { GW, GH, START_R, BATTLE_MS, MAX_PLAYERS, speedFor, encode, paintGrid, makePalette } from './common.js?v=20261010153644';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);

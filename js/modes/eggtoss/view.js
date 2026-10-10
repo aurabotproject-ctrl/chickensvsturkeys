@@ -4,14 +4,15 @@
 //             your finger (only YOU can see it). Let go to fling an egg.
 //   Dodgers:  hold ◀ / ▶ (or the arrow keys) to slide your piece along its rail.
 // =========================================================
-import { GW, GH, SPEED, FLIGHT, X_MIN, X_MAX, COOLDOWN, PHONE_VIEW } from './rules.js?v=20261010145950';
-import { drawGallery, toStall } from './draw.js?v=20261010145950';
+import { GW, GH, SPEED, FLIGHT, X_MIN, X_MAX, COOLDOWN, PHONE_VIEW } from './rules.js?v=20261010153644';
+import { drawGallery, toStall } from './draw.js?v=20261010153644';
 
 const AIM_LIFT = 70; // css px the crosshair sits above the finger
 
 export class EtView {
-  constructor(el, { uid, onFling, onDir } = {}) {
-    this.el = el; this.uid = uid; this.onFling = onFling || (() => {}); this.onDir = onDir || (() => {});
+  constructor(el, { uid, onFling, onX } = {}) {
+    this.el = el; this.uid = uid; this.onFling = onFling || (() => {}); this.onX = onX || (() => {});
+    this.sentX = null; this.sentAt = 0;
     this.info = null; this.defs = []; this.eggs = new Map(); this.splats = new Map();
     this.role = 'att'; this.team = 'chicken'; this.eggsLeft = 0; this.dir = 0; this.myX = null; this.lastFling = 0; this.local = [];
     this.canvas = document.createElement('canvas'); this.canvas.className = 'et-phone';
@@ -29,7 +30,7 @@ export class EtView {
   setRole({ role, team, eggs }) { this.role = role; this.team = team; this.eggsLeft = eggs; if (role !== 'def') this.setDir(0); }
   setInfo(info) {
     if (!info) return;
-    if (this.info && this.info.round !== info.round) { this.eggs.clear(); this.splats.clear(); this.local = []; this.myX = null; }
+    if (this.info && this.info.round !== info.round) { this.eggs.clear(); this.splats.clear(); this.local = []; this.myX = null; this.sentX = null; this.setDir(0); }
     this.info = info;
     const old = new Map(this.defs.map((p) => [p.uid, p]));
     this.defs = (info.d || []).map(([uid, team, pc, name, lane]) => { const o = old.get(uid); return { uid, team, pc, name, lane, x: o?.x ?? GW / 2, tx: o?.tx ?? GW / 2, out: o?.out || false, outAt: o?.outAt, ts: o?.ts ?? 1, seen: o?.seen }; });
@@ -89,7 +90,14 @@ export class EtView {
     };
     window.addEventListener('keydown', this.keyH); window.addEventListener('keyup', this.keyH);
   }
-  setDir(d) { if (d === this.dir) return; this.dir = d; this.onDir(d); }
+  setDir(d) { if (d === this.dir) return; this.dir = d; if (!d) this.sendX(true); }
+  /** Tell the host where my piece is (about 12 times a second while moving, and once when I stop). */
+  sendX(force = false) {
+    if (this.myX == null) return;
+    const x = Math.round(this.myX); const now = performance.now();
+    if (x === this.sentX || (!force && now - this.sentAt < 80)) return;
+    this.sentX = x; this.sentAt = now; this.onX(x);
+  }
 
   // ---------- animation ----------
   step(dt) {
@@ -99,11 +107,9 @@ export class EtView {
     this.local = this.local.filter((e) => e.k < 1.05);
     for (const p of this.defs) {
       if (p.uid === this.uid && !p.out) {
-        // my own piece moves straight away; gently pulled back to where the big screen has it
-        if (this.myX == null) this.myX = p.tx;
-        this.myX = Math.max(X_MIN, Math.min(X_MAX, this.myX + this.dir * SPEED * dt));
-        const gap = p.tx - this.myX;
-        if (Math.abs(gap) > 160) this.myX = p.tx; else if (!this.dir) this.myX += gap * Math.min(1, dt * 6);
+        // my own piece is driven ONLY by my buttons (the big screen follows me, not the other way round)
+        if (this.myX == null) { if (!p.seen) continue; this.myX = p.tx; }
+        if (this.dir) { this.myX = Math.max(X_MIN, Math.min(X_MAX, this.myX + this.dir * SPEED * dt)); this.sendX(); }
         p.x = this.myX;
       } else p.x += (p.tx - p.x) * Math.min(1, dt * 12);
     }
