@@ -1,19 +1,32 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261010154707';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010154707';
-import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261010154707';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010154707';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010154707';
-import { renderBanks } from './banks-ui.js?v=20261010154707';
+} from '../js/core/firebase.js?v=20261010181753';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010181753';
+import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261010181753';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010181753';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010181753';
+import { renderBanks } from './banks-ui.js?v=20261010181753';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
 
 let unsubs = [];
 
+/** Footer fun: a big chicken chases a small turkey across the bottom, then 10 s later a big turkey chases a small chicken. Repeats. */
+function chaseStrip() {
+  if (document.getElementById('chase')) return;
+  const el = document.createElement('div'); el.id = 'chase'; el.setAttribute('aria-hidden', 'true');
+  const pair = (cls, big, small) => `<div class="chase-pair ${cls}">
+      <div class="runner small"><span class="sweat">💦</span><img src="${sprite(small)}" alt=""></div>
+      <div class="runner big"><img src="${sprite(big)}" alt=""><span class="dust"></span></div>
+    </div>`;
+  el.innerHTML = pair('c-chases', 'chicken_run', 'turkey_run') + pair('t-chases', 'turkey_run', 'chicken_run');
+  document.body.appendChild(el); document.body.classList.add('has-chase');
+}
+
 async function boot() {
+  chaseStrip();
   if (!isConfigured) { app.innerHTML = '<p class="loading">Firebase is not configured — see README.md.</p>'; return; }
   try {
     [ctx.strands, ctx.premade, ctx.curricula] = await Promise.all([loadStrands(), listPremade(), loadCurricula()]);

@@ -63,3 +63,30 @@
 @media (max-width: 760px) {
   .ed-head, .builder, .qcard .row3, .qcard .opts { grid-template-columns: 1fr; }
 }
+
+/* ---- chase strip along the bottom of Teacher HQ (big chicken chases small turkey, then the other way round) ---- */
+body.has-chase .main { padding-bottom: 104px; }
+body.has-chase .side { padding-bottom: 12px; }
+#chase { position: fixed; left: 250px; right: 0; bottom: 0; height: 88px; pointer-events: none; z-index: 4; overflow: hidden; background: linear-gradient(rgba(6,18,46,0), rgba(6,18,46,.92) 38%); }
+@media (max-width: 860px) { #chase { left: 0; } }
+#chase::before { content: ""; position: absolute; left: 0; right: 0; bottom: 8px; height: 4px; border-radius: 4px; background: repeating-linear-gradient(90deg, rgba(255,255,255,.12) 0 22px, transparent 22px 40px); }
+.chase-pair { position: absolute; left: 0; bottom: 10px; display: flex; align-items: flex-end; gap: 46px; animation: chase-run 20s linear infinite both; will-change: transform; }
+.chase-pair.c-chases { animation-delay: 1s; }
+.chase-pair.t-chases { animation-delay: 11s; }
+@keyframes chase-run {
+  0% { transform: translateX(100vw); }
+  36%, 100% { transform: translateX(-340px); }
+}
+.runner { position: relative; animation: chase-hop .32s ease-in-out infinite alternate; }
+.runner img { display: block; transform: scaleX(-1); filter: drop-shadow(3px 3px 0 rgba(0,0,0,.25)); }
+.runner.big img { height: 74px; }
+.runner.small img { height: 44px; }
+.runner.small { animation-duration: .22s; }
+.runner.big { animation-delay: .1s; }
+@keyframes chase-hop { from { transform: translateY(0) rotate(-3deg); } to { transform: translateY(-9px) rotate(3deg); } }
+.runner .sweat { position: absolute; top: -18px; right: -6px; font-size: 20px; animation: chase-sweat .5s ease-in-out infinite alternate; }
+@keyframes chase-sweat { from { transform: translateY(0) rotate(10deg); opacity: .6; } to { transform: translateY(-6px) rotate(-10deg); opacity: 1; } }
+.runner .dust { position: absolute; right: -26px; bottom: 2px; width: 30px; height: 18px; border-radius: 50%; background: rgba(160,130,90,.35); box-shadow: 18px 4px 0 -3px rgba(160,130,90,.25), 34px 7px 0 -6px rgba(160,130,90,.15); animation: chase-dust .32s ease-out infinite; }
+@keyframes chase-dust { from { transform: scale(.6); opacity: .9; } to { transform: scale(1.2) translateX(10px); opacity: .2; } }
+@media (prefers-reduced-motion: reduce) { #chase { display: none; } body.has-chase .main { padding-bottom: revert; } }
+@media print { #chase { display: none; } }

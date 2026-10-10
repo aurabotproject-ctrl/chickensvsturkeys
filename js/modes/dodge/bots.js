@@ -1,6 +1,6 @@
 // Test bots: let a teacher try the game (or pad out a small class)
 // without real phones. They live only on the host screen.
-import { COURT_W, COURT_H } from './arena.js?v=20261010154707';
+import { COURT_W, COURT_H } from './arena.js?v=20261010181753';
 
 const NAMES = ['Robo Rooster', 'Byte Bird', 'Chip', 'Gizmo', 'Sprocket', 'Widget', 'Pixel', 'Bolt', 'Nugget', 'Turbo', 'Zippy', 'Cluck-3000'];
 let n = 0;
