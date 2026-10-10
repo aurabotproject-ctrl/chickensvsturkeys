@@ -100,6 +100,18 @@ Create Game → **Advance** → number of rounds, and the longest a round can la
 
 ⚠️ Advance adds `pc` (piece choice) and `adv` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
 
+## Egg Toss (fairground egg-flinging gallery)
+Create Game → **Egg Toss** → rounds (2 / 4 / 6), and the answer time per round (30 / 45 / 60 s).
+- Before the game each student picks a **chess piece + colour** (the same pieces as Advance). Combinations a teammate already picked fade out.
+- Each round, one team **flings** and the other team **dodges**. Round 1: turkeys fling at chickens. The teams swap every round, so both teams fling the same number of times.
+- **Questions first.** Flingers: every right answer = **2 eggs** for this round. Dodgers: every right answer makes their target **10% smaller**, down to 30%. No right answers = full-size target.
+- **Then 30 seconds of flinging.** The dodgers' pieces stand on **4 rails** and slide left/right (hold ◀ ▶ on their device). Flingers drag a finger to aim and let go to fling. **Only the flinger can see their own crosshair**; nobody else sees it, including the big screen. Eggs take under a second to land, so dodgers can see them coming and move.
+- Only an egg that hits the **bullseye** counts, not one that just hits the piece. A hit = yolk splat, the piece topples, and that student spectates for the rest of the round.
+- Unused eggs are lost at the end of each round. The team with the most **targets hit** over all rounds wins. Individual standings are by questions answered correctly.
+- Image prompt for the game-card icon: `EGG_TOSS_IMAGE_PROMPTS.md`.
+
+⚠️ Egg Toss adds `et` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
+
 ## Land Grab (paper.io style)
 Create Game → **Land Grab** → number of rounds, and the answer time per round (45 / 60 / 90 s — 60 s recommended).
 - **Each round = 1 minute of questions, then 30 seconds of land grab.** Every right answer in the question minute makes your character faster in the land grab (speed 5, +1 per right answer, up to 14).

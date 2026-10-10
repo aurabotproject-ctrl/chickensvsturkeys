@@ -373,3 +373,28 @@ body.mode-advance .egg-bar, body.mode-advance .egg-count { display: none; }
 .adv-wrap { position: relative; flex: 1; min-height: 0; border-radius: 16px; overflow: hidden; touch-action: manipulation; }
 .adv-canvas { display: block; }
 @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+
+/* ---------- Egg Toss ---------- */
+body.mode-eggtoss .tabs, body.mode-eggtoss #ko, body.mode-eggtoss .egg-bar, body.mode-eggtoss .egg-count { display: none !important; }
+#view-et { position: relative; display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+#view-et.hidden { display: none; }
+.et-top { display: flex; gap: 6px; align-items: center; }
+.et-top .tw-score { margin-left: auto; }
+.et-role { background: var(--yolk); color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; padding: 1px 12px; font-family: var(--font-burst); font-size: 1.25rem; letter-spacing: .03em; }
+.et-role.def { background: var(--grass, #7ed321); }
+.et-wrap { position: relative; flex: 1; min-height: 0; border: 4px solid var(--ink); border-radius: 18px; overflow: hidden; background: #2a170a; box-shadow: var(--pop-shadow-sm); }
+.et-phone { display: block; }
+.et-dodge { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.et-dodge.hidden { display: none; }
+.et-dodge button { font-size: 2.4rem; font-weight: 900; padding: 6px 0; border: 4px solid var(--ink); border-radius: 18px; background: var(--chicken, #1e6fe0); color: #fff; box-shadow: var(--pop-shadow-sm); touch-action: none; user-select: none; -webkit-user-select: none; }
+body.team-turkey .et-dodge button { background: var(--turkey, #e0402a); }
+.et-dodge button.on { transform: translateY(3px); box-shadow: none; filter: brightness(1.15); }
+@media (orientation: landscape) and (max-height: 560px) {
+  #view-et { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr auto; gap: 6px; }
+  #view-et.hidden { display: none; }
+  .et-top { grid-column: 1 / -1; }
+  .et-wrap { grid-column: 1; grid-row: 2 / 4; }
+  .et-dodge { grid-column: 2; grid-row: 2; grid-template-columns: 1fr; align-content: center; }
+  .et-dodge button { padding: 14px 18px; }
+  #et-hint { grid-column: 2; grid-row: 3; max-width: 180px; font-size: .72rem; }
+}

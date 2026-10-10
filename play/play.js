@@ -3,19 +3,21 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010134958';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010134958';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010134958';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010134958';
-import { sfx } from '../js/core/sfx.js?v=20261010134958';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010134958';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010134958';
-import { PIECES, COLOURS, legalMoves, blockSpots, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010134958';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010134958';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010134958';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010134958';
-import * as FE from '../js/modes/farm/economy.js?v=20261010134958';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010134958';
+} from '../js/core/firebase.js?v=20261010144606';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010144606';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010144606';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010144606';
+import { sfx } from '../js/core/sfx.js?v=20261010144606';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010144606';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010144606';
+import { PIECES, COLOURS, legalMoves, blockSpots, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010144606';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010144606';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261010144606';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010144606';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010144606';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010144606';
+import * as FE from '../js/modes/farm/economy.js?v=20261010144606';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010144606';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -29,8 +31,10 @@ const isTowers = () => D.state.mode === 'towers';
 const isSiege = () => D.state.mode === 'siege';
 const isPaint = () => D.state.mode === 'paint';
 const isAdv = () => D.state.mode === 'advance';
+const isEt = () => D.state.mode === 'eggtoss';
+const hasPiece = () => isAdv() || isEt(); // games where you play as a chess piece
 const hasMap = () => isFarm() || isTowers() || isSiege() || isAdv();
-const UNIT = () => (isPaint() ? 'of the field' : isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
+const UNIT = () => (isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
 const SCORE = (n) => (isFarm() ? fmt(n) : isPaint() ? `${Math.round((n || 0) * 10) / 10}%` : Math.floor(n || 0));
 
 // ---------------- join ----------------
@@ -100,7 +104,9 @@ function subscribe() {
   on('tw/own', (v) => { TW.own = v; TW.view?.setOwn(v); });
   on('tw/lv', (v) => { TW.lv = v; TW.view?.setLevels(v); });
   on('tw/p', (v) => { TW.p = v || ''; TW.view?.setPaths(v || ''); });
-  on('players', (v) => { D.all = v || {}; if (isAdv() && D.me && !D.me.pc) renderPiecePick(true); });
+  on('players', (v) => { D.all = v || {}; if (hasPiece() && D.me && !D.me.pc) renderPiecePick(true); });
+  on('et/info', (v) => { ET.info = v; ET.view?.setInfo(v); });
+  on('et/s', (v) => { ET.s = v || ''; ET.view?.setState(ET.s); });
   on('adv/info', (v) => { ADV.info = v; advBuild(); });
   on('adv/s', (v) => { ADV.s = v || ''; advBuild(); });
   on('pt/info', (v) => { PT.info = v; PT.view?.setInfo(v); });
@@ -143,7 +149,7 @@ function render() {
     show('wait'); $('#wait').innerHTML = waitHtml('Sorting teams…', 'Hang tight!'); return;
   }
   if (!Number.isInteger(me.av)) { renderAvatarPick(); return; }
-  if (isAdv() && !me.pc) { renderPiecePick(); return; }
+  if (hasPiece() && !me.pc) { renderPiecePick(); return; }
   if (phase === 'lobby') {
     show('wait');
     $('#wait').innerHTML = html`<div class="panel light wait-card stack center">
@@ -207,10 +213,11 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isAdv()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
   document.body.classList.toggle('mode-paint', isPaint());
+  document.body.classList.toggle('mode-eggtoss', isEt());
   if (isAdv() !== document.body.classList.contains('mode-advance') || isFarm() !== document.body.classList.contains('mode-farm') || isTowers() !== document.body.classList.contains('mode-towers') || isSiege() !== document.body.classList.contains('mode-siege')) {
     document.body.classList.toggle('mode-farm', isFarm());
     document.body.classList.toggle('mode-towers', isTowers());
@@ -247,7 +254,7 @@ function showRoundEnd() {
     <div class="scores"><div style="background:var(--chicken)">${raw(teamIco('chicken'))} ${SCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">${raw(teamIco('turkey'))} ${SCORE(D.teams.turkey)}</div></div>
     <p>💥 ${SCORE(ps.score)} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} correct</p>
     <img src="${sprite(isFarm() ? `fm_coop_${me.team === 'chicken' ? 'c' : 't'}${ps.coop || 1}` : (isCannon() ? 'c_' : '') + me.team + '_idle')}" alt="" style="width:${isFarm() ? 200 : 120}px">
-    <p>${isSiege() ? `HALF TIME! Teams swap — next half you ${ps.role === 'def' ? 'ATTACK ⚔️' : 'DEFEND 🛡️'}.` : 'Next round soon — watch the big screen!'}</p></div>`;
+    <p>${isEt() ? `Next round you ${ps.role === 'att' ? 'DODGE 🛡️' : 'FLING 🥚'}!` : isSiege() ? `HALF TIME! Teams swap — next half you ${ps.role === 'def' ? 'ATTACK ⚔️' : 'DEFEND 🛡️'}.` : 'Next round soon — watch the big screen!'}</p></div>`;
 }
 
 function showFinal() {
@@ -271,6 +278,7 @@ function onPstate() {
   if (isSiege()) drawSgHud();
   if (isPaint()) drawPtHud();
   if (isAdv()) advHud();
+  if (isEt()) etHud();
   if (isFarm()) {
     farmState();
     if (ps.fox === 'danger' && !L.foxPrompted) { L.foxPrompted = true; setTab('answer'); navigator.vibrate?.([100, 50, 100]); } else if (!ps.fox) L.foxPrompted = false;
@@ -316,10 +324,11 @@ function showView(v) {
   $('#view-fight').classList.toggle('hidden', v !== 'fight');
   $('#view-cannon').classList.toggle('hidden', v !== 'cannon');
   $('#view-pt').classList.toggle('hidden', v !== 'paint');
+  $('#view-et').classList.toggle('hidden', v !== 'et');
 }
 
 function setTab(t) {
-  if (isCannon() || isPaint()) { if (isPaint() && D.state.phase !== 'playing') showView('answer'); return; }
+  if (isCannon() || isPaint() || isEt()) { if ((isPaint() || isEt()) && D.state.phase !== 'playing') showView('answer'); return; }
   if (TW.quiz) { TW.quiz = false; document.body.classList.remove('tw-quiz'); }
   L.tab = t;
   $('#tab-answer').classList.toggle('on', t === 'answer');
@@ -396,8 +405,8 @@ function drawFeedback() {
   const lock = f.lockMs || 1500;
   const readMs = f.correct ? lock : Math.max(lock, 2600);
   const fg = f.farm; const tw = f.tw; const sg = f.sg; const pt = f.pt;
-  const av = f.adv;
-  const gain = av ? `<div class="farm-gain"><span>♟ +1 move!</span><span>${av.stuck ? 'but you are blocked in…' : 'go to the BOARD'}</span></div>` : pt ? `<div class="farm-gain"><span>⚡ +1 speed</span><span>now speed ${pt.speed}</span></div>` : sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team\'s weakest building!' : 'sent to the building you tapped!'}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
+  const av = f.adv; const et = f.et;
+  const gain = et ? (et.role === 'att' ? `<div class="farm-gain"><span>🥚 +${et.add} eggs</span><span>${et.eggs} ready to fling</span></div>` : `<div class="farm-gain"><span>🎯 Target shrinks!</span><span>now ${et.ts}% size</span></div>`) : av ? `<div class="farm-gain"><span>♟ +1 move!</span><span>${av.stuck ? 'but you are blocked in…' : 'go to the BOARD'}</span></div>` : pt ? `<div class="farm-gain"><span>⚡ +1 speed</span><span>now speed ${pt.speed}</span></div>` : sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team\'s weakest building!' : 'sent to the building you tapped!'}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
   box.innerHTML = f.correct
     ? html`<div class="big">CORRECT!</div>${raw(gain)}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
     : html`<div class="big">NOPE!</div><div class="ans-was">Answer: <b>${f.rightText}</b></div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div><div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`;
@@ -494,6 +503,11 @@ function drawProgress() {
   if (isPaint() && D.state.phase === 'answer') {
     el.classList.remove('hidden');
     el.textContent = `⚡ Your speed: ${D.ps.speed || 5} · ${D.ps.rc || 0} right this round — keep going!`;
+    return;
+  }
+  if (isEt() && D.state.phase === 'answer') {
+    el.classList.remove('hidden');
+    el.textContent = D.ps.role === 'att' ? `🥚 You FLING this round · ${D.ps.eggs || 0} eggs earned — keep answering!` : `🛡️ You DODGE this round · your target is ${D.ps.ts ?? 100}% size${(D.ps.ts ?? 100) <= 30 ? ' — the smallest it can go! 🎯' : ' — answer to shrink it!'}`;
     return;
   }
   const on = isCannon() && D.state.phase === 'answer';
@@ -978,7 +992,7 @@ function renderPiecePick(refresh = false) {
   };
   $('#wait').innerHTML = html`<div class="piece-pick">
     <h1 class="comic-title slant">PICK YOUR PIECE!</h1>
-    <p style="margin:0">Choose a piece and colour. Faded ones are already taken by a teammate.</p>
+    <p style="margin:0">Choose a piece and colour${isEt() ? ' — it carries your target in Egg Toss' : ''}. Faded ones are already taken by a teammate.</p>
     <div class="pp-grid">${raw(COLOURS[team].map((c) => PIECES.map((p) => cell(p, c)).join('')).join(''))}</div></div>`;
   $$('[data-pc]').forEach((b) => { b.onclick = () => { sfx.click(); $$('[data-pc]').forEach((x) => { x.disabled = true; }); update(G(`players/${uid}`), { pc: b.dataset.pc }).catch((e) => { console.error(e); renderPiecePick(); }); }; });
 }
@@ -1075,3 +1089,56 @@ function advHud() {
     : left ? (ADV.mode === 'block' ? 'Tap an orange square next to you to drop a hay-bale block.' : 'Tap a green square: forward, diagonal or sideways.')
       : 'Answer questions on the QUIZ tab. Each right answer = 1 move.';
 }
+
+// ---------------- Egg Toss ----------------
+const ET = { view: null, info: null, s: '', seq: Date.now(), q: [], spent: 0, lastEggs: null, wasOut: false };
+function ensureEt() {
+  if (!isEt() || !uid) return;
+  if (!ET.view) {
+    ET.view = new EtView($('#et-scene'), {
+      uid,
+      onFling: (x, y) => {
+        ET.seq += 1; ET.q.push({ s: ET.seq, x, y }); ET.q = ET.q.slice(-6);
+        ET.spent += 1;
+        update(G(`inputs/${uid}`), { q: ET.q }).catch(() => {});
+        sfx.egg(); navigator.vibrate?.(25);
+        etHud();
+      },
+      onDir: (d) => { update(G(`inputs/${uid}`), { d }).catch(() => {}); },
+    });
+    ET.view.onEmpty = () => { etHint('No eggs left! Answer more questions next time you fling.', 'bad'); sfx.wrong(); };
+    if (ET.info) ET.view.setInfo(ET.info);
+    ET.view.setState(ET.s);
+    // debug/test hook: screen position of a standing enemy target
+    window.cvtEt = { target: () => { const v = ET.view; const p = v?.defs.find((q) => !q.out); if (!p || !v.L) return null; const r = v.canvas.getBoundingClientRect(); const y = p.lane != null ? (v.L.oy + (TGT(p).y) * v.L.s) : 0; return { x: r.left + v.L.ox + p.x * v.L.s, y: r.top + y }; } };
+  }
+  etHud();
+}
+let etHintT = null;
+function etHint(msg, cls = '') { const h = $('#et-hint'); h.textContent = msg; h.className = `tw-hint ${cls}`; clearTimeout(etHintT); etHintT = setTimeout(() => { etHintT = null; etHud(); }, 2400); }
+function etHud() {
+  if (!isEt()) return;
+  const ps = D.ps; const role = ps.role || 'att';
+  if (ps.eggs !== ET.lastEggs) { ET.lastEggs = ps.eggs; ET.spent = 0; } // fresh number from the big screen
+  const eggs = Math.max(0, (ps.eggs || 0) - ET.spent);
+  ET.view?.setRole({ role, team: D.me?.team, eggs });
+  const r = $('#et-role'); r.textContent = role === 'att' ? '🥚 FLING!' : '🛡️ DODGE!'; r.classList.toggle('def', role === 'def');
+  $('#et-stat').textContent = role === 'att' ? `🥚 ${eggs} egg${eggs === 1 ? '' : 's'}` : `🎯 ${ps.ts ?? 100}% target`;
+  $('#et-hc').textContent = ps.hc ?? 0; $('#et-ht').textContent = ps.ht ?? 0;
+  $('#et-dodge').classList.toggle('hidden', role !== 'def');
+  const out = !!ps.out && D.state.phase === 'playing';
+  $('#et-out').classList.toggle('hidden', !out);
+  if (out && !ET.wasOut) { sfx.splat(); navigator.vibrate?.([80, 40, 80]); ET.view?.setDir(0); }
+  ET.wasOut = out;
+  if (etHintT) return;
+  const h = $('#et-hint'); h.className = 'tw-hint';
+  h.textContent = role === 'att'
+    ? (eggs ? 'Put your finger down and drag — your crosshair is just above your finger. Let go to FLING! Hit the bullseye, not just the piece.' : 'Out of eggs! Watch the big screen.')
+    : (ps.out ? 'SPLAT! You\'re out — watch the rest of this round. You\'ll be back next round!' : `Hold ◀ ▶ to slide along your rail and dodge the eggs! ${ps.standing ?? 0}/${ps.of ?? 0} of your team still standing.`);
+}
+$$('#et-dodge [data-d]').forEach((b) => {
+  const d = +b.dataset.d;
+  b.addEventListener('pointerdown', (e) => { e.preventDefault(); b.setPointerCapture(e.pointerId); b.classList.add('on'); if (!D.ps.out) ET.view?.setDir(d); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => { b.classList.remove('on'); if (ET.view?.dir === d) ET.view.setDir(0); }));
+  b.addEventListener('contextmenu', (e) => e.preventDefault());
+});
