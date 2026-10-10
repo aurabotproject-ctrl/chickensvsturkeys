@@ -2,7 +2,7 @@
 import {
   isConfigured, db, ensureSignedIn, explainError,
   ref, set, onValue, push, runTransaction, serverTimestamp, onDisconnect,
-} from '../js/core/firebase.js?v=20261010211359';
+} from '../js/core/firebase.js?v=20261010212825';
 
 window.__cvtStarted = true; // tells the fallback timer in index.html the code loaded
 

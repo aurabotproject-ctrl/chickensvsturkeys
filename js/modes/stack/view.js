@@ -4,8 +4,8 @@
 //          Drag left/right to line it up, ⟳ to turn it, DROP to let go.
 //   THROW: the other team's tower. Tap where you want your egg to land.
 // =========================================================
-import { U, PLATS, PLAT_W, SHAPES, SHAPE_KEYS, SPAWN_GAP, outline, other } from './rules.js?v=20261010211359';
-import { drawScene, drawBlock } from './arena.js?v=20261010211359';
+import { U, PLATS, PLAT_W, SHAPES, SHAPE_KEYS, SPAWN_GAP, outline, other } from './rules.js?v=20261010212825';
+import { drawScene, drawBlock } from './arena.js?v=20261010212825';
 
 const centroid = (k) => { const o = outline(k); return o.reduce((a, v) => ({ x: a.x + v.x / o.length, y: a.y + v.y / o.length }), { x: 0, y: 0 }); };
 
@@ -113,6 +113,7 @@ export class StackView {
     let cx; let cy; let span;
     if (build) { cx = p.x; cy = Math.min(-2 * U, top - 1.2 * U); span = { w: PLAT_W + 3 * U, h: 10 * U }; } else { cx = p.x; cy = (top - 3 * U) / 2; span = { w: PLAT_W + 4 * U, h: Math.max(10 * U, -top + 6 * U) }; }
     const s = Math.min(W / span.w, H / span.h);
+    cy = Math.min(cy, 4.6 * U - H / 2 / s); // never look below the bottom of the background picture
     const cam = this.cam; if (cam.x == null || cam.mode !== this.mode) { cam.x = cx; cam.y = cy; cam.s = s; cam.mode = this.mode; }
     cam.x += (cx - cam.x) * 0.12; cam.y += (cy - cam.y) * 0.12; cam.s += (s - cam.s) * 0.12;
     const V = this.V = { ox: W / 2 - cam.x * cam.s, oy: H / 2 - cam.y * cam.s, s: cam.s, W, H, viewTop: 0, labels: false };

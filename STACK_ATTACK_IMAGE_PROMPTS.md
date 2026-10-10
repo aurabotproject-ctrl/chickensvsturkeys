@@ -1,11 +1,6 @@
 # STACK ATTACK — ChatGPT Image Prompts
 
-Stack Attack is **already playable** using art the game already has:
-- **Blocks:** the blue and red Egg Cannon fort pieces (crates, blocks, window boxes, short and long planks, pillars, doors, arches, wedges, roofs) plus hay bales.
-- **Throwers:** the throwing chicken and turkey.
-- **Eggs and splats:** the existing team eggs and yolk splat.
-
-These 3 images are upgrades. Until they arrive, the cliffs and sky are drawn in code and the game card shows a blue crate.
+✔ **Icon and background received and wired in** (`mode_stack`, `sa_bg`). The background already has both cliffs painted in, and they're used as the real platforms, so **image #2 (the separate cliffs) isn't needed**. The prompts are kept below in case you want to remake anything.
 
 | # | Save as | What it becomes | Replaces |
 |---|---|---|---|

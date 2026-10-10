@@ -108,7 +108,7 @@ Create Game → **Stack Attack** → rounds (1 / 2 / 3) and round length (2 / 3 
 - Spend an action on **🧱 BUILD**: your next block (crate, hay bale, plank, pillar, arch, wedge, roof…) hovers over your tower — drag to line it up, ⟳ to turn it, **DROP**. Real physics: sloppy stacking wobbles and topples, and anything that falls off the cliff is gone.
 - Or spend it on **🥚 THROW**: switch to the other team's tower and tap where to lob an egg. It lands with a SPLAT that knocks blocks flying (eggs never hit your own tower).
 - Tower height counts live in metres (1 crate = 1 m). At the end of each round the heights are added to each team's score, and every round starts with fresh towers.
-- Art: reuses the blue/red Egg Cannon fort pieces. Upgrade prompts (cliffs, background, card icon): `STACK_ATTACK_IMAGE_PROMPTS.md`.
+- Art: the blue/red Egg Cannon fort pieces for blocks, and a painted cliffs-and-river panorama (`sa_bg`) whose cliff tops are the real platforms. Prompts: `STACK_ATTACK_IMAGE_PROMPTS.md`.
 
 ⚠️ Stack Attack adds `sa` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
 

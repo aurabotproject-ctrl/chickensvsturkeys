@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261010211359';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010211359';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010211359';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010211359';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010211359';
-import { renderBanks } from './banks-ui.js?v=20261010211359';
+} from '../js/core/firebase.js?v=20261010212825';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010212825';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010212825';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010212825';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010212825';
+import { renderBanks } from './banks-ui.js?v=20261010212825';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -126,7 +126,7 @@ const MODES = [
   { id: 'advance', name: 'Advance', img: 'mode_advance', desc: 'A giant chessboard race! Every right answer = 1 move. First team to get everyone to the other side wins the round.' },
   { id: 'eggtoss', name: 'Egg Toss', img: 'mode_eggtoss', desc: 'A fairground egg toss! One team flings eggs, the other dodges. Right answers = more eggs, or a smaller target. Teams swap every round.' },
   { id: 'cross', name: 'Cross the Road', img: 'mode_cross', desc: 'Why did the chicken cross the road? Every right answer = 4 hops. Dodge tractors, ride the logs and get across for a point — splat and it\'s back to the start!' },
-  { id: 'stack', name: 'Stack Attack', img: 'f_blue_crate', desc: 'Build the tallest wobbly tower! Every right answer = drop a block on your tower OR lob an egg at theirs. Real physics — careful stacking wins!' },
+  { id: 'stack', name: 'Stack Attack', img: 'mode_stack', desc: 'Build the tallest wobbly tower! Every right answer = drop a block on your tower OR lob an egg at theirs. Real physics — careful stacking wins!' },
   { id: 'farm', name: 'Egg Farm', img: 'fm_coop_c4', desc: 'Grow the richest egg farm — every right answer boosts your farm.' },
 ];
 

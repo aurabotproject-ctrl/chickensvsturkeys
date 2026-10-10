@@ -3,25 +3,25 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010211359';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010211359';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010211359';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010211359';
-import { sfx } from '../js/core/sfx.js?v=20261010211359';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010211359';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010211359';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010211359';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010211359';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261010211359';
-import { CrossView } from '../js/modes/cross/view.js?v=20261010211359';
-import { StackView } from '../js/modes/stack/view.js?v=20261010211359';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261010211359';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261010211359';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010211359';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010211359';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010211359';
-import * as FE from '../js/modes/farm/economy.js?v=20261010211359';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010211359';
+} from '../js/core/firebase.js?v=20261010212825';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010212825';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010212825';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010212825';
+import { sfx } from '../js/core/sfx.js?v=20261010212825';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010212825';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010212825';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010212825';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010212825';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261010212825';
+import { CrossView } from '../js/modes/cross/view.js?v=20261010212825';
+import { StackView } from '../js/modes/stack/view.js?v=20261010212825';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261010212825';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261010212825';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010212825';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010212825';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010212825';
+import * as FE from '../js/modes/farm/economy.js?v=20261010212825';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010212825';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;

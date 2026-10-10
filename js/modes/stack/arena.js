@@ -5,18 +5,21 @@
 //   sa/info = { round }   sa/b = "id,k,t,x,y,a100;…|egg x,y,t;…|splat x,y;…"
 // =========================================================
 /* global Matter */
-import { sfx } from '../../core/sfx.js?v=20261010211359';
-import { img } from '../advance/draw.js?v=20261010211359';
+import { sfx } from '../../core/sfx.js?v=20261010212825';
+import { img } from '../advance/draw.js?v=20261010212825';
 import {
   U, PLATS, PLAT_W, MAX_ACTIONS, FALL_Y, SPAWN_GAP, SHAPES, SHAPE_KEYS, outline, randomShape, colourOf, other,
   LAUNCH, throwVelocity, BLAST, BLAST_R, EGG_STEPS, FILTER,
-} from './rules.js?v=20261010211359';
+} from './rules.js?v=20261010212825';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
 const ready = (im) => im && im.complete && im.naturalWidth > 0;
 /** Stack Attack art that exists (STACK_ATTACK_IMAGE_PROMPTS.md). Anything missing is drawn in code. */
-export const SA_ART = new Set([]);
+export const SA_ART = new Set(['sa_bg']);
+/** Where the background picture sits in the world: its painted cliff tops are the real platforms. */
+const BG = { cx: 845, cy: 668, ppu: 56.7 };
+const SKY = '#0186fd'; // the colour along the top of the panorama // image px of the ravine centre / cliff-top line, image px per metre
 const saArt = (name) => { if (!SA_ART.has(name)) return null; const im = img(name); return ready(im) ? im : null; };
 const TEAMS = ['chicken', 'turkey'];
 
@@ -288,11 +291,21 @@ export class StackArena {
  */
 export function drawScene(ctx, D, V) {
   const { ox, oy, s } = V; const W = V.W; const H = V.H;
-  // sky + far hills (the background art if we have it, scaled to cover)
-  const bg = saArt('sa_bg');
+  // background: the panorama is pinned to the world (its cliffs ARE the platforms); beyond its edges we extend sky/scenery
+  const bg = saArt('sa_bg'); const vt = V.viewTop ?? 0;
   if (bg) {
-    const sc = Math.max(W / bg.naturalWidth, (H - (V.viewTop ?? 0)) / bg.naturalHeight);
-    ctx.drawImage(bg, (W - bg.naturalWidth * sc) / 2, H - bg.naturalHeight * sc, bg.naturalWidth * sc, bg.naturalHeight * sc);
+    const k = (s * U) / BG.ppu; // screen px per image px
+    const bx = ox - BG.cx * k; const by = oy - BG.cy * k; const bw = bg.naturalWidth * k; const bh = bg.naturalHeight * k;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, vt, W, H - vt); ctx.clip();
+    ctx.fillStyle = SKY; ctx.fillRect(0, vt, W, H - vt); // sky beyond the top of the picture
+    // the picture, plus mirrored copies to the left and right so the hills carry on
+    for (let i = -2; i <= 2; i++) {
+      const x = bx + i * bw; if (x > W || x + bw < 0) continue;
+      if (i % 2) { ctx.save(); ctx.translate(x + bw, by); ctx.scale(-1, 1); ctx.drawImage(bg, 0, 0, bw, bh); ctx.restore(); } else ctx.drawImage(bg, x, by, bw, bh);
+    }
+    if (by > vt) { const g = ctx.createLinearGradient(0, by, 0, by + bh * 0.12); g.addColorStop(0, SKY); g.addColorStop(1, 'rgba(1,134,253,0)'); ctx.fillStyle = g; ctx.fillRect(0, by - 1, W, bh * 0.12 + 1); }
+    if (by + bh < H) { ctx.fillStyle = '#3d6b2a'; ctx.fillRect(0, by + bh - 1, W, H - (by + bh) + 1); }
+    ctx.restore();
   } else {
     const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#5fb4ff'); g.addColorStop(1, '#bfe6ff');
     ctx.fillStyle = g; ctx.fillRect(0, V.viewTop ?? 0, W, H - (V.viewTop ?? 0));
@@ -301,10 +314,11 @@ export function drawScene(ctx, D, V) {
     ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.fill();
   }
   // ravine
-  ctx.fillStyle = '#3a6b9e'; ctx.fillRect(0, oy + 5 * U * s, W, H);
+  if (!bg) { ctx.fillStyle = '#3a6b9e'; ctx.fillRect(0, oy + 5 * U * s, W, H); }
   // the two cliffs
   for (const t of TEAMS) {
     const p = PLATS[t]; const x = ox + (p.x - PLAT_W / 2) * s; const w = PLAT_W * s;
+    if (bg) { drawFlag(ctx, t, x, w, oy, s); continue; } // the panorama already has the cliffs
     const cl = saArt(t === 'turkey' ? 'sa_cliff_t' : 'sa_cliff_c');
     if (cl) { // cliff art: its flat grassy top lines up with the cliff top (the top ~6% of the picture is grass)
       const cw = w * 1.08; const ch = cw * (cl.naturalHeight / cl.naturalWidth);
@@ -376,4 +390,11 @@ export function drawBlock(ctx, b, x, y, s, alpha = 1) {
     const pts = outline(b.k); ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(p.x * s, p.y * s) : ctx.moveTo(p.x * s, p.y * s))); ctx.closePath(); ctx.fill(); ctx.stroke();
   }
   ctx.restore();
+}
+
+function drawFlag(ctx, t, x, w, oy, s) {
+  const fx = t === 'chicken' ? x + 0.6 * U * s : x + w - 0.6 * U * s; const fy = oy;
+  ctx.fillStyle = '#333'; ctx.fillRect(fx - 2, fy - 2.4 * U * s, 4, 2.4 * U * s);
+  ctx.fillStyle = t === 'chicken' ? '#1e6fe0' : '#e0402a'; ctx.strokeStyle = '#111'; ctx.lineWidth = 3; ctx.beginPath();
+  const dir = t === 'chicken' ? 1 : -1; ctx.moveTo(fx, fy - 2.4 * U * s); ctx.lineTo(fx + dir * 1.0 * U * s, fy - 2.05 * U * s); ctx.lineTo(fx, fy - 1.7 * U * s); ctx.closePath(); ctx.fill(); ctx.stroke();
 }
