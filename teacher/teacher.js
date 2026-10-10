@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261010183146';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010183146';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010183146';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010183146';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010183146';
-import { renderBanks } from './banks-ui.js?v=20261010183146';
+} from '../js/core/firebase.js?v=20261010183609';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010183609';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010183609';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010183609';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010183609';
+import { renderBanks } from './banks-ui.js?v=20261010183609';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -49,7 +49,7 @@ function renderSignIn() {
   app.innerHTML = html`<div class="signin"><div class="box stack">
     <img src="${sprite('logo')}" alt="Chickens vs Turkeys">
     <div class="panel"><p style="margin-top:0">Teachers sign in with Google to make question banks and host games.<br>Students don't need an account — they join with a code.</p>
-    <button id="signin" class="btn big yellow">Sign in with Google</button>
+    <button id="signin" class="btn big yellow">${raw(uiIcon('ui_signin', ''))} Sign in with Google</button>
     <p id="err" class="error-text"></p></div>
     <p><a href="../">← Back</a> · <a href="../play/">I'm a student</a></p></div></div>`;
   $('#signin').onclick = async () => {

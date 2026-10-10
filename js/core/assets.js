@@ -4,7 +4,7 @@ const BASE = new URL('../../assets/sprites/', import.meta.url).href;
 
 export const sprite = (name) => `${BASE}${name}.webp`;
 /** Menu / button pictures (MENU_ICON_PROMPTS.md). Listed here once the art is sliced; until then the emoji is used. */
-export const UI_ICONS = new Set([]);
+export const UI_ICONS = new Set(['ui_home', 'ui_create', 'ui_banks', 'ui_results', 'ui_launch', 'ui_join', 'ui_teacher', 'ui_signin']);
 export const uiIcon = (name, emoji) => (UI_ICONS.has(name) ? `<img class="ui-ico" src="${sprite(name)}" alt="">` : emoji);
 /** Matching chicken / turkey head icon (use instead of the 🐔 🦃 emojis). */
 export const teamIco = (team) => `<img class="tico" src="${BASE}ico_${team === 'turkey' ? 'turkey' : 'chicken'}.webp" alt="${team === 'turkey' ? 'Turkeys' : 'Chickens'}">`;

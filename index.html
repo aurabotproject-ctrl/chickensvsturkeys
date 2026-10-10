@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Chickens vs Turkeys</title>
   <meta name="description" content="Answer. Attack. Survive. A comic-book classroom quiz battle.">
-  <link rel="stylesheet" href="css/tokens.css?v=20261010183146">
+  <link rel="stylesheet" href="css/tokens.css?v=20261010183609">
   <style>
     body { min-height: 100vh; display: grid; place-items: center; background: linear-gradient(rgba(6,18,46,.35), rgba(6,18,46,.8)), url('assets/sprites/keyart.webp') center/cover fixed; }
     .hero { text-align: center; padding: 30px 16px; display: grid; justify-items: center; gap: 18px; }
     /* logo: grows in from small, lands with a squashy bounce + left/right wobble, then keeps a gentle sway */
     .logo-wrap { display: block; animation: logo-sway 5s ease-in-out 1.5s infinite; transform-origin: 50% 70%; }
-    .hero img { display: block; width: min(640px, 92vw); filter: drop-shadow(6px 6px 0 var(--ink)); transform-origin: 50% 80%; animation: logo-land 1.4s cubic-bezier(.3,.7,.4,1) both; }
+    .logo-wrap img { display: block; width: min(640px, 92vw); filter: drop-shadow(6px 6px 0 var(--ink)); transform-origin: 50% 80%; animation: logo-land 1.4s cubic-bezier(.3,.7,.4,1) both; }
     @keyframes logo-land {
       0%   { transform: scale(.12) rotate(-14deg); opacity: 0; }
       12%  { opacity: 1; }
@@ -29,9 +29,10 @@
     }
     .actions, .note { animation: pop-in 600ms var(--ease-pop) 1.05s both; }
     .note { animation-delay: 1.25s; }
-    @media (prefers-reduced-motion: reduce) { .hero img, .logo-wrap, .actions, .note { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { .logo-wrap img, .logo-wrap, .actions, .note { animation: none; } }
     .actions { display: flex; gap: 18px; flex-wrap: wrap; justify-content: center; }
     .actions .btn { min-width: 250px; }
+    .ui-ico { height: 1.6em; width: auto; vertical-align: -.42em; margin-right: .15em; filter: drop-shadow(2px 2px 0 var(--ink)); }
     .note { color: #e5eeff; font-size: var(--fs-sm); text-shadow: 1px 1px 0 var(--ink); }
   </style>
 </head>
@@ -39,8 +40,8 @@
   <div class="hero">
     <span class="logo-wrap"><img src="assets/sprites/logo.webp" alt="Chickens vs Turkeys — Answer. Attack. Survive."></span>
     <div class="actions">
-      <a class="btn big" href="play/">🎮 Join a Game</a>
-      <a class="btn big purple" href="teacher/">🍎 I'm a Teacher</a>
+      <a class="btn big" href="play/"><img class="ui-ico" src="assets/sprites/ui_join.webp" alt=""> Join a Game</a>
+      <a class="btn big purple" href="teacher/"><img class="ui-ico" src="assets/sprites/ui_teacher.webp" alt=""> I'm a Teacher</a>
     </div>
     <p class="note">Students: you just need the 6-letter code from the big screen. · <a href="hello/">Connection check</a></p>
   </div>

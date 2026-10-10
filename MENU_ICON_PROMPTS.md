@@ -1,5 +1,7 @@
 # MENU ICONS — ChatGPT Image Prompt
 
+✔ **Icons received and wired in** (`assets/sprites/ui_*.webp`). The prompt is kept below in case you want to remake them.
+
 This replaces the emojis in the Teacher HQ menu, the dashboard buttons and the home page buttons with icons that match the game's comic style.
 
 | Where | Emoji now | New icon |
