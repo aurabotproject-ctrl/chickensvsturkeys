@@ -2,7 +2,7 @@
 // ADVANCE — shared rules (host + phones)
 // A checkerboard; chickens start on the bottom row, turkeys on the top.
 // Right answer = move 1 square (forward, forward-diagonal or sideways)
-// or, on small teams, drop a hay-bale block next to you for 2 questions.
+// or drop a hay-bale block next to you for 2 questions.
 // First team to get EVERYONE to the far side wins the round; otherwise
 // after the time limit the team that is further on average wins.
 // =========================================================
@@ -10,7 +10,6 @@
 export const MIN_SIZE = 10;
 /** Board is square: as wide as the bigger team, at least 10. */
 export const boardSize = (nChicken, nTurkey) => Math.max(MIN_SIZE, nChicken, nTurkey);
-export const BLOCK_LIMIT = 10;      // blocks only allowed when your team has fewer than this many players
 export const BLOCK_QUESTIONS = 2;   // a block lasts for the placer's next 2 answers
 
 export const PIECES = [

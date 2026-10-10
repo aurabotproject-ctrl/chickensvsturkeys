@@ -1,11 +1,11 @@
 // =========================================================
 // ADVANCE — host game logic + projector drawing.
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010133712';
+import { sfx } from '../../core/sfx.js?v=20261010134616';
 import {
-  boardSize, BLOCK_LIMIT, BLOCK_QUESTIONS, allCombos, startRow, goalRow, progressOf, legalMoves, blockSpots, isFree,
-} from './rules.js?v=20261010133712';
-import { drawBoard } from './draw.js?v=20261010133712';
+  boardSize, BLOCK_QUESTIONS, allCombos, startRow, goalRow, progressOf, legalMoves, blockSpots, isFree,
+} from './rules.js?v=20261010134616';
+import { drawBoard } from './draw.js?v=20261010134616';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -136,7 +136,7 @@ export class AdvanceArena {
     this.onChange(p);
     return { move: correct && !p.home, home: p.home };
   }
-  canBlock(p) { return this.teamSize(p.team) < BLOCK_LIMIT && !this.board.blocks.some((b) => b.owner === p.uid) && blockSpots(this.board, p).length > 0; }
+  canBlock(p) { return !this.board.blocks.some((b) => b.owner === p.uid) && blockSpots(this.board, p).length > 0; }
   teamSize(t) { return this.board ? this.board.pieces.filter((q) => q.team === t).length : 0; }
 
   /** inp.q = [{ s, op: 'move'|'block', r, c }] */
@@ -213,7 +213,7 @@ export class AdvanceArena {
     const avg = this.averages();
     return {
       score: p.score, moves: p.moves, home: p.home ? 1 : 0, r: p.r, c: p.c, pc: p.pc || '',
-      canBlock: this.canBlock(p) ? 1 : 0, blockSmall: this.teamSize(p.team) < BLOCK_LIMIT ? 1 : 0,
+      canBlock: this.canBlock(p) ? 1 : 0, blockSmall: 1,
       ac: Math.round(avg.chicken), at: Math.round(avg.turkey), wc: this.wins.chicken, wt: this.wins.turkey,
     };
   }
