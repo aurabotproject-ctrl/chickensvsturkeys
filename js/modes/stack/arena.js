@@ -5,12 +5,12 @@
 //   sa/info = { round }   sa/b = "id,k,t,x,y,a100;…|egg x,y,t;…|splat x,y;…"
 // =========================================================
 /* global Matter */
-import { sfx } from '../../core/sfx.js?v=20261010214912';
-import { img } from '../advance/draw.js?v=20261010214912';
+import { sfx } from '../../core/sfx.js?v=20261010230402';
+import { img } from '../advance/draw.js?v=20261010230402';
 import {
   U, PLATS, PLAT_W, MAX_ACTIONS, FALL_Y, SPAWN_GAP, SHAPES, SHAPE_KEYS, outline, randomShape, colourOf, other,
   LAUNCH, throwVelocity, BLAST, BLAST_R, EGG_STEPS, FILTER,
-} from './rules.js?v=20261010214912';
+} from './rules.js?v=20261010230402';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);

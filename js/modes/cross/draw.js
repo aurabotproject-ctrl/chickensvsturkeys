@@ -1,6 +1,6 @@
 // CROSS THE ROAD — field drawing shared by the big screen and the phones (Canvas 2D).
-import { img } from '../advance/draw.js?v=20261010214912';
-import { W, L, objX } from './rules.js?v=20261010214912';
+import { img } from '../advance/draw.js?v=20261010230402';
+import { W, L, objX } from './rules.js?v=20261010230402';
 
 const ready = (im) => im && im.complete && im.naturalWidth > 0;
 const TEAM = { chicken: '#1e6fe0', turkey: '#e0402a' };

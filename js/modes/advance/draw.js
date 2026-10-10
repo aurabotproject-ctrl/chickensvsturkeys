@@ -1,6 +1,6 @@
 // ADVANCE — board drawing shared by the big screen and the phones (Canvas 2D).
-import { sprite } from '../../core/assets.js?v=20261010214912';
-import { pieceOf, colourOf, pieceSprite, ADV_ART, ADV_REF_H } from './rules.js?v=20261010214912';
+import { sprite } from '../../core/assets.js?v=20261010230402';
+import { pieceOf, colourOf, pieceSprite, ADV_ART, ADV_REF_H } from './rules.js?v=20261010230402';
 
 const imgs = new Map();
 export function img(name) {

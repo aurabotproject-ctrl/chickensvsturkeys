@@ -5,8 +5,8 @@
 //   THROW: the other team's tower. Press and hold to aim (a dotted arc shows
 //          exactly where the egg will fly), slide to adjust, let go to throw.
 // =========================================================
-import { U, PLATS, PLAT_W, SHAPES, SHAPE_KEYS, SPAWN_GAP, outline, other, LAUNCH, throwVelocity, EGG_STEPS, G_STEP } from './rules.js?v=20261010214912';
-import { drawScene, drawBlock } from './arena.js?v=20261010214912';
+import { U, PLATS, PLAT_W, SHAPES, SHAPE_KEYS, SPAWN_GAP, outline, other, LAUNCH, throwVelocity, EGG_STEPS, G_STEP } from './rules.js?v=20261010230402';
+import { drawScene, drawBlock } from './arena.js?v=20261010230402';
 
 const centroid = (k) => { const o = outline(k); return o.reduce((a, v) => ({ x: a.x + v.x / o.length, y: a.y + v.y / o.length }), { x: 0, y: 0 }); };
 
@@ -17,7 +17,7 @@ export class StackView {
     this.blocks = new Map(); this.eggs = []; this.splats = []; this.heights = { chicken: 0, turkey: 0 };
     this.mode = 'build'; this.next = 'crate'; this.rot = 0; this.gx = PLATS[this.team].x;
     this.acts = 0; this.sent = []; this.seq = Date.now(); this.q = []; this.cam = {}; this.marks = [];
-    this.flying = new Map(); this.mine = []; this.aim = null; this.shake = 0;
+    this.flying = new Map(); this.mine = []; this.mySeqs = new Set(); this.aim = null; this.shake = 0;
     this.canvas = document.createElement('canvas'); this.canvas.className = 'sa-canvas';
     this.el.appendChild(this.canvas); this.ctx = this.canvas.getContext('2d');
     this.ro = new ResizeObserver(() => this.resize()); this.ro.observe(this.el); this.resize();
@@ -30,7 +30,7 @@ export class StackView {
     this.canvas.width = Math.round(w * dpr); this.canvas.height = Math.round(h * dpr); this.canvas.style.width = `${w}px`; this.canvas.style.height = `${h}px`; this.dpr = dpr;
   }
   setTeam(team) { if (team && team !== this.team) { this.team = team; this.gx = PLATS[team].x; } }
-  newRound() { this.blocks.clear(); this.eggs = []; this.flying.clear(); this.mine = []; this.splats = []; this.sent = []; this.cam = {}; this.gx = PLATS[this.team].x; this.rot = 0; }
+  newRound() { this.blocks.clear(); this.eggs = []; this.flying.clear(); this.mine = []; this.mySeqs.clear(); this.splats = []; this.sent = []; this.cam = {}; this.gx = PLATS[this.team].x; this.rot = 0; }
 
   setState(str) {
     const [bs = '', es = '', ss = '', hs = ''] = String(str || '').split('|');
@@ -51,11 +51,16 @@ export class StackView {
     for (const t of es.split(';').filter(Boolean)) {
       const [id, x0, y0, vx, vy, step, ti, seq] = t.split(',').map(Number); live.add(id);
       const f = this.flying.get(id);
-      if (!f) this.flying.set(id, { x0, y0, vx: vx / 1000, vy: vy / 1000, step, at: now, team: ti ? 'turkey' : 'chicken', seq });
+      // my own eggs are already flying on this screen (from the moment I let go), so the copy from the
+      // big screen is hidden — drawing both made it look like the egg was thrown twice
+      if (!f) this.flying.set(id, { x0, y0, vx: vx / 1000, vy: vy / 1000, step, at: now, team: ti ? 'turkey' : 'chicken', seq, hidden: !!seq && this.mySeqs.has(seq) });
       else { f.step = step; f.at = now; }
-      if (seq) this.mine = this.mine.filter((m) => m.seq !== seq); // the real egg has taken over from my preview egg
     }
-    for (const id of [...this.flying.keys()]) if (!live.has(id)) this.flying.delete(id);
+    for (const [id, f] of [...this.flying]) {
+      if (live.has(id)) continue;
+      this.flying.delete(id);
+      if (f.hidden) this.mine = this.mine.filter((m) => m.seq !== f.seq); // the real egg has landed — so has mine
+    }
     for (const t of ss.split(';').filter(Boolean)) {
       const [x, y, t0] = t.split(',').map(Number);
       if (!this.splats.some((s) => s.key === t0)) {
@@ -102,7 +107,7 @@ export class StackView {
     x = Math.round(x); y = Math.round(y);
     this.send({ op: 'egg', x, y });
     const from = LAUNCH[this.team]; const v = throwVelocity(from, { x, y }, EGG_STEPS);
-    this.follow = { seq: this.seq, t0: performance.now(), target: { x, y } };
+    this.follow = { seq: this.seq, t0: performance.now(), target: { x, y } }; this.mySeqs.add(this.seq);
     this.mine.push({ seq: this.seq, x0: from.x, y0: from.y, vx: v.x, vy: v.y, step: 0, at: performance.now(), team: this.team, tx: x, ty: y }); // fly it straight away
     this.marks.push({ x, y, t0: performance.now() });
     this.onEvent('egg'); return true;
@@ -142,9 +147,9 @@ export class StackView {
     // my egg in flight (my instant preview egg, or the real one once it arrives) — the camera follows it
     let chase = null;
     if (this.follow && now - this.follow.t0 < 3000) {
-      const fl = this.mine.find((m) => m.seq === this.follow.seq) || [...this.flying.values()].find((m) => m.seq === this.follow.seq);
+      const fl = this.mine.find((m) => m.seq === this.follow.seq);
       if (fl && stepNow(fl) <= EGG_STEPS + 10) chase = StackView.eggAt(fl, stepNow(fl));
-      else if (!fl && now - this.follow.t0 > 600) this.follow = null;
+      else if (!fl) this.follow = null;
     } else this.follow = null;
     // camera: build = zoomed on the top of my tower; throw = the enemy tower (or following my egg)
     let cx; let cy; let span;
@@ -157,13 +162,16 @@ export class StackView {
     const ease = chase && !build ? 0.22 : 0.12;
     cam.x += (cx - cam.x) * ease; cam.y += (cy - cam.y) * ease; cam.s += (s - cam.s) * 0.12;
     const V = this.V = { ox: W / 2 - cam.x * cam.s, oy: H / 2 - cam.y * cam.s, s: cam.s, W, H, viewTop: 0, labels: false };
-    const eggs = [];
+    const eggs = []; let myCount = 0;
     for (const f of [...this.flying.values(), ...this.mine]) {
-      const n = stepNow(f); if (n > EGG_STEPS + 40) continue;
+      if (f.hidden) continue;
+      let n = stepNow(f); if (n > EGG_STEPS + 40) continue;
+      if (this.mine.includes(f)) { n = Math.min(n, EGG_STEPS); myCount += 1; } // my egg waits at its target for the real splat
       const pos = StackView.eggAt(f, n);
       eggs.push({ position: pos, team: f.team, trail: [12, 9, 6, 3].map((d) => StackView.eggAt(f, Math.max(0, n - d))) });
     }
-    this.mine = this.mine.filter((f) => stepNow(f) <= EGG_STEPS + 6);
+    this.mine = this.mine.filter((f) => stepNow(f) <= EGG_STEPS + 30);
+    this.dbgAll = eggs.length; this.dbgMine = myCount + [...this.flying.values()].filter((f) => !f.hidden && f.seq && this.mySeqs.has(f.seq)).length; // test hook: copies of my egg on screen
     // shake when my egg lands
     const sh = now - this.shake < 380 ? (1 - (now - this.shake) / 380) * 7 : 0;
     if (sh) { V.ox += (Math.random() - 0.5) * sh * 2; V.oy += (Math.random() - 0.5) * sh * 2; }

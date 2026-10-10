@@ -6,29 +6,29 @@
 import {
   isConfigured, db, ref, get, set, update, remove, onValue, onChildAdded, onChildChanged,
   currentUser, isTeacher, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010214912';
-import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261010214912';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010214912';
-import { playUrl } from '../js/core/games.js?v=20261010214912';
-import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261010214912';
-import { loadBankByKey } from '../js/quiz/banks.js?v=20261010214912';
-import { QuizEngine } from '../js/quiz/engine.js?v=20261010214912';
-import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261010214912';
-import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261010214912';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261010214912';
-import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261010214912';
-import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261010214912';
-import { TowerArena } from '../js/modes/towers/arena.js?v=20261010214912';
-import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261010214912';
-import { CrossArena } from '../js/modes/cross/arena.js?v=20261010214912';
-import { StackArena } from '../js/modes/stack/arena.js?v=20261010214912';
-import { PaintArena } from '../js/modes/paint/arena.js?v=20261010214912';
-import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261010214912';
-import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261010214912';
-import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261010214912';
-import { SiegeArena } from '../js/modes/siege/arena.js?v=20261010214912';
-import { defenderFor } from '../js/modes/siege/rules.js?v=20261010214912';
-import { EVENTS, randomEvent } from '../js/events/events.js?v=20261010214912';
+} from '../js/core/firebase.js?v=20261010230402';
+import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261010230402';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010230402';
+import { playUrl } from '../js/core/games.js?v=20261010230402';
+import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261010230402';
+import { loadBankByKey } from '../js/quiz/banks.js?v=20261010230402';
+import { QuizEngine } from '../js/quiz/engine.js?v=20261010230402';
+import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261010230402';
+import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261010230402';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261010230402';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261010230402';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261010230402';
+import { TowerArena } from '../js/modes/towers/arena.js?v=20261010230402';
+import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261010230402';
+import { CrossArena } from '../js/modes/cross/arena.js?v=20261010230402';
+import { StackArena } from '../js/modes/stack/arena.js?v=20261010230402';
+import { PaintArena } from '../js/modes/paint/arena.js?v=20261010230402';
+import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261010230402';
+import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261010230402';
+import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261010230402';
+import { SiegeArena } from '../js/modes/siege/arena.js?v=20261010230402';
+import { defenderFor } from '../js/modes/siege/rules.js?v=20261010230402';
+import { EVENTS, randomEvent } from '../js/events/events.js?v=20261010230402';
 
 const gameId = params.get('g');
 const G = (p = '') => ref(db, `games/${gameId}${p ? '/' + p : ''}`);

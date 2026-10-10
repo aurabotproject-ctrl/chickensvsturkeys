@@ -4,8 +4,8 @@
 // attackers come down from the top, the coop is at the bottom).
 // Wide screens: same layout as the big screen.
 // =========================================================
-import { sprite } from '../../core/assets.js?v=20261010214912';
-import { ROWS, COLS, W, LAWN, DEF, ATT, DEF_ORDER, ATT_ORDER, defArt, attArt, coopArt, mowerArt } from './rules.js?v=20261010214912';
+import { sprite } from '../../core/assets.js?v=20261010230402';
+import { ROWS, COLS, W, LAWN, DEF, ATT, DEF_ORDER, ATT_ORDER, defArt, attArt, coopArt, mowerArt } from './rules.js?v=20261010230402';
 
 const X0 = LAWN.x - 120;          // world x at the coop edge of the board
 const SPAN = W - X0;              // world x range shown
