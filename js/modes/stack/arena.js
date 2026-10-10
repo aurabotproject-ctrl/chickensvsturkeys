@@ -5,12 +5,12 @@
 //   sa/info = { round }   sa/b = "id,k,t,x,y,a100;…|egg x,y,t;…|splat x,y;…"
 // =========================================================
 /* global Matter */
-import { sfx } from '../../core/sfx.js?v=20261010212825';
-import { img } from '../advance/draw.js?v=20261010212825';
+import { sfx } from '../../core/sfx.js?v=20261010214912';
+import { img } from '../advance/draw.js?v=20261010214912';
 import {
   U, PLATS, PLAT_W, MAX_ACTIONS, FALL_Y, SPAWN_GAP, SHAPES, SHAPE_KEYS, outline, randomShape, colourOf, other,
   LAUNCH, throwVelocity, BLAST, BLAST_R, EGG_STEPS, FILTER,
-} from './rules.js?v=20261010212825';
+} from './rules.js?v=20261010214912';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -50,7 +50,7 @@ export class StackArena {
       const now = performance.now(); acc += Math.min(250, now - last); last = now;
       while (acc >= 1000 / 60) { acc -= 1000 / 60; if (!this.paused) this.step(); }
     }, 1000 / 60);
-    setInterval(() => this.pushSync(), 170);
+    setInterval(() => this.pushSync(), 120);
     setInterval(() => this.measure(), 250);
   }
   resize() {
@@ -92,12 +92,14 @@ export class StackArena {
     Matter.World.add(this.engine.world, b); this.blocks.push(b);
     return b;
   }
-  throwEgg(team, target, owner) {
-    const from = { x: LAUNCH[team].x + rnd(-10, 10), y: LAUNCH[team].y };
-    const to = { x: target.x + rnd(-14, 14), y: target.y + rnd(-10, 10) };
+  /** Students' eggs fly exactly to where they aimed (their phone showed the arc); bots wobble a little. */
+  throwEgg(team, target, owner, seq = 0, wobble = false) {
+    const from = { x: LAUNCH[team].x, y: LAUNCH[team].y };
+    const to = wobble ? { x: target.x + rnd(-14, 14), y: target.y + rnd(-10, 10) } : { x: target.x, y: target.y };
+    const v = throwVelocity(from, to, EGG_STEPS);
     const e = Matter.Bodies.circle(from.x, from.y, 13, { density: 0.006, restitution: 0.1, frictionAir: 0, label: 'egg', collisionFilter: FILTER.egg(team) });
-    Matter.Body.setVelocity(e, throwVelocity(from, to, EGG_STEPS));
-    Object.assign(e, { team, owner, born: performance.now() });
+    Matter.Body.setVelocity(e, v);
+    Object.assign(e, { team, owner, born: performance.now(), from, v0: v, steps: 0, seq, trail: [] });
     Matter.World.add(this.engine.world, e); this.eggs.push(e);
     sfx.egg?.();
   }
@@ -124,6 +126,7 @@ export class StackArena {
       for (const b of gone) { Matter.World.remove(this.engine.world, b); this.pop('TIMBER!', b.position.x, Math.min(b.position.y, 2 * U), b.team); }
       this.blocks = this.blocks.filter((b) => !gone.includes(b));
     }
+    for (const e of this.eggs) { e.steps += 1; if (e.steps % 3 === 0) { e.trail.push({ x: e.position.x, y: e.position.y }); if (e.trail.length > 8) e.trail.shift(); } }
     for (const e of this.eggs.filter((q) => q.position.y > FALL_Y)) { Matter.World.remove(this.engine.world, e); this.eggs = this.eggs.filter((q) => q !== e); }
     // bots
     if (this.running) for (const p of this.players.values()) if (p.bot) this.botThink(p, 1 / 60);
@@ -210,7 +213,7 @@ export class StackArena {
     }
     if (c.op === 'egg') {
       const tx = +c.x; const ty = +c.y; if (!Number.isFinite(tx) || !Number.isFinite(ty)) return false;
-      this.throwEgg(p.team, { x: tx, y: ty }, p.uid);
+      this.throwEgg(p.team, { x: tx, y: ty }, p.uid, +c.s || 0, !!p.bot);
       p.acts -= 1; return true;
     }
     return false;
@@ -242,7 +245,8 @@ export class StackArena {
   pushSync(force = false) {
     if (!this.round) return;
     const bs = this.blocks.map((b) => `${b.id},${SHAPE_KEYS.indexOf(b.k)},${b.team === 'turkey' ? 1 : 0},${Math.round(b.position.x)},${Math.round(b.position.y)},${Math.round(b.angle * 100)}`).join(';');
-    const es = this.eggs.map((e) => `${Math.round(e.position.x)},${Math.round(e.position.y)},${e.team === 'turkey' ? 1 : 0}`).join(';');
+    // eggs: launch point + velocity + age, so phones can fly them smoothly between updates
+    const es = this.eggs.map((e) => `${e.id || (e.id = ++this.bid)},${Math.round(e.from.x)},${Math.round(e.from.y)},${Math.round(e.v0.x * 1000)},${Math.round(e.v0.y * 1000)},${e.steps},${e.team === 'turkey' ? 1 : 0},${e.seq || 0}`).join(';');
     const now = performance.now();
     const ss = this.splats.filter((s) => now - s.t0 < 1500).map((s) => `${Math.round(s.x)},${Math.round(s.y)},${Math.round(s.t0)}`).join(';');
     const str = `${bs}|${es}|${ss}|${this.heights.chicken},${this.heights.turkey}`;
@@ -361,15 +365,16 @@ export function drawScene(ctx, D, V) {
   for (const b of D.blocks) drawBlock(ctx, b, ox + b.position.x * s, oy + b.position.y * s, s);
   // eggs
   for (const e of D.eggs) {
-    const im = img(e.team === 'turkey' ? 'egg_red' : 'egg_blue'); const r = 16 * s;
+    const im = img(e.team === 'turkey' ? 'egg_red' : 'egg_blue'); const r = Math.max(9, 22 * s);
     const x = ox + e.position.x * s; const y = oy + e.position.y * s;
+    (e.trail || []).forEach((p, i, a) => { ctx.fillStyle = `rgba(255,255,255,${0.12 + (0.4 * i) / a.length})`; ctx.beginPath(); ctx.arc(ox + p.x * s, oy + p.y * s, r * (0.25 + (0.35 * i) / a.length), 0, Math.PI * 2); ctx.fill(); });
     if (ready(im)) { ctx.save(); ctx.translate(x, y); ctx.rotate(performance.now() / 120); ctx.drawImage(im, -r * 0.8, -r, r * 1.6, r * 2); ctx.restore(); } else { ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); }
   }
   // splats
   const now = performance.now(); const sp = img('splat');
   for (const f of D.splats) {
     const k = (now - f.t0) / 1400; if (k < 0 || k >= 1) continue;
-    ctx.globalAlpha = 1 - k; const w = U * s * (1.6 + k); const x = ox + f.x * s; const y = oy + f.y * s;
+    ctx.globalAlpha = 1 - k; const w = U * s * (2.4 + k * 1.2); const x = ox + f.x * s; const y = oy + f.y * s;
     if (ready(sp)) ctx.drawImage(sp, x - w / 2, y - w * 0.3, w, w * (sp.naturalHeight / sp.naturalWidth));
     ctx.font = `normal ${U * s * 0.7}px Bangers, Impact, sans-serif`; ctx.textAlign = 'center'; ctx.lineWidth = 4; ctx.strokeStyle = '#111';
     ctx.strokeText('SPLAT!', x, y - U * s * (0.8 + k)); ctx.fillStyle = '#ffc72c'; ctx.fillText('SPLAT!', x, y - U * s * (0.8 + k));

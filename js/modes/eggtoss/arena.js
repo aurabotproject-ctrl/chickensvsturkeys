@@ -5,13 +5,13 @@
 //   flingers: inputs/{uid}.q  = [{ s, x, y }] (fling an egg at x, y)
 // and get the stall back through et/info + et/s.
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010212825';
-import { allCombos } from '../advance/rules.js?v=20261010212825';
+import { sfx } from '../../core/sfx.js?v=20261010214912';
+import { allCombos } from '../advance/rules.js?v=20261010214912';
 import {
   GW, LANES, X_MIN, X_MAX, SPEED, FLIGHT, EGGS_PER_CORRECT, COOLDOWN, LANE_Y,
   targetScale, attackerFor, other, targetCentre, launchX, findHit, eggAt,
-} from './rules.js?v=20261010212825';
-import { drawGallery } from './draw.js?v=20261010212825';
+} from './rules.js?v=20261010214912';
+import { drawGallery } from './draw.js?v=20261010214912';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);

@@ -3,25 +3,25 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010212825';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010212825';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010212825';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010212825';
-import { sfx } from '../js/core/sfx.js?v=20261010212825';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010212825';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010212825';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010212825';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010212825';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261010212825';
-import { CrossView } from '../js/modes/cross/view.js?v=20261010212825';
-import { StackView } from '../js/modes/stack/view.js?v=20261010212825';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261010212825';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261010212825';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010212825';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010212825';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010212825';
-import * as FE from '../js/modes/farm/economy.js?v=20261010212825';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010212825';
+} from '../js/core/firebase.js?v=20261010214912';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010214912';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010214912';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010214912';
+import { sfx } from '../js/core/sfx.js?v=20261010214912';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010214912';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010214912';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010214912';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010214912';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261010214912';
+import { CrossView } from '../js/modes/cross/view.js?v=20261010214912';
+import { StackView } from '../js/modes/stack/view.js?v=20261010214912';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261010214912';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261010214912';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010214912';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010214912';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010214912';
+import * as FE from '../js/modes/farm/economy.js?v=20261010214912';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010214912';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -1238,8 +1238,10 @@ function ensureSa() {
       else if (e === 'egg') { sfx.egg?.(); navigator.vibrate?.(25); saHint('🥚 Egg away!', 'good'); }
       else if (e === 'noacts') { sfx.wrong(); saHint('No actions left — answer a question on the QUIZ tab!', 'bad'); }
       else if (e === 'rotate') sfx.click();
+      else if (e === 'hit') { sfx.splat?.(); navigator.vibrate?.([60, 30, 90]); saHint('💥 SPLAT! Direct hit!', 'good'); }
       saHud();
-      if (SA.view.actsLeft() <= 0 && (e === 'drop' || e === 'egg')) setTimeout(() => { if (SA.view.actsLeft() <= 0 && L.tab === 'fight' && D.state.phase === 'playing') setTab('answer'); }, 900);
+      // out of actions: back to the quiz — but only after you've watched your block land / your egg splat
+      if (SA.view.actsLeft() <= 0 && (e === 'drop' || e === 'egg')) setTimeout(() => { if (SA.view.actsLeft() <= 0 && L.tab === 'fight' && D.state.phase === 'playing') setTab('answer'); }, e === 'egg' ? 2600 : 1800);
     },
   });
   window.cvtSa = { view: SA.view }; // test hook
@@ -1270,5 +1272,5 @@ function saHud() {
   h.textContent = D.state.phase !== 'playing' ? 'Get ready to build!'
     : !left ? 'Answer questions on the QUIZ tab — each right answer = 1 action.'
       : mode === 'build' ? 'Drag to line up your block, ⟳ to turn it, then DROP. Stack it carefully!'
-        : 'Tap the other team\'s tower to lob an egg at it. Aim for the top!';
+        : 'Press and hold on their tower — the dotted line shows where your egg will fly. Slide to aim, let go to throw. Aim for the top!';
 }

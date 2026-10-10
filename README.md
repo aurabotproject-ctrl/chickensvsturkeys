@@ -106,7 +106,7 @@ Create Game → **Advance** → number of rounds, and the longest a round can la
 Create Game → **Stack Attack** → rounds (1 / 2 / 3) and round length (2 / 3 / 4 min).
 - Each team builds a tower on its own cliff. Students answer on the **QUIZ** tab; every right answer = **1 action** (save up to 5). The **TOWER** tab opens by itself after a right answer.
 - Spend an action on **🧱 BUILD**: your next block (crate, hay bale, plank, pillar, arch, wedge, roof…) hovers over your tower — drag to line it up, ⟳ to turn it, **DROP**. Real physics: sloppy stacking wobbles and topples, and anything that falls off the cliff is gone.
-- Or spend it on **🥚 THROW**: switch to the other team's tower and tap where to lob an egg. It lands with a SPLAT that knocks blocks flying (eggs never hit your own tower).
+- Or spend it on **🥚 THROW**: switch to the other team's tower, press and hold to aim (a dotted arc shows exactly where the egg will fly), slide to adjust and let go. The camera follows your egg across the ravine and it lands with a SPLAT that knocks blocks flying (eggs never hit your own tower).
 - Tower height counts live in metres (1 crate = 1 m). At the end of each round the heights are added to each team's score, and every round starts with fresh towers.
 - Art: the blue/red Egg Cannon fort pieces for blocks, and a painted cliffs-and-river panorama (`sa_bg`) whose cliff tops are the real platforms. Prompts: `STACK_ATTACK_IMAGE_PROMPTS.md`.
 
