@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261010182602';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010182602';
-import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261010182602';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010182602';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010182602';
-import { renderBanks } from './banks-ui.js?v=20261010182602';
+} from '../js/core/firebase.js?v=20261010183146';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010183146';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010183146';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010183146';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010183146';
+import { renderBanks } from './banks-ui.js?v=20261010183146';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -58,10 +58,10 @@ function renderSignIn() {
 }
 
 const NAV = [
-  ['dashboard', '🏠', 'Dashboard'],
-  ['create', '🎮', 'Create Game'],
-  ['banks', '📚', 'Question Banks'],
-  ['results', '📊', 'Results'],
+  ['dashboard', uiIcon('ui_home', '🏠'), 'Dashboard'],
+  ['create', uiIcon('ui_create', '🎮'), 'Create Game'],
+  ['banks', uiIcon('ui_banks', '📚'), 'Question Banks'],
+  ['results', uiIcon('ui_results', '📊'), 'Results'],
 ];
 
 function shell() {
@@ -70,7 +70,7 @@ function shell() {
     <aside class="side">
       <img class="logo" src="${sprite('logo')}" alt="Chickens vs Turkeys">
       <nav class="nav">${raw(NAV.map(([k, i, l]) => `<button data-go="${k}" class="${ctx.view === k || (ctx.view === 'edit' && k === 'banks') ? 'on' : ''}"><span class="ni">${i}</span><span class="nl">${l}</span></button>`).join(''))}</nav>
-      <div class="me">${raw(u.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : '')}<span>${u.displayName || u.email}<br><a href="#" id="signout">Sign out</a></span></div>
+      <div class="me">${raw(u.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : '')}<span><b>${u.displayName || u.email}</b><br><a href="#" id="signout">Sign out</a></span></div>
     </aside>
     <main class="main" id="main"></main></div>`;
   $$('[data-go]').forEach((b) => { b.onclick = () => go(b.dataset.go); });
@@ -95,9 +95,9 @@ function renderDashboard(main) {
   const first = (ctx.user.displayName || 'Teacher').split(' ')[0];
   main.innerHTML = html`<h1 class="page-title">Kia ora, ${first}!</h1>
     <div class="big-actions">
-      <button class="btn grass" data-go="create">🎮 Create Game</button>
-      <button class="btn blue" data-go="banks">📚 Question Banks</button>
-      <button class="btn purple" data-go="results">📊 View Results</button>
+      <button class="btn grass" data-go="create">${raw(uiIcon('ui_create', '🎮'))} Create Game</button>
+      <button class="btn blue" data-go="banks">${raw(uiIcon('ui_banks', '📚'))} Question Banks</button>
+      <button class="btn purple" data-go="results">${raw(uiIcon('ui_results', '📊'))} View Results</button>
     </div>
     <div class="dash-grid">
       <section class="panel light"><h3>Recent games</h3><div id="recent" class="list"></div></section>
@@ -156,7 +156,7 @@ function renderCreate(main) {
         <div class="field ${s.mode !== 'dodge' ? 'hidden' : ''}"><span>When hit by an egg</span>${raw(seg('koMode', [['respawn', 'Back in 5 s'], ['out', 'Out for the round']]))}</div>
         <div class="field"><span>Random events</span>${raw(seg('events', [['auto', 'Automatic'], ['manual', 'I\'ll trigger them'], ['off', 'Off']]))}</div>
       </div>
-      <div class="launch"><button id="launch" class="btn big" ${raw(bankOpts.length ? '' : 'disabled')}>🚀 Launch Game</button></div>
+      <div class="launch"><button id="launch" class="btn big" ${raw(bankOpts.length ? '' : 'disabled')}>${raw(uiIcon('ui_launch', '🚀'))} Launch Game</button></div>
     </section>`;
   $$('.mode-card', main).forEach((c) => {
     c.onclick = () => { if (c.classList.contains('soon')) { toast('That game is coming in a later phase!', 'warn'); return; } s.mode = c.dataset.mode;

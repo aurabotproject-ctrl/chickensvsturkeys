@@ -1,6 +1,6 @@
 // Host-side quiz engine. Holds the answer key (phones never see it),
 // deals questions to each player, grades answers and logs them.
-import { shuffle } from '../core/ui.js?v=20261010182602';
+import { shuffle } from '../core/ui.js?v=20261010183146';
 
 export const MAX_EGGS = 8;
 
