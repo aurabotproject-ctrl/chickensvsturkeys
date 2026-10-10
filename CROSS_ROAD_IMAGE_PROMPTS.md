@@ -76,7 +76,7 @@ BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no green in 
 
 ---
 
-## 4. Side-on road vehicles (replaces the angled trucks)
+## 4. Side-on road vehicles (replaces the angled trucks) — ✔ received and wired in
 **Save as:** `cross-road-3.png`
 
 The egg truck, pickup and semi borrowed from Egg Farm are drawn at a front three-quarter angle, so on the road they look like they're driving diagonally off the lane. This sheet redraws them (plus the two tractors, so they all match) **side-on**, driving straight along the road.

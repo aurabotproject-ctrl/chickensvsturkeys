@@ -6,8 +6,8 @@
 //   swipe across one of your team's lines = cut it
 // =========================================================
 /* global PIXI */
-import { MAP_W, MAP_H, KINDS, maxPaths, pathProblem, segmentsCross, distToSeg } from './map.js?v=20261010195237';
-import { loadTextures, drawBackground, makeBuilding, updateBuilding, COLORS } from './draw.js?v=20261010195237';
+import { MAP_W, MAP_H, KINDS, maxPaths, pathProblem, segmentsCross, distToSeg } from './map.js?v=20261010200014';
+import { loadTextures, drawBackground, makeBuilding, updateBuilding, COLORS } from './draw.js?v=20261010200014';
 
 export class TowerView {
   constructor(el, { team, uid, onCommand, onHint, onTap } = {}) {

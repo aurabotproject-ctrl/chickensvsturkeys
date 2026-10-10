@@ -4,8 +4,8 @@
 //             your finger (only YOU can see it). Let go to fling an egg.
 //   Dodgers:  hold ◀ / ▶ (or the arrow keys) to slide your piece along its rail.
 // =========================================================
-import { GW, GH, SPEED, FLIGHT, X_MIN, X_MAX, COOLDOWN, PHONE_VIEW } from './rules.js?v=20261010195237';
-import { drawGallery, toStall } from './draw.js?v=20261010195237';
+import { GW, GH, SPEED, FLIGHT, X_MIN, X_MAX, COOLDOWN, PHONE_VIEW } from './rules.js?v=20261010200014';
+import { drawGallery, toStall } from './draw.js?v=20261010200014';
 
 const AIM_LIFT = 70; // css px the crosshair sits above the finger
 

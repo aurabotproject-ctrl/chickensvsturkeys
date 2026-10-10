@@ -1,11 +1,11 @@
 // =========================================================
 // ADVANCE — host game logic + projector drawing.
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010195237';
+import { sfx } from '../../core/sfx.js?v=20261010200014';
 import {
   boardSize, BLOCK_QUESTIONS, MAX_BLOCKS, allCombos, startRow, goalRow, progressOf, legalMoves, blockSpots, pushTargets, isFree,
-} from './rules.js?v=20261010195237';
-import { drawBoard } from './draw.js?v=20261010195237';
+} from './rules.js?v=20261010200014';
+import { drawBoard } from './draw.js?v=20261010200014';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);

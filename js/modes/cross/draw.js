@@ -1,11 +1,11 @@
 // CROSS THE ROAD — field drawing shared by the big screen and the phones (Canvas 2D).
-import { img } from '../advance/draw.js?v=20261010195237';
-import { W, L, objX } from './rules.js?v=20261010195237';
+import { img } from '../advance/draw.js?v=20261010200014';
+import { W, L, objX } from './rules.js?v=20261010200014';
 
 const ready = (im) => im && im.complete && im.naturalWidth > 0;
 const TEAM = { chicken: '#1e6fe0', turkey: '#e0402a' };
 /** Art that exists (CROSS_ROAD_IMAGE_PROMPTS.md). Missing pieces are drawn in code. */
-export const CR_ART = new Set(['cr_haycart', 'cr_quad', 'cr_log2', 'cr_log3', 'cr_log4', 'cr_lilypad', 'cr_flat_c', 'cr_flat_t', 'cr_splash', 'cr_soggy_c', 'cr_win_c', 'cr_win_t']);
+export const CR_ART = new Set(['cr_haycart', 'cr_quad', 'cr_log2', 'cr_log3', 'cr_log4', 'cr_lilypad', 'cr_flat_c', 'cr_flat_t', 'cr_splash', 'cr_soggy_c', 'cr_win_c', 'cr_win_t', 'cr_truck', 'cr_van', 'cr_semi', 'cr_tractor_c', 'cr_tractor_t']);
 const art = (name) => {
   if (name.startsWith('cr_') && !CR_ART.has(name)) return null;
   const im = img(name); return ready(im) ? im : null;
