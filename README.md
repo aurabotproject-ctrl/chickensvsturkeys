@@ -108,7 +108,7 @@ Create Game → **Egg Toss** → rounds (2 / 4 / 6), and the answer time per rou
 - **Then 30 seconds of flinging.** The dodgers' pieces stand on **4 rails** and slide left/right (hold ◀ ▶ on their device). Flingers drag a finger to aim and let go to fling. **Only the flinger can see their own crosshair**; nobody else sees it, including the big screen. Eggs take under a second to land, so dodgers can see them coming and move.
 - Only an egg that hits the **bullseye** counts, not one that just hits the piece. A hit = yolk splat, the piece topples, and that student spectates for the rest of the round.
 - Unused eggs are lost at the end of each round. The team with the most **targets hit** over all rounds wins. Individual standings are by questions answered correctly.
-- Image prompt for the game-card icon: `EGG_TOSS_IMAGE_PROMPTS.md`.
+- Game-card icon: `mode_eggtoss.webp` (prompt in `EGG_TOSS_IMAGE_PROMPTS.md`).
 
 ⚠️ Egg Toss adds `et` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
 

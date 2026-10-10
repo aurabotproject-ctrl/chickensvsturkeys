@@ -1,8 +1,6 @@
 # EGG TOSS — ChatGPT Image Prompts
 
-Egg Toss is **already playable** and needs only **one** new image. The targets are the Advance chess pieces. The eggs and yolk splats use the game's existing art, and the fairground stall is drawn in code.
-
-The one thing missing is a **game-card icon** to match the other cards (Coop Wars, Coop Siege, Advance). Until you make it, the card shows a flying egg.
+✔ **Icon received and wired in** as `assets/sprites/mode_eggtoss.webp`. The prompt is kept below in case you want to remake it.
 
 ## How to use
 - Paste the prompt into ChatGPT with your concept / mode-icons reference image attached.

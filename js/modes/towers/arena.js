@@ -5,9 +5,9 @@
 // raise friendly ones. Right answers add troops to your coops.
 // =========================================================
 /* global PIXI */
-import { MAP_W, MAP_H, KINDS, generateMap, maxPaths, pathProblem, tier } from './map.js?v=20261010144606';
-import { loadTextures, drawBackground, makeBuilding, updateBuilding, rangeOf, guardsSelf, COLORS } from './draw.js?v=20261010144606';
-import { sfx } from '../../core/sfx.js?v=20261010144606';
+import { MAP_W, MAP_H, KINDS, generateMap, maxPaths, pathProblem, tier } from './map.js?v=20261010145254';
+import { loadTextures, drawBackground, makeBuilding, updateBuilding, rangeOf, guardsSelf, COLORS } from './draw.js?v=20261010145254';
+import { sfx } from '../../core/sfx.js?v=20261010145254';
 
 const SPEED = 95;            // troop speed (map px / s)
 const SEND_EVERY = 0.55;     // seconds between troops on each path

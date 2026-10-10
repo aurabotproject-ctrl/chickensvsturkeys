@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261010144606';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010144606';
-import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261010144606';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010144606';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010144606';
-import { renderBanks } from './banks-ui.js?v=20261010144606';
+} from '../js/core/firebase.js?v=20261010145254';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010145254';
+import { sprite, subjectIcon, teamIco } from '../js/core/assets.js?v=20261010145254';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010145254';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010145254';
+import { renderBanks } from './banks-ui.js?v=20261010145254';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -111,7 +111,7 @@ const MODES = [
   { id: 'siege', name: 'Coop Siege', img: 'mode_siege', desc: 'Two halves: defend your coop with egg shooters and hay walls, then swap and attack! Right answers earn corn to spend.' },
   { id: 'paint', name: 'Land Grab', img: 'chicken_run', desc: 'Answer for 1 minute to power up your speed, then 30 seconds to grab land — loop back home, and don\'t let anyone cut your trail!' },
   { id: 'advance', name: 'Advance', img: 'mode_advance', desc: 'A giant chessboard race! Every right answer = 1 move. First team to get everyone to the other side wins the round.' },
-  { id: 'eggtoss', name: 'Egg Toss', img: 'egg_fly', desc: 'A fairground egg toss! One team flings eggs, the other dodges. Right answers = more eggs, or a smaller target. Teams swap every round.' },
+  { id: 'eggtoss', name: 'Egg Toss', img: 'mode_eggtoss', desc: 'A fairground egg toss! One team flings eggs, the other dodges. Right answers = more eggs, or a smaller target. Teams swap every round.' },
   { id: 'farm', name: 'Egg Farm', img: 'fm_coop_c4', desc: 'Grow the richest egg farm — every right answer boosts your farm.' },
 ];
 
