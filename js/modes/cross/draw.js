@@ -1,6 +1,6 @@
 // CROSS THE ROAD — field drawing shared by the big screen and the phones (Canvas 2D).
-import { img } from '../advance/draw.js?v=20261010194832';
-import { W, L, objX } from './rules.js?v=20261010194832';
+import { img } from '../advance/draw.js?v=20261010195237';
+import { W, L, objX } from './rules.js?v=20261010195237';
 
 const ready = (im) => im && im.complete && im.naturalWidth > 0;
 const TEAM = { chicken: '#1e6fe0', turkey: '#e0402a' };
@@ -51,7 +51,7 @@ export function drawField(ctx, S, x, y, w, h, opts = {}) {
   for (let r = L - 1; r >= 0; r--) {
     const lane = field.lanes[r]; const ly = oy + rowY(r) * cell;
     if (lane.type === 'river') for (const o of lane.objs) (lane.lily ? drawLily : drawLog)(ctx, ox + objX(lane, o, t) * cell, ly, o.len * cell, cell, o.len);
-    if (lane.type === 'road') for (const o of lane.objs) drawVehicle(ctx, o, ox + objX(lane, o, t) * cell, ly, cell, lane.v < 0);
+    if (lane.type === 'road') for (const o of lane.objs) drawVehicle(ctx, o, ox + objX(lane, o, t) * cell, ly, cell, lane.v < 0, t);
     if (lane.type === 'grass') for (const o of lane.obs) drawScenery(ctx, o.img, ox + o.c * cell, ly, cell);
     // birds on this row (they glide between squares with a little hop)
     for (const b of S.birds || []) if (Math.round(b.dr ?? b.r) === r) drawBird(ctx, b, ox + b.dx * cell, oy + rowY(b.dr) * cell, cell, b.uid === opts.me, opts.labels);
@@ -139,14 +139,30 @@ function codeLog(ctx, x, y, w, cell) {
   ctx.strokeStyle = 'rgba(120,70,20,.6)'; ctx.beginPath(); ctx.ellipse(x + w - 2 - h * 0.28, ly + h / 2, h * 0.12, h * 0.22, 0, 0, Math.PI * 2); ctx.stroke();
 }
 
-function drawVehicle(ctx, o, x, y, cell, left) {
-  const bw = o.len * cell; const im = art(o.img);
-  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x + bw / 2, y + cell * 0.88, bw * 0.45, cell * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+/**
+ * Bumpy ride: a constant little engine rumble, plus every so often a bump in the road
+ * (a quick hop with a tilt, back wheels then front). Each vehicle has its own rhythm.
+ */
+function bumpy(o, t) {
+  const seed = o.o * 7.31 + o.len * 3.7;
+  const rumble = Math.sin(t * 31 + seed) * 0.6 + Math.sin(t * 47 + seed * 2) * 0.4; // -1..1, fast and small
+  const period = 1.6 + ((seed * 13.7) % 1.4); // a bump every 1.6–3 s
+  const ph = ((t + seed) % period) / period; // 0..1
+  const k = ph < 0.16 ? Math.sin((ph / 0.16) * Math.PI) : 0; // the bump itself (~0.3 s)
+  const tilt = ph < 0.16 ? Math.sin((ph / 0.16) * Math.PI * 2) : 0; // nose up, then nose down
+  return { dy: -k, rumble, tilt };
+}
+function drawVehicle(ctx, o, x, y, cell, left, t = 0) {
+  const bw = o.len * cell; const im = art(o.img) || (o.fb ? art(o.fb) : null);
+  const b = bumpy(o, t);
+  const lift = b.dy * cell * 0.1 + b.rumble * cell * 0.012; const rot = b.tilt * 0.045 + b.rumble * 0.006;
+  ctx.fillStyle = 'rgba(0,0,0,.25)'; ctx.beginPath(); ctx.ellipse(x + bw / 2, y + cell * 0.88, bw * 0.45 * (1 + b.dy * 0.1), cell * 0.12, 0, 0, Math.PI * 2); ctx.fill();
   if (im) {
     const s = Math.min((bw * 1.02) / im.naturalWidth, (cell * 1.25) / im.naturalHeight);
     const dw = im.naturalWidth * s; const dh = im.naturalHeight * s;
-    ctx.save(); ctx.translate(x + bw / 2, y + cell * 0.95);
+    ctx.save(); ctx.translate(x + bw / 2, y + cell * 0.95 + lift);
     if (left) ctx.scale(-1, 1);
+    ctx.rotate(-rot);
     ctx.drawImage(im, -dw / 2, -dh, dw, dh); ctx.restore();
   } else if (o.img === 'cr_haycart') { // hay cart drawn in code until the art arrives
     ctx.save(); ctx.translate(x + bw / 2, y); if (left) ctx.scale(-1, 1);

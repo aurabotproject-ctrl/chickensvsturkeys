@@ -76,5 +76,31 @@ BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no green in 
 
 ---
 
+## 4. Side-on road vehicles (replaces the angled trucks)
+**Save as:** `cross-road-3.png`
+
+The egg truck, pickup and semi borrowed from Egg Farm are drawn at a front three-quarter angle, so on the road they look like they're driving diagonally off the lane. This sheet redraws them (plus the two tractors, so they all match) **side-on**, driving straight along the road.
+
+```
+Create a game sprite sheet of 5 FARM ROAD VEHICLES for a comic-book style classroom game called "Chickens vs Turkeys: Cross the Road" (a Crossy Road style game where vehicles drive left and right across the screen). Match the attached comic style reference and the attached hay cart / quad bike sheet exactly.
+
+STYLE: chunky toy-like comic cartoon, thick black outlines with a thin white outer stroke, cel-shaded 2–3 tone shading, subtle halftone dots, saturated punchy colours, light from the top-left, family-friendly.
+
+VIEW — VERY IMPORTANT: every vehicle is seen exactly from the SIDE (a flat side profile, like a vehicle in a side-scrolling game), with only a very slight top-down tilt so a little of the roof shows. ALL vehicles face and drive to the RIGHT: the front/bonnet/headlights on the right, the back on the left. Both wheels on the near side are visible and level, sitting on one flat ground line. NO front three-quarter view, NO diagonal angle, the front of the vehicle must NOT point towards the viewer.
+
+THE 5 VEHICLES (left to right, top row then bottom row):
+1. EGG TRUCK: a white box truck with a red cab, the box has a big cartoon egg logo on its side and a few egg cartons visible at the open back. About 2 times as long as it is tall.
+2. FARM PICKUP: a blue pickup truck with a chicken logo on the door and crates of eggs in the tray. About 2 times as long as it is tall.
+3. SEMI TRUCK: a red semi cab pulling a long white trailer stacked with egg trays (visible through slatted sides). About 3.5 times as long as it is tall.
+4. BLUE TRACTOR: a chunky blue farm tractor (big back wheel, small front wheel) driven by a white CHICKEN wearing a blue headband, a small crate of eggs on the back. About 1.5 times as long as it is tall.
+5. RED TRACTOR: the same tractor shape in RED, driven by a brown TURKEY wearing a red headband, tail fan poking up behind the seat. About 1.5 times as long as it is tall.
+
+LAYOUT: row 1 = vehicles 1, 2, 3; row 2 = vehicles 4, 5. Evenly spaced with a wide empty green gap (at least 60 px) around every vehicle. Nothing touching or cut off. Each vehicle sits flat on its wheels. NO text, letters or numbers (logos are pictures only).
+
+BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no ground shadow, no green in the artwork, crisp clean edges.
+```
+
+---
+
 ## After you generate
-Claude will slice them into `cr_haycart`, `cr_quad`, `cr_log2`, `cr_log3`, `cr_log4`, `cr_lilypad`, `cr_flat_c`, `cr_flat_t`, `cr_splash`, `cr_soggy_c`, `cr_win_c`, `cr_win_t` and `mode_cross`, list them in `CR_ART` in `js/modes/cross/draw.js`, and the game switches over to them.
+Claude will slice them into `cr_haycart`, `cr_quad`, `cr_log2`, `cr_log3`, `cr_log4`, `cr_lilypad`, `cr_flat_c`, `cr_flat_t`, `cr_splash`, `cr_soggy_c`, `cr_win_c`, `cr_win_t` `cr_truck`, `cr_van`, `cr_semi`, `cr_tractor_c`, `cr_tractor_t` and `mode_cross`, list them in `CR_ART` in `js/modes/cross/draw.js`, and the game switches over to them.

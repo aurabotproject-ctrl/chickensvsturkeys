@@ -29,15 +29,18 @@ export function rng(seed) {
   };
 }
 
-/** Vehicles (art faces right; flipped for lanes driving left). len in squares. */
+/**
+ * Vehicles (art faces right; flipped for lanes driving left). len in squares.
+ * img = side-on road art (CROSS_ROAD_IMAGE_PROMPTS.md #4); fb = art used until that exists.
+ */
 export const VEHICLES = [
-  { k: 'tractor_c', len: 1.5, img: 'tw_tractor_c1' },
-  { k: 'tractor_t', len: 1.5, img: 'tw_tractor_t1' },
-  { k: 'van', len: 2, img: 'fm_van' },
-  { k: 'truck', len: 2, img: 'fm_truck' },
+  { k: 'tractor_c', len: 1.5, img: 'cr_tractor_c', fb: 'tw_tractor_c1' },
+  { k: 'tractor_t', len: 1.5, img: 'cr_tractor_t', fb: 'tw_tractor_t1' },
+  { k: 'van', len: 2, img: 'cr_van', fb: 'fm_van' },
+  { k: 'truck', len: 2, img: 'cr_truck', fb: 'fm_truck' },
   { k: 'cart', len: 2, img: 'cr_haycart' },
   { k: 'quad', len: 1.4, img: 'cr_quad' },
-  { k: 'semi', len: 3, img: 'fm_semi' },
+  { k: 'semi', len: 3, img: 'cr_semi', fb: 'fm_semi' },
 ];
 export const SCENERY = ['fm_tree', 'fm_tree2', 'tw_rocks', 'tw_stump', 'tw_hay_round'];
 
@@ -69,7 +72,7 @@ function roadLane(R, dir, depth) {
   for (let guard = 0; guard < 12; guard++) {
     const veh = pick();
     if (pos + veh.len > LOOP - 1.5) break;
-    objs.push({ o: pos, len: veh.len, img: veh.img });
+    objs.push({ o: pos, len: veh.len, img: veh.img, fb: veh.fb });
     pos += veh.len + 3 + R() * 3.5;
   }
   return { type: 'road', v, objs };
