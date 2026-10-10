@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261010200014';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010200014';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010200014';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010200014';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010200014';
-import { renderBanks } from './banks-ui.js?v=20261010200014';
+} from '../js/core/firebase.js?v=20261010201126';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010201126';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010201126';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010201126';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010201126';
+import { renderBanks } from './banks-ui.js?v=20261010201126';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -142,11 +142,11 @@ function renderCreate(main) {
     <section class="panel light"><h3>1. Pick a game</h3>
       <div class="mode-grid">${raw(MODES.map((m) => `<div class="card mode-card ${m.soon ? 'soon' : ''} ${s.mode === m.id ? 'on' : ''}" data-mode="${m.id}"><img src="${sprite(m.img)}" alt=""><div class="title">${m.name}</div><div class="hint">${m.desc}</div></div>`).join(''))}</div>
     </section>
-    <section class="panel light" style="margin-top:18px"><h3>2. Pick a question bank</h3>
+    <section class="panel light" id="step-bank" style="margin-top:18px"><h3>2. Pick a question bank</h3>
       ${raw(bankOpts.length ? `<select class="select" id="bank">${bankOpts.map((o) => `<option value="${esc(o.key)}" ${o.key === s.bankKey ? 'selected' : ''}>${esc(o.label)}</option>`).join('')}</select>` : '<p class="empty">No banks yet.</p>')}
       <p class="hint">Make your own on the <a href="#" id="tobanks">Question Banks</a> page.</p>
     </section>
-    <section class="panel light" style="margin-top:18px"><h3>3. Settings</h3>
+    <section class="panel light" id="step-settings" style="margin-top:18px"><h3>3. Settings</h3>
       <div class="settings-grid">
         <div class="field ${s.mode === 'farm' || s.mode === 'towers' || s.mode === 'siege' ? 'hidden' : ''}"><span>Rounds</span>${raw(seg('rounds', s.mode === 'eggtoss' ? [[2, '2'], [4, '4'], [6, '6']] : s.mode === 'cross' ? [[1, '1'], [2, '2'], [3, '3']] : [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']]))}${raw(s.mode === 'eggtoss' ? '<span class="hint">Teams swap between flinging and dodging every round, so both teams fling the same number of times.</span>' : '')}</div>
         <div class="field"><span>${s.mode === 'cannon' || s.mode === 'paint' || s.mode === 'eggtoss' ? 'Answer time per round' : s.mode === 'farm' || s.mode === 'towers' ? 'Game length' : s.mode === 'siege' ? 'Length of each half' : 'Round length'}</span>${raw(seg('roundSeconds', s.mode === 'farm' || s.mode === 'towers' ? [[300, '5 min'], [480, '8 min'], [720, '12 min']] : s.mode === 'siege' ? [[150, '2½ min'], [210, '3½ min'], [300, '5 min']] : s.mode === 'advance' ? [[60, '1 min'], [90, '90 s'], [120, '2 min']] : s.mode === 'cross' ? [[120, '2 min'], [180, '3 min'], [240, '4 min']] : s.mode === 'eggtoss' ? [[30, '30 s'], [45, '45 s'], [60, '60 s']] : [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}${raw(s.mode === 'cross' ? '<span class="hint">Students answer and hop at the same time. Each right answer = 4 hops (they can save up to 12). Every crossing = 1 point for their team.</span>' : '')}${raw(s.mode === 'eggtoss' ? '<span class="hint">Questions first (flingers earn eggs, dodgers shrink their target), then 30 seconds of egg flinging.</span>' : s.mode === 'cannon' ? '<span class="hint">Students answer 5 questions, then a 45-second battle.</span>' : s.mode === 'advance' ? '<span class="hint">The longest each round can last. A round ends early if a team gets everyone across.</span>' : s.mode === 'paint' ? '<span class="hint">Every right answer = more speed. Then a 30-second land grab.</span>' : s.mode === 'siege' ? '<span class="hint">2 halves — the teams swap between defending and attacking at half time.</span>' : '')}</div>
@@ -163,7 +163,12 @@ function renderCreate(main) {
     c.onclick = () => { if (c.classList.contains('soon')) { toast('That game is coming in a later phase!', 'warn'); return; } s.mode = c.dataset.mode;
       if (s.mode === 'farm' || s.mode === 'towers') { s.settings.rounds = 1; if (![300, 480, 720].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 480; } else if (s.mode === 'eggtoss') { if (![2, 4, 6].includes(s.settings.rounds)) s.settings.rounds = 2; if (![30, 45, 60].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 30; } else if (s.mode === 'cross') { if (![1, 2, 3].includes(s.settings.rounds)) s.settings.rounds = 2; if (![120, 180, 240].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 180; } else if (s.mode === 'advance') { if (![60, 90, 120].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 120; } else if (s.mode === 'siege') { s.settings.rounds = 2; if (![150, 210, 300].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 210; } else if (s.settings.roundSeconds > 90 || s.settings.roundSeconds < 45) s.settings.roundSeconds = 60;
       if (s.mode !== 'eggtoss' && s.settings.rounds > 5) s.settings.rounds = 3;
-      renderCreate(main); };
+      renderCreate(main);
+      // jump down to the next steps so the bank + settings aren't missed (scroll back up to change the game)
+      requestAnimationFrame(() => {
+        $('#step-bank', main)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        ['#step-bank', '#step-settings'].forEach((sel) => { const el = $(sel, main); if (!el) return; el.classList.remove('flash-next'); void el.offsetWidth; el.classList.add('flash-next'); });
+      }); };
   });
   $('#tobanks').onclick = (e) => { e.preventDefault(); go('banks'); };
   $('#bank')?.addEventListener('change', (e) => { s.bankKey = e.target.value; });

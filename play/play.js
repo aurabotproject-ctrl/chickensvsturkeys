@@ -3,23 +3,23 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010200014';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010200014';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010200014';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010200014';
-import { sfx } from '../js/core/sfx.js?v=20261010200014';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010200014';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010200014';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010200014';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010200014';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261010200014';
-import { CrossView } from '../js/modes/cross/view.js?v=20261010200014';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261010200014';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010200014';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010200014';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010200014';
-import * as FE from '../js/modes/farm/economy.js?v=20261010200014';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010200014';
+} from '../js/core/firebase.js?v=20261010201126';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010201126';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010201126';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010201126';
+import { sfx } from '../js/core/sfx.js?v=20261010201126';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010201126';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010201126';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010201126';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010201126';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261010201126';
+import { CrossView } from '../js/modes/cross/view.js?v=20261010201126';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261010201126';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010201126';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010201126';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010201126';
+import * as FE from '../js/modes/farm/economy.js?v=20261010201126';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010201126';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
