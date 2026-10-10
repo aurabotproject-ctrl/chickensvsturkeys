@@ -36,6 +36,7 @@ export const VEHICLES = [
   { k: 'van', len: 2, img: 'fm_van' },
   { k: 'truck', len: 2, img: 'fm_truck' },
   { k: 'cart', len: 2, img: 'cr_haycart' },
+  { k: 'quad', len: 1.4, img: 'cr_quad' },
   { k: 'semi', len: 3, img: 'fm_semi' },
 ];
 export const SCENERY = ['fm_tree', 'fm_tree2', 'tw_rocks', 'tw_stump', 'tw_hay_round'];
@@ -51,7 +52,7 @@ export function makeField(seed) {
     const n = Math.min(L - 1 - r, 2 + Math.floor(R() * 2));
     for (let i = 0; i < n; i++) {
       const depth = r / (L - 1); // lanes further up are a bit faster
-      lanes[r] = kind === 'road' ? roadLane(R, dir, depth) : riverLane(R, dir, depth);
+      lanes[r] = kind === 'road' ? roadLane(R, dir, depth) : riverLane(R, dir, depth, !lanes[r - 1]?.lily);
       dir = -dir; r += 1;
     }
     if (r < L - 1) { lanes[r] = grassLane(R); r += 1; }
@@ -74,7 +75,13 @@ function roadLane(R, dir, depth) {
   return { type: 'road', v, objs };
 }
 
-function riverLane(R, dir, depth) {
+function riverLane(R, dir, depth, allowLily = true) {
+  // sometimes a still pond lane with lily pads to hop across (they don't move)
+  if (R() < 0.22 && allowLily) {
+    const cols = new Set(); const n = 5 + Math.floor(R() * 3);
+    while (cols.size < n) cols.add(Math.floor(R() * W));
+    return { type: 'river', v: 0, lily: true, objs: [...cols].map((c) => ({ o: c + PAD, len: 1 })) };
+  }
   const v = dir * (0.6 + depth * 0.45 + R() * 0.5);
   const objs = [];
   let pos = R() * 2;

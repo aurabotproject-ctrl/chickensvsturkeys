@@ -6,9 +6,9 @@
 //   cr/info = { round, seed, t0, players: [[uid, team, name]] }
 //   cr/s    = "i,r,x100,deaths,crossings;…"
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010193406';
-import { W, L, HOPS_PER, MAX_HOPS, makeField, tryHop, stepBird, startCol, danger, dangerAhead } from './rules.js?v=20261010193406';
-import { drawField } from './draw.js?v=20261010193406';
+import { sfx } from '../../core/sfx.js?v=20261010194832';
+import { W, L, HOPS_PER, MAX_HOPS, makeField, tryHop, stepBird, startCol, danger, dangerAhead } from './rules.js?v=20261010194832';
+import { drawField } from './draw.js?v=20261010194832';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);

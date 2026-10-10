@@ -1,11 +1,6 @@
 # CROSS THE ROAD — ChatGPT Image Prompts
 
-Cross the Road is **already playable**. It reuses art the game already has:
-- **Vehicles:** the farm truck, van, semi and the blue and red tractors.
-- **Grass strips:** trees, rocks, stumps and hay bales.
-- **Players:** the little chicken and turkey sprites, with their hit poses.
-
-These 3 images fill the gaps. Until they arrive, the hay cart and the logs are drawn in code, and the game card shows the little chicken.
+✔ **Art received and wired in** (`assets/sprites/cr_*.webp` + `mode_cross.webp`). The prompts are kept below in case you want to remake any of them.
 
 | # | Image | Replaces |
 |---|---|---|

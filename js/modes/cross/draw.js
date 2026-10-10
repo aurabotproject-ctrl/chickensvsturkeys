@@ -1,11 +1,11 @@
 // CROSS THE ROAD — field drawing shared by the big screen and the phones (Canvas 2D).
-import { img } from '../advance/draw.js?v=20261010193406';
-import { W, L, objX } from './rules.js?v=20261010193406';
+import { img } from '../advance/draw.js?v=20261010194832';
+import { W, L, objX } from './rules.js?v=20261010194832';
 
 const ready = (im) => im && im.complete && im.naturalWidth > 0;
 const TEAM = { chicken: '#1e6fe0', turkey: '#e0402a' };
 /** Art that exists (CROSS_ROAD_IMAGE_PROMPTS.md). Missing pieces are drawn in code. */
-export const CR_ART = new Set([]);
+export const CR_ART = new Set(['cr_haycart', 'cr_quad', 'cr_log2', 'cr_log3', 'cr_log4', 'cr_lilypad', 'cr_flat_c', 'cr_flat_t', 'cr_splash', 'cr_soggy_c', 'cr_win_c', 'cr_win_t']);
 const art = (name) => {
   if (name.startsWith('cr_') && !CR_ART.has(name)) return null;
   const im = img(name); return ready(im) ? im : null;
@@ -50,7 +50,7 @@ export function drawField(ctx, S, x, y, w, h, opts = {}) {
   }
   for (let r = L - 1; r >= 0; r--) {
     const lane = field.lanes[r]; const ly = oy + rowY(r) * cell;
-    if (lane.type === 'river') for (const o of lane.objs) drawLog(ctx, ox + objX(lane, o, t) * cell, ly, o.len * cell, cell);
+    if (lane.type === 'river') for (const o of lane.objs) (lane.lily ? drawLily : drawLog)(ctx, ox + objX(lane, o, t) * cell, ly, o.len * cell, cell, o.len);
     if (lane.type === 'road') for (const o of lane.objs) drawVehicle(ctx, o, ox + objX(lane, o, t) * cell, ly, cell, lane.v < 0);
     if (lane.type === 'grass') for (const o of lane.obs) drawScenery(ctx, o.img, ox + o.c * cell, ly, cell);
     // birds on this row (they glide between squares with a little hop)
@@ -62,8 +62,8 @@ export function drawField(ctx, S, x, y, w, h, opts = {}) {
     const k = (now - f.t0) / 1400; if (k < 0 || k >= 1) continue;
     const fx = ox + (f.x + 0.5) * cell; const fy = oy + (rowY(f.r) + 0.5) * cell;
     if (f.kind === 'road') splat(ctx, fx, fy, cell, k, f.team);
-    else if (f.kind === 'river') splash(ctx, fx, fy, cell, k);
-    else if (f.kind === 'cross') cheer(ctx, fx, fy, cell, k);
+    else if (f.kind === 'river') splash(ctx, fx, fy, cell, k, f.team);
+    else if (f.kind === 'cross') cheer(ctx, fx, fy, cell, k, f.team);
   }
   ctx.restore();
   // frame around the whole field on the big screen
@@ -107,7 +107,26 @@ function drawLaneGround(ctx, lane, r, ox, y, cell, t) {
   }
 }
 
-function drawLog(ctx, x, y, w, cell) {
+/** Log art, stretched in the middle so any length looks right (3-slice). */
+function drawLog(ctx, x, y, w, cell, len = 2) {
+  const im = art(len >= 4 ? 'cr_log4' : len === 3 ? 'cr_log3' : 'cr_log2');
+  if (im) {
+    const h = cell * 0.86; const s = h / im.naturalHeight; const iw = im.naturalWidth; const ih = im.naturalHeight;
+    const lw = iw * 0.2; const rw = iw * 0.3; const dl = lw * s; const dr = rw * s; const dy = y + (cell - h) / 2 + cell * 0.04;
+    const mid = Math.max(0, w - dl - dr);
+    ctx.drawImage(im, 0, 0, lw, ih, x, dy, dl, h);
+    ctx.drawImage(im, lw, 0, iw - lw - rw, ih, x + dl, dy, mid, h);
+    ctx.drawImage(im, iw - rw, 0, rw, ih, x + dl + mid, dy, dr, h);
+    return;
+  }
+  codeLog(ctx, x, y, w, cell);
+}
+function drawLily(ctx, x, y, w, cell) {
+  const im = art('cr_lilypad');
+  if (im) { const s = (cell * 1.0) / im.naturalWidth; const dh = im.naturalHeight * s; ctx.drawImage(im, x, y + (cell - dh) / 2 + cell * 0.05, cell, dh); return; }
+  ctx.fillStyle = '#2e8b3a'; ctx.beginPath(); ctx.ellipse(x + cell / 2, y + cell / 2, cell * 0.42, cell * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+}
+function codeLog(ctx, x, y, w, cell) {
   const h = cell * 0.68; const ly = y + (cell - h) / 2;
   ctx.fillStyle = '#8a5528'; ctx.strokeStyle = '#111'; ctx.lineWidth = Math.max(2, cell * 0.05);
   rr(ctx, x + 2, ly, w - 4, h, h / 2); ctx.fill(); ctx.stroke();
@@ -175,6 +194,14 @@ function drawBird(ctx, b, bx, y, cell, me, labels) {
 }
 
 function splat(ctx, x, y, cell, k, team) {
+  const flat = art(team === 'turkey' ? 'cr_flat_t' : 'cr_flat_c');
+  if (flat) {
+    ctx.globalAlpha = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
+    const s = cell * (1.35 + Math.min(1, k * 4) * 0.25); const dh = s * (flat.naturalHeight / flat.naturalWidth);
+    ctx.drawImage(flat, x - s / 2, y - dh / 2, s, dh);
+    label(ctx, 'SPLAT!', '#ffc72c', x, y - cell * (0.75 + k * 0.5), cell * 0.55);
+    ctx.globalAlpha = 1; return;
+  }
   const im = art('splat'); const s = cell * (1.1 + k * 0.4);
   ctx.globalAlpha = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
   if (im) ctx.drawImage(im, x - s / 2, y - s * 0.3, s, s * (im.naturalHeight / im.naturalWidth));
@@ -184,7 +211,15 @@ function splat(ctx, x, y, cell, k, team) {
   ctx.lineWidth = 4; ctx.strokeStyle = '#111'; ctx.strokeText('SPLAT!', x, y - cell * (0.6 + k * 0.5)); ctx.fillStyle = '#ffc72c'; ctx.fillText('SPLAT!', x, y - cell * (0.6 + k * 0.5));
   ctx.globalAlpha = 1;
 }
-function splash(ctx, x, y, cell, k) {
+function splash(ctx, x, y, cell, k, team) {
+  const sp = art(k < 0.45 || team === 'turkey' ? 'cr_splash' : 'cr_soggy_c');
+  if (sp) {
+    ctx.globalAlpha = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
+    const s = cell * 1.4; const dh = s * (sp.naturalHeight / sp.naturalWidth);
+    ctx.drawImage(sp, x - s / 2, y + cell * 0.45 - dh, s, dh);
+    label(ctx, 'SPLASH!', '#9fe0ff', x, y - cell * (0.9 + k * 0.5), cell * 0.5);
+    ctx.globalAlpha = 1; return;
+  }
   ctx.globalAlpha = 1 - k;
   ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(2, cell * 0.06);
   for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.ellipse(x, y, cell * (0.2 + k * 0.6 + i * 0.15), cell * (0.08 + k * 0.2 + i * 0.05), 0, 0, Math.PI * 2); ctx.stroke(); }
@@ -194,7 +229,15 @@ function splash(ctx, x, y, cell, k) {
   ctx.lineWidth = 4; ctx.strokeStyle = '#111'; ctx.strokeText('SPLASH!', x, y - cell * (0.6 + k * 0.5)); ctx.fillStyle = '#9fe0ff'; ctx.fillText('SPLASH!', x, y - cell * (0.6 + k * 0.5));
   ctx.globalAlpha = 1;
 }
-function cheer(ctx, x, y, cell, k) {
+function cheer(ctx, x, y, cell, k, team) {
+  const win = art(team === 'turkey' ? 'cr_win_t' : 'cr_win_c');
+  if (win) {
+    ctx.globalAlpha = k > 0.7 ? 1 - (k - 0.7) / 0.3 : 1;
+    const s = cell * (1.2 + Math.sin(Math.min(1, k * 3) * Math.PI) * 0.3); const dh = s * (win.naturalHeight / win.naturalWidth);
+    ctx.drawImage(win, x - s / 2, y - dh * 0.7 - k * cell * 0.6, s, dh);
+    label(ctx, '+1!', '#7ed321', x, y - cell * (1.1 + k * 0.9), cell * 0.7);
+    ctx.globalAlpha = 1; return;
+  }
   ctx.globalAlpha = k > 0.6 ? 1 - (k - 0.6) / 0.4 : 1;
   ctx.font = `normal ${cell * 0.7}px Bangers, Impact, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
   ctx.lineWidth = 5; ctx.strokeStyle = '#111'; ctx.strokeText('+1!', x, y - cell * (0.4 + k * 1.2)); ctx.fillStyle = '#7ed321'; ctx.fillText('+1!', x, y - cell * (0.4 + k * 1.2));
@@ -204,3 +247,8 @@ function cheer(ctx, x, y, cell, k) {
 }
 
 function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+
+function label(ctx, text, col, x, y, size) {
+  ctx.font = `normal ${size}px Bangers, Impact, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 4; ctx.strokeStyle = '#111'; ctx.strokeText(text, x, y); ctx.fillStyle = col; ctx.fillText(text, x, y);
+}

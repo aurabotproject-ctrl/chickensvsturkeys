@@ -5,8 +5,8 @@
 // the host. Controls: tap = hop forward, swipe = hop that way,
 // or the arrow buttons / arrow keys.
 // =========================================================
-import { W, L, makeField, tryHop, stepBird, startCol } from './rules.js?v=20261010193406';
-import { drawField } from './draw.js?v=20261010193406';
+import { W, L, makeField, tryHop, stepBird, startCol } from './rules.js?v=20261010194832';
+import { drawField } from './draw.js?v=20261010194832';
 
 export class CrossView {
   constructor(el, { uid, now, onOp, onEvent } = {}) {
