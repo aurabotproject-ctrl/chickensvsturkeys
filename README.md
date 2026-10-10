@@ -102,6 +102,16 @@ Create Game → **Advance** → number of rounds, and the longest a round can la
 
 ⚠️ Advance adds `pc` (piece choice) and `adv` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
 
+## Stack Attack (wobbly tower building)
+Create Game → **Stack Attack** → rounds (1 / 2 / 3) and round length (2 / 3 / 4 min).
+- Each team builds a tower on its own cliff. Students answer on the **QUIZ** tab; every right answer = **1 action** (save up to 5). The **TOWER** tab opens by itself after a right answer.
+- Spend an action on **🧱 BUILD**: your next block (crate, hay bale, plank, pillar, arch, wedge, roof…) hovers over your tower — drag to line it up, ⟳ to turn it, **DROP**. Real physics: sloppy stacking wobbles and topples, and anything that falls off the cliff is gone.
+- Or spend it on **🥚 THROW**: switch to the other team's tower and tap where to lob an egg. It lands with a SPLAT that knocks blocks flying (eggs never hit your own tower).
+- Tower height counts live in metres (1 crate = 1 m). At the end of each round the heights are added to each team's score, and every round starts with fresh towers.
+- Art: reuses the blue/red Egg Cannon fort pieces. Upgrade prompts (cliffs, background, card icon): `STACK_ATTACK_IMAGE_PROMPTS.md`.
+
+⚠️ Stack Attack adds `sa` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
+
 ## Cross the Road ("Why did the chicken cross the road?")
 Create Game → **Cross the Road** → rounds (1 / 2 / 3) and round length (2 / 3 / 4 min).
 - Students answer on the **QUIZ** tab. Every right answer = **4 hops** (they can save up to 12). The **ROAD** tab opens by itself after a right answer.

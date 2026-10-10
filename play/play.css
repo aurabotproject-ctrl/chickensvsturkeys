@@ -412,3 +412,14 @@ body.team-turkey .cr-pad button { background: var(--turkey, #e0402a); }
 .cr-pad [data-d="d"] { grid-column: 2; grid-row: 2; font-size: .95rem; padding: 3px 0; background: #555 !important; }
 .cr-pad button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 .cr-pad button:disabled { opacity: .35; cursor: not-allowed; }
+
+/* ---- Stack Attack ---- */
+body.mode-stack .egg-bar, body.mode-stack .egg-count { display: none; }
+#view-sa { gap: 6px; }
+.sa-canvas { display: block; touch-action: none; }
+.sa-build { display: grid; grid-template-columns: 1fr 3fr; gap: 6px; }
+.sa-build button { all: unset; cursor: pointer; text-align: center; padding: 8px 0; border: 3px solid var(--ink); border-radius: 14px; background: #ddd; color: var(--ink); font-size: 1.6rem; font-weight: 900; box-shadow: 0 4px 0 var(--ink); touch-action: manipulation; -webkit-user-select: none; user-select: none; }
+.sa-build .drop { background: var(--grass, #7ed321); font-family: var(--font-comic); font-size: 1.7rem; letter-spacing: .05em; line-height: 1; }
+.sa-build .drop small { display: block; font-family: var(--font-body); font-size: .75rem; font-weight: 900; letter-spacing: 0; }
+.sa-build button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.sa-build button:disabled { opacity: .4; cursor: not-allowed; }

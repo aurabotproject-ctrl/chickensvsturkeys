@@ -3,23 +3,25 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010201536';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010201536';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010201536';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010201536';
-import { sfx } from '../js/core/sfx.js?v=20261010201536';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010201536';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010201536';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010201536';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010201536';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261010201536';
-import { CrossView } from '../js/modes/cross/view.js?v=20261010201536';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261010201536';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010201536';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010201536';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010201536';
-import * as FE from '../js/modes/farm/economy.js?v=20261010201536';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010201536';
+} from '../js/core/firebase.js?v=20261010211359';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010211359';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010211359';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010211359';
+import { sfx } from '../js/core/sfx.js?v=20261010211359';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010211359';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010211359';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010211359';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010211359';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261010211359';
+import { CrossView } from '../js/modes/cross/view.js?v=20261010211359';
+import { StackView } from '../js/modes/stack/view.js?v=20261010211359';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261010211359';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261010211359';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010211359';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010211359';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010211359';
+import * as FE from '../js/modes/farm/economy.js?v=20261010211359';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010211359';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -35,9 +37,10 @@ const isPaint = () => D.state.mode === 'paint';
 const isAdv = () => D.state.mode === 'advance';
 const isEt = () => D.state.mode === 'eggtoss';
 const isCross = () => D.state.mode === 'cross';
+const isStack = () => D.state.mode === 'stack';
 const hasPiece = () => isAdv() || isEt(); // games where you play as a chess piece
-const hasMap = () => isFarm() || isTowers() || isSiege() || isAdv() || isCross();
-const UNIT = () => (isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCross() ? 'crossings' : isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
+const hasMap = () => isFarm() || isTowers() || isSiege() || isAdv() || isCross() || isStack();
+const UNIT = () => (isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCross() ? 'crossings' : isStack() ? 'blocks + egg hits' : isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
 const SCORE = (n) => (isFarm() ? fmt(n) : isPaint() ? `${Math.round((n || 0) * 10) / 10}%` : Math.floor(n || 0));
 
 // ---------------- join ----------------
@@ -110,6 +113,8 @@ function subscribe() {
   on('players', (v) => { D.all = v || {}; if (hasPiece() && D.me && !D.me.pc) renderPiecePick(true); });
   on('et/info', (v) => { ET.info = v; ET.view?.setInfo(v); });
   on('et/s', (v) => { ET.s = v || ''; ET.view?.setState(ET.s); });
+  on('sa/info', (v) => { if (v) { ensureSa(); if (SA.round !== v.round) { SA.round = v.round; SA.view.newRound(); } } });
+  on('sa/s', (v) => { SA.s = v || ''; SA.view?.setState(SA.s); });
   on('cr/info', (v) => { CR.info = v; if (v) { ensureCr(); CR.view.setInfo(v); if (CR.s) CR.view.setState(CR.s); } });
   on('cr/s', (v) => { CR.s = v || ''; CR.view?.setState(CR.s); });
   on('adv/info', (v) => { ADV.info = v; advBuild(); });
@@ -218,20 +223,22 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross() || isStack()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
   document.body.classList.toggle('mode-paint', isPaint());
   document.body.classList.toggle('mode-eggtoss', isEt());
   if (isCross()) crHud();
-  if (isCross() !== document.body.classList.contains('mode-cross') || isAdv() !== document.body.classList.contains('mode-advance') || isFarm() !== document.body.classList.contains('mode-farm') || isTowers() !== document.body.classList.contains('mode-towers') || isSiege() !== document.body.classList.contains('mode-siege')) {
+  if (isStack()) saHud();
+  if (isStack() !== document.body.classList.contains('mode-stack') || isCross() !== document.body.classList.contains('mode-cross') || isAdv() !== document.body.classList.contains('mode-advance') || isFarm() !== document.body.classList.contains('mode-farm') || isTowers() !== document.body.classList.contains('mode-towers') || isSiege() !== document.body.classList.contains('mode-siege')) {
     document.body.classList.toggle('mode-farm', isFarm());
     document.body.classList.toggle('mode-towers', isTowers());
     document.body.classList.toggle('mode-siege', isSiege());
     document.body.classList.toggle('mode-advance', isAdv());
     document.body.classList.toggle('mode-cross', isCross());
+    document.body.classList.toggle('mode-stack', isStack());
     $('#tab-answer').firstChild.textContent = hasMap() ? '❓ QUIZ ⚡' : '❓ ANSWER';
-    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : isTowers() ? '🗺️ MAP ' : isSiege() ? '🏰 BATTLE ' : isAdv() ? '♟ BOARD ' : isCross() ? '🐔 ROAD ' : '🥚 FIGHT ';
+    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : isTowers() ? '🗺️ MAP ' : isSiege() ? '🏰 BATTLE ' : isAdv() ? '♟ BOARD ' : isCross() ? '🐔 ROAD ' : isStack() ? '🧱 TOWER ' : '🥚 FIGHT ';
   }
   if (phase === 'playing' || phase === 'answer') {
     if (s.paused) { ov.className = 'overlay'; ov.innerHTML = '<div class="box"><h1 class="comic-title">PAUSED</h1><p>Eyes on the teacher!</p></div>'; } else if (ov.innerHTML.includes('PAUSED')) ov.className = 'overlay hidden';
@@ -287,6 +294,7 @@ function onPstate() {
   if (isAdv()) advHud();
   if (isEt()) etHud();
   if (isCross()) crHud();
+  if (isStack()) saHud();
   if (isFarm()) {
     farmState();
     if (ps.fox === 'danger' && !L.foxPrompted) { L.foxPrompted = true; setTab('answer'); navigator.vibrate?.([100, 50, 100]); } else if (!ps.fox) L.foxPrompted = false;
@@ -348,6 +356,8 @@ function setTab(t) {
   $('#view-sg').classList.toggle('hidden', t !== 'fight' || !isSiege());
   $('#view-adv').classList.toggle('hidden', t !== 'fight' || !isAdv());
   $('#view-cr').classList.toggle('hidden', t !== 'fight' || !isCross());
+  $('#view-sa').classList.toggle('hidden', t !== 'fight' || !isStack());
+  if (isStack() && t === 'fight') { ensureSa(); SA.view.resize(); }
   if (isCross() && t === 'fight') { ensureCr(); CR.view.resize(); }
   if (isAdv() && t === 'fight') advResize();
   if (isSiege() && t === 'fight') { ensureSg(); SG.view?.layout(); }
@@ -415,8 +425,8 @@ function drawFeedback() {
   const lock = f.lockMs || 1500;
   const readMs = f.correct ? lock : Math.max(lock, 2600);
   const fg = f.farm; const tw = f.tw; const sg = f.sg; const pt = f.pt;
-  const av = f.adv; const et = f.et; const cr = f.cr;
-  const gain = cr ? `<div class="farm-gain"><span>🐾 +${cr.add} hops</span><span>${cr.full ? 'hop bank full — go hop!' : `${cr.hops} ready — go to the ROAD`}</span></div>` : et ? (et.role === 'att' ? `<div class="farm-gain"><span>🥚 +${et.add} eggs</span><span>${et.eggs} ready to fling</span></div>` : `<div class="farm-gain"><span>🎯 Target shrinks!</span><span>now ${et.ts}% size</span></div>`) : av ? `<div class="farm-gain"><span>♟ +1 move!</span><span>${av.stuck ? 'but you are blocked in…' : 'go to the BOARD'}</span></div>` : pt ? `<div class="farm-gain"><span>⚡ +1 speed</span><span>now speed ${pt.speed}</span></div>` : sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team\'s weakest building!' : 'sent to the building you tapped!'}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
+  const av = f.adv; const et = f.et; const cr = f.cr; const sa = f.sa;
+  const gain = sa ? `<div class="farm-gain"><span>⚡ +1 action</span><span>${sa.acts} ready — 🧱 build or 🥚 throw!</span></div>` : cr ? `<div class="farm-gain"><span>🐾 +${cr.add} hops</span><span>${cr.full ? 'hop bank full — go hop!' : `${cr.hops} ready — go to the ROAD`}</span></div>` : et ? (et.role === 'att' ? `<div class="farm-gain"><span>🥚 +${et.add} eggs</span><span>${et.eggs} ready to fling</span></div>` : `<div class="farm-gain"><span>🎯 Target shrinks!</span><span>now ${et.ts}% size</span></div>`) : av ? `<div class="farm-gain"><span>♟ +1 move!</span><span>${av.stuck ? 'but you are blocked in…' : 'go to the BOARD'}</span></div>` : pt ? `<div class="farm-gain"><span>⚡ +1 speed</span><span>now speed ${pt.speed}</span></div>` : sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team\'s weakest building!' : 'sent to the building you tapped!'}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
   box.innerHTML = f.correct
     ? html`<div class="big">CORRECT!</div>${raw(gain)}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
     : html`<div class="big">NOPE!</div><div class="ans-was">Answer: <b>${f.rightText}</b></div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div><div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`;
@@ -426,6 +436,7 @@ function drawFeedback() {
 
 function hideFeedback() {
   $('#fb').className = 'fb hidden';
+  if (isStack() && SA.view?.actsLeft() > 0 && D.state.phase === 'playing') setTimeout(() => { if (SA.view?.actsLeft() > 0 && L.tab === 'answer') setTab('fight'); }, 50);
   if (isCross() && crHopsLeft() > 0 && D.state.phase === 'playing') setTimeout(() => { if (crHopsLeft() > 0 && L.tab === 'answer') setTab('fight'); }, 50);
   if (isAdv() && (D.ps.moves || 0) > 0 && D.state.phase === 'playing') setTimeout(() => { if ((D.ps.moves || 0) > 0 && L.tab === 'answer') setTab('fight'); }, 50);
   $('#answers').classList.remove('locked');
@@ -1212,4 +1223,52 @@ function crHud() {
   h.textContent = D.state.phase !== 'playing' ? 'Get ready to cross the road!'
     : left ? (crSafeTip() || 'Tap the road to hop forward, or swipe / use the arrows. Roads: dodge the traffic. Rivers: ride the logs or hop on the lily pads!')
       : 'Answer questions on the QUIZ tab — each right answer = 4 hops.';
+}
+
+
+// ---------------- Stack Attack ----------------
+const SA = { s: '', view: null, round: 0, hintT: 0 };
+function ensureSa() {
+  if (SA.view) return;
+  SA.view = new StackView($('#sa-scene'), {
+    uid, team: D.me?.team,
+    onOp: (q) => { update(G(`inputs/${uid}`), { q }).catch(() => {}); },
+    onEvent: (e) => {
+      if (e === 'drop') { sfx.click(); navigator.vibrate?.(25); saHint('🧱 Dropped! Watch it land…', 'good'); }
+      else if (e === 'egg') { sfx.egg?.(); navigator.vibrate?.(25); saHint('🥚 Egg away!', 'good'); }
+      else if (e === 'noacts') { sfx.wrong(); saHint('No actions left — answer a question on the QUIZ tab!', 'bad'); }
+      else if (e === 'rotate') sfx.click();
+      saHud();
+      if (SA.view.actsLeft() <= 0 && (e === 'drop' || e === 'egg')) setTimeout(() => { if (SA.view.actsLeft() <= 0 && L.tab === 'fight' && D.state.phase === 'playing') setTab('answer'); }, 900);
+    },
+  });
+  window.cvtSa = { view: SA.view }; // test hook
+  $$('#sa-modes [data-mode]').forEach((b) => { b.onclick = () => { SA.view.mode = b.dataset.mode; sfx.click(); saHud(); }; });
+  $('#sa-rot').onclick = () => SA.view.rotate();
+  $('#sa-drop').onclick = () => { if (D.state.phase === 'playing' && !D.state.paused) SA.view.drop(); };
+}
+function saHint(text, kind = '') {
+  const h = $('#sa-hint'); h.textContent = text; h.className = `tw-hint ${kind}`; clearTimeout(SA.hintT);
+  SA.hintT = setTimeout(() => { SA.hintT = 0; saHud(); }, 1800);
+}
+function saHud() {
+  if (!isStack()) return;
+  const ps = D.ps;
+  if (SA.view) { SA.view.setTeam(D.me?.team); SA.view.setMine({ acts: ps.acts || 0, next: ps.next || 'crate', hs: ps.hs || 0 }); }
+  const left = SA.view ? SA.view.actsLeft() : (ps.acts || 0);
+  $('#sa-acts').textContent = `⚡ ${left} action${left === 1 ? '' : 's'}`;
+  $('#sa-acts').classList.toggle('ready', left > 0);
+  $('#sa-hc').textContent = `${(ps.hc || 0).toFixed(1)} m`; $('#sa-ht').textContent = `${(ps.ht || 0).toFixed(1)} m`;
+  const mode = SA.view?.mode || 'build';
+  $$('#sa-modes [data-mode]').forEach((b) => b.classList.toggle('on', b.dataset.mode === mode));
+  $('#sa-build').classList.toggle('hidden', mode !== 'build');
+  $('#sa-drop').disabled = left <= 0; $('#sa-rot').disabled = left <= 0;
+  $('#sa-next').textContent = `Next: ${(SA_SHAPES[ps.next] || SA_SHAPES.crate).name}`;
+  if (left && L.tab === 'answer' && D.state.phase === 'playing') $('#tab-fight').classList.add('nudge');
+  if (SA.hintT) return;
+  const h = $('#sa-hint'); h.className = 'tw-hint';
+  h.textContent = D.state.phase !== 'playing' ? 'Get ready to build!'
+    : !left ? 'Answer questions on the QUIZ tab — each right answer = 1 action.'
+      : mode === 'build' ? 'Drag to line up your block, ⟳ to turn it, then DROP. Stack it carefully!'
+        : 'Tap the other team\'s tower to lob an egg at it. Aim for the top!';
 }
