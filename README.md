@@ -102,6 +102,18 @@ Create Game → **Advance** → number of rounds, and the longest a round can la
 
 ⚠️ Advance adds `pc` (piece choice) and `adv` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
 
+## Cross the Road ("Why did the chicken cross the road?")
+Create Game → **Cross the Road** → rounds (1 / 2 / 3) and round length (2 / 3 / 4 min).
+- Students answer on the **QUIZ** tab. Every right answer = **4 hops** (they can save up to 12). The **ROAD** tab opens by itself after a right answer.
+- Hop with a **tap** (forward), a **swipe**, the **◀ ▲ ▶ ▼** buttons or the arrow keys. Chickens and turkeys all cross the same field together.
+- **Roads**: tractors, vans, egg trucks, hay carts and semis — get hit and it's SPLAT, back to the start. **Rivers**: hop onto the logs and ride them — miss a log (or get carried off the edge) and it's SPLASH, back to the start. **Grass strips** are safe (watch out for trees and rocks in the way).
+- Reaching the far side = **1 point for your team**, then you start again at the bottom. Most crossings over all rounds wins.
+- The danger: run out of hops while standing on a road and you're a sitting duck! Students get a tip when they're about to step off the grass without enough hops to reach the next safe strip.
+- A new field is made every round. The traffic runs on a shared clock, so every device and the big screen see the same tractor in the same place. Each device judges its own hops instantly, so timing feels fair.
+- Image prompts: `CROSS_ROAD_IMAGE_PROMPTS.md` (the game reuses the existing vehicles, scenery and birds; the hay cart and logs are drawn in code until then).
+
+⚠️ Cross the Road adds `cr` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
+
 ## Egg Toss (fairground egg-flinging gallery)
 Create Game → **Egg Toss** → rounds (2 / 4 / 6), and the answer time per round (30 / 45 / 60 s).
 - Before the game each student picks a **chess piece + colour** (the same pieces as Advance). Combinations a teammate already picked fade out.

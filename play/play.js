@@ -3,21 +3,23 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010183609';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010183609';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010183609';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010183609';
-import { sfx } from '../js/core/sfx.js?v=20261010183609';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010183609';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010183609';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010183609';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010183609';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261010183609';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010183609';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010183609';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010183609';
-import * as FE from '../js/modes/farm/economy.js?v=20261010183609';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010183609';
+} from '../js/core/firebase.js?v=20261010193406';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010193406';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010193406';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010193406';
+import { sfx } from '../js/core/sfx.js?v=20261010193406';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010193406';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010193406';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010193406';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010193406';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261010193406';
+import { CrossView } from '../js/modes/cross/view.js?v=20261010193406';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261010193406';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010193406';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010193406';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010193406';
+import * as FE from '../js/modes/farm/economy.js?v=20261010193406';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010193406';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -32,9 +34,10 @@ const isSiege = () => D.state.mode === 'siege';
 const isPaint = () => D.state.mode === 'paint';
 const isAdv = () => D.state.mode === 'advance';
 const isEt = () => D.state.mode === 'eggtoss';
+const isCross = () => D.state.mode === 'cross';
 const hasPiece = () => isAdv() || isEt(); // games where you play as a chess piece
-const hasMap = () => isFarm() || isTowers() || isSiege() || isAdv();
-const UNIT = () => (isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
+const hasMap = () => isFarm() || isTowers() || isSiege() || isAdv() || isCross();
+const UNIT = () => (isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCross() ? 'crossings' : isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
 const SCORE = (n) => (isFarm() ? fmt(n) : isPaint() ? `${Math.round((n || 0) * 10) / 10}%` : Math.floor(n || 0));
 
 // ---------------- join ----------------
@@ -107,6 +110,8 @@ function subscribe() {
   on('players', (v) => { D.all = v || {}; if (hasPiece() && D.me && !D.me.pc) renderPiecePick(true); });
   on('et/info', (v) => { ET.info = v; ET.view?.setInfo(v); });
   on('et/s', (v) => { ET.s = v || ''; ET.view?.setState(ET.s); });
+  on('cr/info', (v) => { CR.info = v; if (v) { ensureCr(); CR.view.setInfo(v); if (CR.s) CR.view.setState(CR.s); } });
+  on('cr/s', (v) => { CR.s = v || ''; CR.view?.setState(CR.s); });
   on('adv/info', (v) => { ADV.info = v; advBuild(); });
   on('adv/s', (v) => { ADV.s = v || ''; advBuild(); });
   on('pt/info', (v) => { PT.info = v; PT.view?.setInfo(v); });
@@ -213,18 +218,20 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
   document.body.classList.toggle('mode-paint', isPaint());
   document.body.classList.toggle('mode-eggtoss', isEt());
-  if (isAdv() !== document.body.classList.contains('mode-advance') || isFarm() !== document.body.classList.contains('mode-farm') || isTowers() !== document.body.classList.contains('mode-towers') || isSiege() !== document.body.classList.contains('mode-siege')) {
+  if (isCross()) crHud();
+  if (isCross() !== document.body.classList.contains('mode-cross') || isAdv() !== document.body.classList.contains('mode-advance') || isFarm() !== document.body.classList.contains('mode-farm') || isTowers() !== document.body.classList.contains('mode-towers') || isSiege() !== document.body.classList.contains('mode-siege')) {
     document.body.classList.toggle('mode-farm', isFarm());
     document.body.classList.toggle('mode-towers', isTowers());
     document.body.classList.toggle('mode-siege', isSiege());
     document.body.classList.toggle('mode-advance', isAdv());
+    document.body.classList.toggle('mode-cross', isCross());
     $('#tab-answer').firstChild.textContent = hasMap() ? '❓ QUIZ ⚡' : '❓ ANSWER';
-    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : isTowers() ? '🗺️ MAP ' : isSiege() ? '🏰 BATTLE ' : isAdv() ? '♟ BOARD ' : '🥚 FIGHT ';
+    $('#tab-fight').firstChild.textContent = isFarm() ? '🏡 FARM ' : isTowers() ? '🗺️ MAP ' : isSiege() ? '🏰 BATTLE ' : isAdv() ? '♟ BOARD ' : isCross() ? '🐔 ROAD ' : '🥚 FIGHT ';
   }
   if (phase === 'playing' || phase === 'answer') {
     if (s.paused) { ov.className = 'overlay'; ov.innerHTML = '<div class="box"><h1 class="comic-title">PAUSED</h1><p>Eyes on the teacher!</p></div>'; } else if (ov.innerHTML.includes('PAUSED')) ov.className = 'overlay hidden';
@@ -279,6 +286,7 @@ function onPstate() {
   if (isPaint()) drawPtHud();
   if (isAdv()) advHud();
   if (isEt()) etHud();
+  if (isCross()) crHud();
   if (isFarm()) {
     farmState();
     if (ps.fox === 'danger' && !L.foxPrompted) { L.foxPrompted = true; setTab('answer'); navigator.vibrate?.([100, 50, 100]); } else if (!ps.fox) L.foxPrompted = false;
@@ -339,6 +347,8 @@ function setTab(t) {
   $('#view-tw').classList.toggle('hidden', t !== 'fight' || !isTowers());
   $('#view-sg').classList.toggle('hidden', t !== 'fight' || !isSiege());
   $('#view-adv').classList.toggle('hidden', t !== 'fight' || !isAdv());
+  $('#view-cr').classList.toggle('hidden', t !== 'fight' || !isCross());
+  if (isCross() && t === 'fight') { ensureCr(); CR.view.resize(); }
   if (isAdv() && t === 'fight') advResize();
   if (isSiege() && t === 'fight') { ensureSg(); SG.view?.layout(); }
   if (isTowers() && t === 'fight') ensureTw();
@@ -405,8 +415,8 @@ function drawFeedback() {
   const lock = f.lockMs || 1500;
   const readMs = f.correct ? lock : Math.max(lock, 2600);
   const fg = f.farm; const tw = f.tw; const sg = f.sg; const pt = f.pt;
-  const av = f.adv; const et = f.et;
-  const gain = et ? (et.role === 'att' ? `<div class="farm-gain"><span>🥚 +${et.add} eggs</span><span>${et.eggs} ready to fling</span></div>` : `<div class="farm-gain"><span>🎯 Target shrinks!</span><span>now ${et.ts}% size</span></div>`) : av ? `<div class="farm-gain"><span>♟ +1 move!</span><span>${av.stuck ? 'but you are blocked in…' : 'go to the BOARD'}</span></div>` : pt ? `<div class="farm-gain"><span>⚡ +1 speed</span><span>now speed ${pt.speed}</span></div>` : sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team\'s weakest building!' : 'sent to the building you tapped!'}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
+  const av = f.adv; const et = f.et; const cr = f.cr;
+  const gain = cr ? `<div class="farm-gain"><span>🐾 +${cr.add} hops</span><span>${cr.full ? 'hop bank full — go hop!' : `${cr.hops} ready — go to the ROAD`}</span></div>` : et ? (et.role === 'att' ? `<div class="farm-gain"><span>🥚 +${et.add} eggs</span><span>${et.eggs} ready to fling</span></div>` : `<div class="farm-gain"><span>🎯 Target shrinks!</span><span>now ${et.ts}% size</span></div>`) : av ? `<div class="farm-gain"><span>♟ +1 move!</span><span>${av.stuck ? 'but you are blocked in…' : 'go to the BOARD'}</span></div>` : pt ? `<div class="farm-gain"><span>⚡ +1 speed</span><span>now speed ${pt.speed}</span></div>` : sg ? `<div class="farm-gain"><span>🌽 +${sg.corn} corn</span><span>${sg.role === 'def' ? 'build defences!' : 'send attackers!'}</span></div>` : tw ? `<div class="farm-gain"><span>🪖 +${tw.troops} troops</span><span>${tw.helper ? 'sent to your team\'s weakest building!' : 'sent to the building you tapped!'}</span></div>` : fg ? `<div class="farm-gain">${fg.chicks ? `<span>${teamIco('chicken')} +${fg.chicks} STAMPEDE!</span>` : ''}<span>+${esc(fmt(fg.cash))} 💰</span><span>+${fg.gold} 🥇</span><span>⚡×${BOOST_MULT} ${fg.boost}s</span></div>` : `<div class="gain">+${Math.max(0, f.eggs)} 🥚</div>`;
   box.innerHTML = f.correct
     ? html`<div class="big">CORRECT!</div>${raw(gain)}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`
     : html`<div class="big">NOPE!</div><div class="ans-was">Answer: <b>${f.rightText}</b></div>${raw(f.explanation ? `<div class="why">💡 ${esc(f.explanation)}</div>` : '')}<div class="bonus">${raw(tags.map((t) => `<span>${esc(t)}</span>`).join(''))}</div><div class="lockbar"><i style="animation-duration:${readMs}ms"></i></div>`;
@@ -416,6 +426,7 @@ function drawFeedback() {
 
 function hideFeedback() {
   $('#fb').className = 'fb hidden';
+  if (isCross() && crHopsLeft() > 0 && D.state.phase === 'playing') setTimeout(() => { if (crHopsLeft() > 0 && L.tab === 'answer') setTab('fight'); }, 50);
   if (isAdv() && (D.ps.moves || 0) > 0 && D.state.phase === 'playing') setTimeout(() => { if ((D.ps.moves || 0) > 0 && L.tab === 'answer') setTab('fight'); }, 50);
   $('#answers').classList.remove('locked');
   drawQuestion();
@@ -1146,3 +1157,59 @@ $$('#et-dodge [data-d]').forEach((b) => {
   ['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => b.addEventListener(ev, () => { b.classList.remove('on'); if (ET.view?.dir === d) ET.view.setDir(0); }));
   b.addEventListener('contextmenu', (e) => e.preventDefault());
 });
+
+
+// ---------------- Cross the Road ----------------
+const CR = { info: null, s: '', view: null, hintT: 0, lastHint: '' };
+function crHopsLeft() { return CR.view ? CR.view.hopsLeft() : (D.ps.hops || 0); }
+function ensureCr() {
+  if (CR.view) return;
+  CR.view = new CrossView($('#cr-scene'), {
+    uid, now: serverNow,
+    onOp: (q) => { update(G(`inputs/${uid}`), { q }).catch(() => {}); },
+    onEvent: (e) => {
+      if (e === 'hop') { sfx.click(); crHud(); if (crHopsLeft() <= 0) crOutOfHops(); }
+      else if (e === 'road') { sfx.splat?.(); navigator.vibrate?.([90, 40, 90]); crHint('💥 SPLAT! Back to the start…', 'bad'); crHud(); }
+      else if (e === 'river') { sfx.splat?.(); navigator.vibrate?.([90, 40, 90]); crHint('💦 SPLASH! You fell in the river — back to the start.', 'bad'); crHud(); }
+      else if (e === 'cross') { sfx.correct?.(); navigator.vibrate?.(60); crHint('🎉 You made it across! +1 for your team! Go again!', 'good'); crHud(); }
+      else if (e === 'nohops') { sfx.wrong(); crHint('No hops left — answer a question on the QUIZ tab!', 'bad'); }
+      else if (e === 'blocked') crHint('Something is in the way!', 'bad');
+    },
+  });
+  window.cvtCr = { view: CR.view }; // test hook
+  $$('#cr-pad [data-d]').forEach((b) => b.addEventListener('pointerdown', (e) => { e.preventDefault(); CR.view.hop(b.dataset.d); }));
+}
+function crOutOfHops() {
+  // standing on a road or log with no hops left is dangerous — answer quickly!
+  const me = CR.view?.me; const lane = me && CR.view.field?.lanes[me.r]?.type;
+  crHint(lane === 'road' || lane === 'river' ? '⚠️ Out of hops in a dangerous spot — answer FAST!' : 'Out of hops — answer questions for more!', lane === 'road' || lane === 'river' ? 'bad' : '');
+  setTimeout(() => { if (crHopsLeft() <= 0 && L.tab === 'fight' && D.state.phase === 'playing') setTab('answer'); }, 700);
+}
+/** Tip: don't step off the grass without enough hops to get over the next roads/river. */
+function crSafeTip() {
+  const v = CR.view; const me = v?.me; if (!me || !v.field) return '';
+  const ty = v.field.lanes[me.r]?.type; if (ty === 'road' || ty === 'river') return '';
+  const need = dangerAhead(v.field, me.r) + 1; const left = crHopsLeft();
+  return need > 1 && left < need ? `💡 Tip: the next stretch needs ${need} hops to reach safe grass — you have ${left}. Answer a few more first?` : '';
+}
+function crHint(text, kind = '') {
+  const h = $('#cr-hint'); if (!h) return;
+  h.textContent = text; h.className = `tw-hint ${kind}`; clearTimeout(CR.hintT);
+  CR.hintT = setTimeout(() => { CR.hintT = 0; crHud(); }, 2200);
+}
+function crHud() {
+  if (!isCross()) return;
+  const ps = D.ps;
+  if (CR.view) { CR.view.setMine({ hops: ps.hops || 0, hs: ps.hs || 0 }); CR.view.active = D.state.phase === 'playing' && !D.state.paused; }
+  const left = crHopsLeft();
+  $('#cr-hops').textContent = `🐾 ${left} hop${left === 1 ? '' : 's'}`;
+  $('#cr-hops').classList.toggle('ready', left > 0);
+  $('#cr-cc').textContent = ps.rcc ?? 0; $('#cr-ct').textContent = ps.rct ?? 0;
+  $$('#cr-pad [data-d]').forEach((b) => { b.disabled = left <= 0; });
+  if (left && L.tab === 'answer' && D.state.phase === 'playing') $('#tab-fight').classList.add('nudge');
+  if (CR.hintT) return;
+  const h = $('#cr-hint'); h.className = 'tw-hint';
+  h.textContent = D.state.phase !== 'playing' ? 'Get ready to cross the road!'
+    : left ? (crSafeTip() || 'Tap the road to hop forward, or swipe / use the arrows. Roads: dodge the traffic. Rivers: ride the logs!')
+      : 'Answer questions on the QUIZ tab — each right answer = 4 hops.';
+}

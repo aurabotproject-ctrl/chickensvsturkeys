@@ -58,6 +58,7 @@
         "pt": { ".read": "auth != null" },
         "adv": { ".read": "auth != null" },
         "et": { ".read": "auth != null" },
+        "cr": { ".read": "auth != null" },
 
         "players": {
           ".read": "auth != null",

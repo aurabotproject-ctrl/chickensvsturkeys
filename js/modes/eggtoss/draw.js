@@ -1,7 +1,7 @@
 // EGG TOSS — the stall drawing shared by the big screen and the phones (Canvas 2D).
-import { img } from '../advance/draw.js?v=20261010183609';
-import { pieceSprite, pieceOf, colourOf, ADV_ART, ADV_REF_H } from '../advance/rules.js?v=20261010183609';
-import { GW, GH, LANES, LANE_Y, LANE_S, PIECE_H, targetCentre, targetR, eggAt, scaleAtY } from './rules.js?v=20261010183609';
+import { img } from '../advance/draw.js?v=20261010193406';
+import { pieceSprite, pieceOf, colourOf, ADV_ART, ADV_REF_H } from '../advance/rules.js?v=20261010193406';
+import { GW, GH, LANES, LANE_Y, LANE_S, PIECE_H, targetCentre, targetR, eggAt, scaleAtY } from './rules.js?v=20261010193406';
 
 const ready = (im) => im && im.complete && im.naturalWidth > 0;
 const TEAM = { chicken: '#1e6fe0', turkey: '#e0402a' };

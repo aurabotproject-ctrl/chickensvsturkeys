@@ -4,9 +4,9 @@
 // full of targets. Birds fire eggs from their rear-end cannons.
 // =========================================================
 /* global PIXI, Matter */
-import { sprite } from '../../core/assets.js?v=20261010183609';
-import { sfx } from '../../core/sfx.js?v=20261010183609';
-import { FORTS, PIECES, DENSITY } from './forts.js?v=20261010183609';
+import { sprite } from '../../core/assets.js?v=20261010193406';
+import { sfx } from '../../core/sfx.js?v=20261010193406';
+import { FORTS, PIECES, DENSITY } from './forts.js?v=20261010193406';
 
 export const W = 1700; export const H = 1200; export const GROUND = 1040;
 export const VMAX = 22;          // egg speed at full power (px per physics step)

@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#0b1f4b">
   <title>Join · Chickens vs Turkeys</title>
-  <link rel="stylesheet" href="../css/tokens.css?v=20261010183609">
-  <link rel="stylesheet" href="../css/ui.css?v=20261010183609">
-  <link rel="stylesheet" href="play.css?v=20261010183609">
+  <link rel="stylesheet" href="../css/tokens.css?v=20261010193406">
+  <link rel="stylesheet" href="../css/ui.css?v=20261010193406">
+  <link rel="stylesheet" href="play.css?v=20261010193406">
   <script src="https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js"></script>
 </head>
 <body>
@@ -107,6 +107,20 @@
       <div class="adv-wrap" id="adv-scene"></div>
       <div class="tw-hint" id="adv-hint">Answer questions on the QUIZ tab. Each right answer = 1 move.</div>
     </div>
+    <div id="view-cr" class="view hidden">
+      <div class="adv-top">
+        <span class="adv-moves" id="cr-hops">🐾 0 hops</span>
+        <span class="tw-score"><span class="c"><img class="tico" src="../assets/sprites/ico_chicken.webp" alt=""> <b id="cr-cc">0</b></span><span class="t"><img class="tico" src="../assets/sprites/ico_turkey.webp" alt=""> <b id="cr-ct">0</b></span></span>
+      </div>
+      <div class="adv-wrap" id="cr-scene"></div>
+      <div class="cr-pad" id="cr-pad">
+        <button data-d="l" aria-label="Hop left">◀</button>
+        <button data-d="u" class="up" aria-label="Hop forward">▲</button>
+        <button data-d="r" aria-label="Hop right">▶</button>
+        <button data-d="d" class="down" aria-label="Hop back">▼</button>
+      </div>
+      <div class="tw-hint" id="cr-hint">Answer questions on the QUIZ tab — each right answer = 3 hops.</div>
+    </div>
     <div id="view-et" class="view hidden">
       <div class="et-top">
         <span class="et-role" id="et-role">🥚 FLING!</span>
@@ -153,6 +167,6 @@
   </section>
 
   <div id="overlay" class="overlay hidden"></div>
-  <script type="module" src="play.js?v=20261010183609"></script>
+  <script type="module" src="play.js?v=20261010193406"></script>
 </body>
 </html>

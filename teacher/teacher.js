@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261010183609';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010183609';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010183609';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010183609';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010183609';
-import { renderBanks } from './banks-ui.js?v=20261010183609';
+} from '../js/core/firebase.js?v=20261010193406';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010193406';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010193406';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010193406';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010193406';
+import { renderBanks } from './banks-ui.js?v=20261010193406';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -125,6 +125,7 @@ const MODES = [
   { id: 'paint', name: 'Land Grab', img: 'chicken_run', desc: 'Answer for 1 minute to power up your speed, then 30 seconds to grab land — loop back home, and don\'t let anyone cut your trail!' },
   { id: 'advance', name: 'Advance', img: 'mode_advance', desc: 'A giant chessboard race! Every right answer = 1 move. First team to get everyone to the other side wins the round.' },
   { id: 'eggtoss', name: 'Egg Toss', img: 'mode_eggtoss', desc: 'A fairground egg toss! One team flings eggs, the other dodges. Right answers = more eggs, or a smaller target. Teams swap every round.' },
+  { id: 'cross', name: 'Cross the Road', img: 'tw_chick1', desc: 'Why did the chicken cross the road? Every right answer = 4 hops. Dodge tractors, ride the logs and get across for a point — splat and it\'s back to the start!' },
   { id: 'farm', name: 'Egg Farm', img: 'fm_coop_c4', desc: 'Grow the richest egg farm — every right answer boosts your farm.' },
 ];
 
@@ -147,20 +148,20 @@ function renderCreate(main) {
     </section>
     <section class="panel light" style="margin-top:18px"><h3>3. Settings</h3>
       <div class="settings-grid">
-        <div class="field ${s.mode === 'farm' || s.mode === 'towers' || s.mode === 'siege' ? 'hidden' : ''}"><span>Rounds</span>${raw(seg('rounds', s.mode === 'eggtoss' ? [[2, '2'], [4, '4'], [6, '6']] : [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']]))}${raw(s.mode === 'eggtoss' ? '<span class="hint">Teams swap between flinging and dodging every round, so both teams fling the same number of times.</span>' : '')}</div>
-        <div class="field"><span>${s.mode === 'cannon' || s.mode === 'paint' || s.mode === 'eggtoss' ? 'Answer time per round' : s.mode === 'farm' || s.mode === 'towers' ? 'Game length' : s.mode === 'siege' ? 'Length of each half' : 'Round length'}</span>${raw(seg('roundSeconds', s.mode === 'farm' || s.mode === 'towers' ? [[300, '5 min'], [480, '8 min'], [720, '12 min']] : s.mode === 'siege' ? [[150, '2½ min'], [210, '3½ min'], [300, '5 min']] : s.mode === 'advance' ? [[60, '1 min'], [90, '90 s'], [120, '2 min']] : s.mode === 'eggtoss' ? [[30, '30 s'], [45, '45 s'], [60, '60 s']] : [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}${raw(s.mode === 'eggtoss' ? '<span class="hint">Questions first (flingers earn eggs, dodgers shrink their target), then 30 seconds of egg flinging.</span>' : s.mode === 'cannon' ? '<span class="hint">Students answer 5 questions, then a 45-second battle.</span>' : s.mode === 'advance' ? '<span class="hint">The longest each round can last. A round ends early if a team gets everyone across.</span>' : s.mode === 'paint' ? '<span class="hint">Every right answer = more speed. Then a 30-second land grab.</span>' : s.mode === 'siege' ? '<span class="hint">2 halves — the teams swap between defending and attacking at half time.</span>' : '')}</div>
+        <div class="field ${s.mode === 'farm' || s.mode === 'towers' || s.mode === 'siege' ? 'hidden' : ''}"><span>Rounds</span>${raw(seg('rounds', s.mode === 'eggtoss' ? [[2, '2'], [4, '4'], [6, '6']] : s.mode === 'cross' ? [[1, '1'], [2, '2'], [3, '3']] : [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']]))}${raw(s.mode === 'eggtoss' ? '<span class="hint">Teams swap between flinging and dodging every round, so both teams fling the same number of times.</span>' : '')}</div>
+        <div class="field"><span>${s.mode === 'cannon' || s.mode === 'paint' || s.mode === 'eggtoss' ? 'Answer time per round' : s.mode === 'farm' || s.mode === 'towers' ? 'Game length' : s.mode === 'siege' ? 'Length of each half' : 'Round length'}</span>${raw(seg('roundSeconds', s.mode === 'farm' || s.mode === 'towers' ? [[300, '5 min'], [480, '8 min'], [720, '12 min']] : s.mode === 'siege' ? [[150, '2½ min'], [210, '3½ min'], [300, '5 min']] : s.mode === 'advance' ? [[60, '1 min'], [90, '90 s'], [120, '2 min']] : s.mode === 'cross' ? [[120, '2 min'], [180, '3 min'], [240, '4 min']] : s.mode === 'eggtoss' ? [[30, '30 s'], [45, '45 s'], [60, '60 s']] : [[45, '45 s'], [60, '60 s'], [90, '90 s']]))}${raw(s.mode === 'cross' ? '<span class="hint">Students answer and hop at the same time. Each right answer = 4 hops (they can save up to 12). Every crossing = 1 point for their team.</span>' : '')}${raw(s.mode === 'eggtoss' ? '<span class="hint">Questions first (flingers earn eggs, dodgers shrink their target), then 30 seconds of egg flinging.</span>' : s.mode === 'cannon' ? '<span class="hint">Students answer 5 questions, then a 45-second battle.</span>' : s.mode === 'advance' ? '<span class="hint">The longest each round can last. A round ends early if a team gets everyone across.</span>' : s.mode === 'paint' ? '<span class="hint">Every right answer = more speed. Then a 30-second land grab.</span>' : s.mode === 'siege' ? '<span class="hint">2 halves — the teams swap between defending and attacking at half time.</span>' : '')}</div>
         <div class="field"><span>Teams</span>${raw(seg('teams', [['choose', 'Students choose'], ['auto', 'Auto-balance']]))}<span class="hint">Students choose = they tap Chickens or Turkeys when they join. You can still move anyone in the lobby.</span></div>
         <div class="field"><span>Confidence check</span>${raw(seg('confidence', [['every', 'Every question'], ['third', 'Every 3rd'], ['off', 'Off']]))}<span class="hint">Students tap 🔥 Sure / 🤔 Think so / 🎲 Guessing — powers the blind-spot report.</span></div>
         <div class="field ${s.mode !== 'paint' ? 'hidden' : ''}"><span>Starting spots</span>${raw(seg('landLayout', [['split', 'Separate sides'], ['mixed', 'Mixed']]))}<span class="hint">Separate = chickens start on the left, turkeys on the right. Mixed = everyone starts scattered across the field — harder and more competitive!</span></div>
         <div class="field ${s.mode !== 'towers' ? 'hidden' : ''}"><span>Troop growth</span>${raw(seg('growth', [['auto', 'Auto'], ['questions', 'Questions only'], ['slow', 'Slow + questions']]))}<span class="hint">Auto = slow growth for 4 or fewer students, questions-only for bigger classes.</span></div>
         <div class="field ${s.mode !== 'dodge' ? 'hidden' : ''}"><span>When hit by an egg</span>${raw(seg('koMode', [['respawn', 'Back in 5 s'], ['out', 'Out for the round']]))}</div>
-        <div class="field"><span>Random events</span>${raw(seg('events', [['auto', 'Automatic'], ['manual', 'I\'ll trigger them'], ['off', 'Off']]))}</div>
+        <div class="field ${['advance', 'eggtoss', 'cross'].includes(s.mode) ? 'hidden' : ''}"><span>Random events</span>${raw(seg('events', [['auto', 'Automatic'], ['manual', 'I\'ll trigger them'], ['off', 'Off']]))}</div>
       </div>
       <div class="launch"><button id="launch" class="btn big" ${raw(bankOpts.length ? '' : 'disabled')}>${raw(uiIcon('ui_launch', '🚀'))} Launch Game</button></div>
     </section>`;
   $$('.mode-card', main).forEach((c) => {
     c.onclick = () => { if (c.classList.contains('soon')) { toast('That game is coming in a later phase!', 'warn'); return; } s.mode = c.dataset.mode;
-      if (s.mode === 'farm' || s.mode === 'towers') { s.settings.rounds = 1; if (![300, 480, 720].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 480; } else if (s.mode === 'eggtoss') { if (![2, 4, 6].includes(s.settings.rounds)) s.settings.rounds = 2; if (![30, 45, 60].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 30; } else if (s.mode === 'advance') { if (![60, 90, 120].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 120; } else if (s.mode === 'siege') { s.settings.rounds = 2; if (![150, 210, 300].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 210; } else if (s.settings.roundSeconds > 90 || s.settings.roundSeconds < 45) s.settings.roundSeconds = 60;
+      if (s.mode === 'farm' || s.mode === 'towers') { s.settings.rounds = 1; if (![300, 480, 720].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 480; } else if (s.mode === 'eggtoss') { if (![2, 4, 6].includes(s.settings.rounds)) s.settings.rounds = 2; if (![30, 45, 60].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 30; } else if (s.mode === 'cross') { if (![1, 2, 3].includes(s.settings.rounds)) s.settings.rounds = 2; if (![120, 180, 240].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 180; } else if (s.mode === 'advance') { if (![60, 90, 120].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 120; } else if (s.mode === 'siege') { s.settings.rounds = 2; if (![150, 210, 300].includes(s.settings.roundSeconds)) s.settings.roundSeconds = 210; } else if (s.settings.roundSeconds > 90 || s.settings.roundSeconds < 45) s.settings.roundSeconds = 60;
       if (s.mode !== 'eggtoss' && s.settings.rounds > 5) s.settings.rounds = 3;
       renderCreate(main); };
   });

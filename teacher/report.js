@@ -1,8 +1,8 @@
 // Master Teacher Print Diagnostic page: teacher/report.html?r=<resultId>
-import { isConfigured, db, ref, get, currentUser, isTeacher } from '../js/core/firebase.js?v=20261010183609';
-import { $, $$, esc, params, sleep } from '../js/core/ui.js?v=20261010183609';
-import { sprite } from '../js/core/assets.js?v=20261010183609';
-import { analyze, CATS, level, LEVEL_TEXT, SYM, toCSV } from '../js/report/analyze.js?v=20261010183609';
+import { isConfigured, db, ref, get, currentUser, isTeacher } from '../js/core/firebase.js?v=20261010193406';
+import { $, $$, esc, params, sleep } from '../js/core/ui.js?v=20261010193406';
+import { sprite } from '../js/core/assets.js?v=20261010193406';
+import { analyze, CATS, level, LEVEL_TEXT, SYM, toCSV } from '../js/report/analyze.js?v=20261010193406';
 
 const root = $('#report');
 let result; let A;
@@ -27,7 +27,7 @@ function msg(h) { root.innerHTML = `<div class="empty-msg"><p>${h}</p></div>`; }
 
 const nm = (s) => (opts.initials ? s.split(/\s+/).map((w) => w[0]?.toUpperCase() + '.').join('') : s);
 const fmtDate = (t) => (t ? new Date(t).toLocaleString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '');
-const MODE = { dodge: 'Dodge Egg', cannon: 'Egg Cannon', farm: 'Egg Farm', towers: 'Coop Wars', siege: 'Coop Siege', paint: 'Land Grab', advance: 'Advance', eggtoss: 'Egg Toss' };
+const MODE = { dodge: 'Dodge Egg', cannon: 'Egg Cannon', farm: 'Egg Farm', towers: 'Coop Wars', siege: 'Coop Siege', paint: 'Land Grab', advance: 'Advance', eggtoss: 'Egg Toss', cross: 'Cross the Road' };
 
 function head(title, sub) {
   return `<div class="rhead"><div><h1>${title}<small>${esc(sub || '')}</small></h1></div>

@@ -398,3 +398,17 @@ body.team-turkey .et-dodge button { background: var(--turkey, #e0402a); }
   .et-dodge button { padding: 14px 18px; }
   #et-hint { grid-column: 2; grid-row: 3; max-width: 180px; font-size: .72rem; }
 }
+
+/* ---- Cross the Road ---- */
+body.mode-cross .egg-bar, body.mode-cross .egg-count { display: none; }
+#view-cr { gap: 6px; }
+.cr-canvas { display: block; touch-action: none; }
+.cr-pad { display: grid; grid-template-columns: 1fr 1.4fr 1fr; grid-template-rows: auto auto; gap: 6px; }
+.cr-pad button { all: unset; cursor: pointer; display: grid; place-items: center; padding: 8px 0; border: 3px solid var(--ink); border-radius: 14px; background: var(--chicken, #1e6fe0); color: #fff; font-size: 1.6rem; font-weight: 900; box-shadow: 0 4px 0 var(--ink); -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+body.team-turkey .cr-pad button { background: var(--turkey, #e0402a); }
+.cr-pad [data-d="l"] { grid-column: 1; grid-row: 1 / span 2; }
+.cr-pad [data-d="r"] { grid-column: 3; grid-row: 1 / span 2; }
+.cr-pad [data-d="u"] { grid-column: 2; grid-row: 1; font-size: 2.1rem; padding: 10px 0; background: var(--grass, #7ed321) !important; color: var(--ink); }
+.cr-pad [data-d="d"] { grid-column: 2; grid-row: 2; font-size: .95rem; padding: 3px 0; background: #555 !important; }
+.cr-pad button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.cr-pad button:disabled { opacity: .35; cursor: not-allowed; }
