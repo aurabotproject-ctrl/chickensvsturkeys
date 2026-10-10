@@ -1,6 +1,6 @@
 // "Build with Claude": makes a prompt the teacher pastes into Claude,
 // then turns Claude's reply back into a question bank.
-import { normalizeBank } from './banks.js?v=20261010201126';
+import { normalizeBank } from './banks.js?v=20261010201536';
 
 export const TEMPLATE = `You are an expert [TEACHER] writing quiz questions for a fast classroom game called "Chickens vs Turkeys". Students answer on phones in about 20 seconds per question.
 

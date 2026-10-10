@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261010201126';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010201126';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010201126';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010201126';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010201126';
-import { renderBanks } from './banks-ui.js?v=20261010201126';
+} from '../js/core/firebase.js?v=20261010201536';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261010201536';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261010201536';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261010201536';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261010201536';
+import { renderBanks } from './banks-ui.js?v=20261010201536';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -68,7 +68,7 @@ function shell() {
   const u = ctx.user;
   app.innerHTML = html`<div class="shell">
     <aside class="side">
-      <img class="logo" src="${sprite('logo')}" alt="Chickens vs Turkeys">
+      <a class="logo-link" href="../" title="Open the title screen (great for the TV while students come in)"><img class="logo" src="${sprite('logo')}" alt="Chickens vs Turkeys — open the title screen"></a>
       <nav class="nav">${raw(NAV.map(([k, i, l]) => `<button data-go="${k}" class="${ctx.view === k || (ctx.view === 'edit' && k === 'banks') ? 'on' : ''}"><span class="ni">${i}</span><span class="nl">${l}</span></button>`).join(''))}</nav>
       <div class="me">${raw(u.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : '')}<span><b>${u.displayName || u.email}</b><br><a href="#" id="signout">Sign out</a></span></div>
     </aside>
