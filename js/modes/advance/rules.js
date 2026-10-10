@@ -10,6 +10,7 @@
 export const MIN_SIZE = 10;
 /** Board is square: as wide as the bigger team, at least 10. */
 export const boardSize = (nChicken, nTurkey) => Math.max(MIN_SIZE, nChicken, nTurkey);
+export const MAX_BLOCKS = 2;        // each player can have up to 2 blocks on the board at once
 export const BLOCK_QUESTIONS = 2;   // a block lasts for the placer's next 2 answers
 
 export const PIECES = [

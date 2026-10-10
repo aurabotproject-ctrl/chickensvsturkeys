@@ -3,19 +3,19 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010134616';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010134616';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010134616';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010134616';
-import { sfx } from '../js/core/sfx.js?v=20261010134616';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010134616';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010134616';
-import { PIECES, COLOURS, legalMoves, blockSpots, pieceSprite, ADV_ART } from '../js/modes/advance/rules.js?v=20261010134616';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010134616';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010134616';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010134616';
-import * as FE from '../js/modes/farm/economy.js?v=20261010134616';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010134616';
+} from '../js/core/firebase.js?v=20261010134958';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010134958';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010134958';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010134958';
+import { sfx } from '../js/core/sfx.js?v=20261010134958';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010134958';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010134958';
+import { PIECES, COLOURS, legalMoves, blockSpots, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010134958';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010134958';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010134958';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010134958';
+import * as FE from '../js/modes/farm/economy.js?v=20261010134958';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010134958';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -1065,6 +1065,8 @@ function advHud() {
   $('#adv-ac').textContent = `${ps.ac ?? 0}%`; $('#adv-at').textContent = `${ps.at ?? 0}%`;
   const blockBtn = $('#adv-modes [data-mode="block"]');
   $('#adv-modes').classList.toggle('hidden', !ps.blockSmall);
+  const mine = (ADV.board?.blocks || []).filter((b) => b.owner === uid).length;
+  blockBtn.textContent = `🧱 Block (${Math.max(0, MAX_BLOCKS - mine)} left)`;
   blockBtn.disabled = !ps.canBlock; if (!ps.canBlock && ADV.mode === 'block') setAdvMode('move');
   if (left && L.tab === 'answer' && !L.lockUntil && D.state.phase === 'playing') $('#tab-fight').classList.add('nudge');
   if (advHintT) return;

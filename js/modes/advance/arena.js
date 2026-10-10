@@ -1,11 +1,11 @@
 // =========================================================
 // ADVANCE — host game logic + projector drawing.
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010134616';
+import { sfx } from '../../core/sfx.js?v=20261010134958';
 import {
-  boardSize, BLOCK_QUESTIONS, allCombos, startRow, goalRow, progressOf, legalMoves, blockSpots, isFree,
-} from './rules.js?v=20261010134616';
-import { drawBoard } from './draw.js?v=20261010134616';
+  boardSize, BLOCK_QUESTIONS, MAX_BLOCKS, allCombos, startRow, goalRow, progressOf, legalMoves, blockSpots, isFree,
+} from './rules.js?v=20261010134958';
+import { drawBoard } from './draw.js?v=20261010134958';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -136,7 +136,7 @@ export class AdvanceArena {
     this.onChange(p);
     return { move: correct && !p.home, home: p.home };
   }
-  canBlock(p) { return !this.board.blocks.some((b) => b.owner === p.uid) && blockSpots(this.board, p).length > 0; }
+  canBlock(p) { return this.board.blocks.filter((b) => b.owner === p.uid).length < MAX_BLOCKS && blockSpots(this.board, p).length > 0; }
   teamSize(t) { return this.board ? this.board.pieces.filter((q) => q.team === t).length : 0; }
 
   /** inp.q = [{ s, op: 'move'|'block', r, c }] */
