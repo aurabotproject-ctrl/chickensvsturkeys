@@ -96,6 +96,7 @@ Create Game → **Advance** → number of rounds, and the longest a round can la
 - Every **right answer = 1 move**: forward, forward-diagonal, or one step sideways — never onto a square with a piece or a block. Students answer on the **QUIZ** tab and move on the **BOARD** tab (it opens by itself after a right answer and shows green squares to tap). Turkeys see the board turned round so they always move "up".
 - **Blocks** (any team size): instead of moving, drop a hay bale on any empty square next to you. Nobody can move onto it. It disappears after your next 2 answers. Up to 2 blocks each on the board at a time.
 - A round ends when a whole team reaches the far side (they win the round), or when time runs out — then the team that is further across **on average** wins. Each round won = 1 point; most rounds wins the game (ties broken by total distance).
+- **Big screen** shows each player as a solid **blue (chickens) or red (turkeys) square**, so you can see at a glance who is further ahead and which parts of the board each team controls. **Student devices** are zoomed in on their own piece, the camera follows them as they move, and a mini-map in the corner shows the whole board (they are the yellow square).
 - Image prompts for the chicken/turkey chess pieces: `ADVANCE_IMAGE_PROMPTS.md` (round tokens are used until then).
 
 ⚠️ Advance adds `pc` (piece choice) and `adv` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.

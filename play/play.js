@@ -3,21 +3,21 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010153644';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010153644';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010153644';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010153644';
-import { sfx } from '../js/core/sfx.js?v=20261010153644';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010153644';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010153644';
-import { PIECES, COLOURS, legalMoves, blockSpots, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010153644';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010153644';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261010153644';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010153644';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010153644';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010153644';
-import * as FE from '../js/modes/farm/economy.js?v=20261010153644';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010153644';
+} from '../js/core/firebase.js?v=20261010154056';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010154056';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010154056';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010154056';
+import { sfx } from '../js/core/sfx.js?v=20261010154056';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010154056';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010154056';
+import { PIECES, COLOURS, legalMoves, blockSpots, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010154056';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010154056';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261010154056';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010154056';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010154056';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010154056';
+import * as FE from '../js/modes/farm/economy.js?v=20261010154056';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010154056';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -1040,7 +1040,9 @@ function advDraw() {
   if (!ADV.board || !ADV.ctx || $('#view-adv').classList.contains('hidden')) return;
   const ctx = ADV.ctx; const dpr = ADV.dpr; const W = ADV.canvas.width / dpr; const H = ADV.canvas.height / dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
-  ADV.layout = drawBoard(ctx, ADV.board, 6, 10, W - 12, H - 20, { flip: D.me?.team === 'turkey', me: uid, marks: advMarks() });
+  const mine = myPiece(); ADV.cam = ADV.cam || {};
+  const follow = mine ? { r: mine.r, c: mine.c, zoom: 5.5, cam: ADV.cam } : null; // zoomed in on my piece, camera follows me
+  ADV.layout = drawBoard(ctx, ADV.board, 6, 10, W - 12, H - 20, { flip: D.me?.team === 'turkey', me: uid, marks: advMarks(), follow });
 }
 function advTap(e) {
   if (D.state.phase !== 'playing' || D.state.paused) return;

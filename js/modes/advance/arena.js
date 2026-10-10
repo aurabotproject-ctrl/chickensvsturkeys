@@ -1,11 +1,11 @@
 // =========================================================
 // ADVANCE — host game logic + projector drawing.
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010153644';
+import { sfx } from '../../core/sfx.js?v=20261010154056';
 import {
   boardSize, BLOCK_QUESTIONS, MAX_BLOCKS, allCombos, startRow, goalRow, progressOf, legalMoves, blockSpots, isFree,
-} from './rules.js?v=20261010153644';
-import { drawBoard } from './draw.js?v=20261010153644';
+} from './rules.js?v=20261010154056';
+import { drawBoard } from './draw.js?v=20261010154056';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -225,7 +225,7 @@ export class AdvanceArena {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
     const top = H * 0.2; const bottom = H * 0.11;
     // team progress bars on the left (chickens) and right (turkeys)
-    const L = drawBoard(ctx, this.board, W * 0.16, top, W * 0.68, H - top - bottom, { labels: true });
+    const L = drawBoard(ctx, this.board, W * 0.16, top, W * 0.68, H - top - bottom, { tiles: true });
     const avg = this.averages();
     bar(ctx, L.ox - L.cell * 1.1 - 46, top, 46, H - top - bottom, avg.chicken, '#1e6fe0', 'CHICKENS', true);
     bar(ctx, L.ox + L.cell * (L.W + 1.1), top, 46, H - top - bottom, avg.turkey, '#e0402a', 'TURKEYS', false);
