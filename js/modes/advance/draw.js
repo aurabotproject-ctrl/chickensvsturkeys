@@ -1,6 +1,6 @@
 // ADVANCE — board drawing shared by the big screen and the phones (Canvas 2D).
-import { sprite } from '../../core/assets.js?v=20261010154056';
-import { pieceOf, colourOf, pieceSprite, ADV_ART, ADV_REF_H } from './rules.js?v=20261010154056';
+import { sprite } from '../../core/assets.js?v=20261010154707';
+import { pieceOf, colourOf, pieceSprite, ADV_ART, ADV_REF_H } from './rules.js?v=20261010154707';
 
 const imgs = new Map();
 export function img(name) {
@@ -57,14 +57,25 @@ export function drawBoard(ctx, board, x, y, w, h, opts = {}) {
   const top = flip ? 'TURKEY GOAL' : 'CHICKEN GOAL'; const bot = flip ? 'CHICKEN GOAL' : 'TURKEY GOAL';
   ctx.fillStyle = flip ? '#ffb3a6' : '#9cc8ff'; ctx.fillText(`▲ ${top} ▲`, ox + (cell * W) / 2, oy - cell * 0.13);
   ctx.fillStyle = flip ? '#9cc8ff' : '#ffb3a6'; ctx.fillText(`▼ ${bot} ▼`, ox + (cell * W) / 2, oy + cell * L + cell * 0.13);
-  // move / block markers
+  // move / block markers (push markers go on top of the enemy pieces, below)
   for (const m of opts.marks || []) {
+    if (m.kind === 'push') continue;
     const { px, py } = pos(m.r, m.c);
     ctx.fillStyle = m.kind === 'block' ? 'rgba(255,140,0,.55)' : 'rgba(126,211,33,.6)';
     ctx.strokeStyle = m.kind === 'block' ? '#ff8c00' : '#3b9b0a'; ctx.lineWidth = Math.max(2, cell * 0.06);
     rr(ctx, px + cell * 0.08, py + cell * 0.08, cell * 0.84, cell * 0.84, cell * 0.18); ctx.fill(); ctx.stroke();
     ctx.fillStyle = '#fff'; ctx.font = `900 ${cell * 0.45}px Nunito, sans-serif`;
     ctx.fillText(m.kind === 'block' ? '🧱' : '⬆', px + cell / 2, py + cell / 2 + 1);
+  }
+  const pushes = (opts.marks || []).filter((m) => m.kind === 'push');
+  for (const m of pushes) { // purple glow under the enemy + an arrow to where they will be pushed
+    const { px, py } = pos(m.r, m.c); const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 180);
+    ctx.fillStyle = `rgba(155,89,255,${0.45 + pulse * 0.25})`; ctx.strokeStyle = '#6a1fd0'; ctx.lineWidth = Math.max(3, cell * 0.08);
+    rr(ctx, px + cell * 0.04, py + cell * 0.04, cell * 0.92, cell * 0.92, cell * 0.18); ctx.fill(); ctx.stroke();
+    if (m.to) {
+      const t = pos(m.to[0], m.to[1]); ctx.strokeStyle = 'rgba(106,31,208,.85)'; ctx.setLineDash([cell * 0.1, cell * 0.08]);
+      rr(ctx, t.px + cell * 0.12, t.py + cell * 0.12, cell * 0.76, cell * 0.76, cell * 0.16); ctx.stroke(); ctx.setLineDash([]);
+    }
   }
   // blocks (hay bales)
   const hay = img('tw_hay1');
@@ -84,6 +95,11 @@ export function drawBoard(ctx, board, x, y, w, h, opts = {}) {
     const px = ox + p.vc * cell; const py = oy + p.vr * cell;
     if (opts.tiles) drawTile(ctx, p, px, py, cell);
     else drawPiece(ctx, p, px, py, cell, { me: p.uid === opts.me, name: opts.labels });
+  }
+  for (const m of pushes) { // 💥 badge on top of each enemy you can push
+    const { px, py } = pos(m.r, m.c);
+    ctx.fillStyle = '#6a1fd0'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px + cell * 0.8, py + cell * 0.2, cell * 0.2, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.font = `${cell * 0.24}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('💥', px + cell * 0.8, py + cell * 0.21);
   }
   if (F) { ctx.restore(); if (F.minimap !== false) miniMap(ctx, board, x, y, w, h, flip, opts.me); }
   return { ox, oy, cell, flip, W, L, clip: F ? { x, y, w, h } : null };

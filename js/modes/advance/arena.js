@@ -1,11 +1,11 @@
 // =========================================================
 // ADVANCE — host game logic + projector drawing.
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010154056';
+import { sfx } from '../../core/sfx.js?v=20261010154707';
 import {
-  boardSize, BLOCK_QUESTIONS, MAX_BLOCKS, allCombos, startRow, goalRow, progressOf, legalMoves, blockSpots, isFree,
-} from './rules.js?v=20261010154056';
-import { drawBoard } from './draw.js?v=20261010154056';
+  boardSize, BLOCK_QUESTIONS, MAX_BLOCKS, allCombos, startRow, goalRow, progressOf, legalMoves, blockSpots, pushTargets, isFree,
+} from './rules.js?v=20261010154707';
+import { drawBoard } from './draw.js?v=20261010154707';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -131,7 +131,7 @@ export class AdvanceArena {
     const gone = this.board.blocks.filter((b) => b.left <= 0); if (gone.length) this.board.blocks = this.board.blocks.filter((b) => b.left > 0);
     if (correct && !p.home) {
       p.moves = Math.min(2, p.moves + 1);
-      if (!legalMoves(this.board, p).length && !this.canBlock(p)) { p.moves = 0; this.onChange(p); return { move: false, stuck: true }; }
+      if (!legalMoves(this.board, p).length && !this.canBlock(p) && !pushTargets(this.board, p).length) { p.moves = 0; this.onChange(p); return { move: false, stuck: true }; }
     }
     this.onChange(p);
     return { move: correct && !p.home, home: p.home };
@@ -153,6 +153,12 @@ export class AdvanceArena {
       if (!this.canBlock(p) || !blockSpots(B, p).some(([rr, cc]) => rr === r && cc === c)) return false;
       B.blocks.push({ r, c, owner: uid, left: BLOCK_QUESTIONS, team: p.team });
       p.moves -= 1; this.pop('🧱', r, c); sfx.click?.();
+    } else if (op === 'push') {
+      const t = pushTargets(B, p).find((x) => x.r === r && x.c === c); if (!t) return false;
+      const q = B.pieces.find((x) => x.uid === t.uid); if (!q) return false;
+      q.r = t.to[0]; q.c = t.to[1]; p.moves -= 1; this.pushCount = (this.pushCount || 0) + 1;
+      const qp = this.players.get(q.uid); if (qp) { qp.r = q.r; qp.c = q.c; qp.score = progressOf(qp.team, qp.r, B.L); this.onChange(qp); }
+      this.pop(`💥 ${first(p.name)} pushed ${first(q.name)} back!`, q.r, q.c, true); sfx.splat?.();
     } else {
       if (!legalMoves(B, p).some(([rr, cc]) => rr === r && cc === c)) return false;
       p.r = r; p.c = c; p.moves -= 1;
@@ -188,7 +194,9 @@ export class AdvanceArena {
         const spot = blockSpots(this.board, p).find(([r, c]) => this.board.pieces.some((q) => q.team !== p.team && Math.abs(q.r - r) <= 1 && Math.abs(q.c - c) <= 1));
         if (spot) { this.act(p.uid, 'block', spot[0], spot[1]); continue; }
       }
-      if (!moves.length) { p.moves = 0; continue; }
+      const pushes = pushTargets(this.board, p);
+      if (pushes.length && Math.random() < 0.35) { const t = pushes[0]; this.act(p.uid, 'push', t.r, t.c); continue; }
+      if (!moves.length) { if (pushes.length) { this.act(p.uid, 'push', pushes[0].r, pushes[0].c); continue; } p.moves = 0; continue; }
       const fwd = moves.filter(([r]) => r !== p.r);
       const pick = (fwd.length ? fwd : moves)[Math.floor(Math.random() * (fwd.length || moves.length))];
       this.act(p.uid, 'move', pick[0], pick[1]);

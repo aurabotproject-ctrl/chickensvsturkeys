@@ -2,7 +2,8 @@
 // ADVANCE — shared rules (host + phones)
 // A checkerboard; chickens start on the bottom row, turkeys on the top.
 // Right answer = move 1 square (forward, forward-diagonal or sideways)
-// or drop a hay-bale block next to you for 2 questions.
+// or drop a hay-bale block next to you for 2 questions,
+// or push an enemy in front of / beside you back one square.
 // First team to get EVERYONE to the far side wins the round; otherwise
 // after the time limit the team that is further on average wins.
 // =========================================================
@@ -58,6 +59,22 @@ export function legalMoves(board, p) {
   const { W, L } = board; const f = dirOf(p.team);
   const cand = [[p.r + f, p.c], [p.r + f, p.c - 1], [p.r + f, p.c + 1], [p.r, p.c - 1], [p.r, p.c + 1]];
   return cand.filter(([r, c]) => r >= 0 && r < L && c >= 0 && c < W && isFree(board, r, c));
+}
+/**
+ * Enemies I can push back one square: directly in front of me or right beside me.
+ * They go one square back towards their own start; I stay where I am.
+ * Not allowed if they are already home, or the square behind them is taken / off the board.
+ */
+export function pushTargets(board, p) {
+  const f = dirOf(p.team); const out = [];
+  for (const [r, c] of [[p.r + f, p.c], [p.r, p.c - 1], [p.r, p.c + 1]]) {
+    const t = board.pieces.find((q) => q.r === r && q.c === c);
+    if (!t || t.team === p.team || t.home) continue;
+    const br = t.r - dirOf(t.team);
+    if (br < 0 || br >= board.L || !isFree(board, br, t.c)) continue;
+    out.push({ r, c, to: [br, t.c], uid: t.uid });
+  }
+  return out;
 }
 /** Squares around a piece where a block could go (all 8 neighbours, free). */
 export function blockSpots(board, p) {

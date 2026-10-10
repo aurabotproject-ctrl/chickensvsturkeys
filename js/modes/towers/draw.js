@@ -1,7 +1,7 @@
 // Coop Wars drawing helpers shared by the projector and the phones (PixiJS v7).
 /* global PIXI */
-import { sprite } from '../../core/assets.js?v=20261010154056';
-import { MAP_W, MAP_H, KINDS, tier, rng } from './map.js?v=20261010154056';
+import { sprite } from '../../core/assets.js?v=20261010154707';
+import { MAP_W, MAP_H, KINDS, tier, rng } from './map.js?v=20261010154707';
 
 const T3 = (base) => ['c', 't', 'n'].map((t) => `${base}${t}`);
 export const TW_SPRITES = [

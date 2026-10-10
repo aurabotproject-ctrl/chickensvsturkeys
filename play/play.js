@@ -3,21 +3,21 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010154056';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010154056';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010154056';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010154056';
-import { sfx } from '../js/core/sfx.js?v=20261010154056';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010154056';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010154056';
-import { PIECES, COLOURS, legalMoves, blockSpots, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010154056';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010154056';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261010154056';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010154056';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010154056';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010154056';
-import * as FE from '../js/modes/farm/economy.js?v=20261010154056';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010154056';
+} from '../js/core/firebase.js?v=20261010154707';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010154707';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010154707';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010154707';
+import { sfx } from '../js/core/sfx.js?v=20261010154707';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010154707';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010154707';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010154707';
+import { PaintView } from '../js/modes/paint/view.js?v=20261010154707';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261010154707';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010154707';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261010154707';
+import { TowerView } from '../js/modes/towers/view.js?v=20261010154707';
+import * as FE from '../js/modes/farm/economy.js?v=20261010154707';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261010154707';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -1034,7 +1034,7 @@ function myPiece() { return ADV.board?.pieces.find((p) => p.uid === uid); }
 function advMarks() {
   const me = myPiece(); if (!me || me.home || (D.ps.moves || 0) - ADV.pending <= 0 || D.state.phase !== 'playing') return [];
   if (ADV.mode === 'block') return blockSpots(ADV.board, me).map(([r, c]) => ({ r, c, kind: 'block' }));
-  return legalMoves(ADV.board, me).map(([r, c]) => ({ r, c, kind: 'move' }));
+  return [...legalMoves(ADV.board, me).map(([r, c]) => ({ r, c, kind: 'move' })), ...pushTargets(ADV.board, me).map((t) => ({ r: t.r, c: t.c, kind: 'push', to: t.to }))];
 }
 function advDraw() {
   if (!ADV.board || !ADV.ctx || $('#view-adv').classList.contains('hidden')) return;
@@ -1051,15 +1051,17 @@ function advTap(e) {
   const mark = advMarks().find((m) => m.r === sq.r && m.c === sq.c);
   if (!mark) {
     const left = (D.ps.moves || 0) - ADV.pending;
-    advHint(left <= 0 ? 'No moves left — answer a question on the QUIZ tab!' : ADV.mode === 'block' ? 'Tap an orange square next to you to drop a block.' : 'Tap a green square to move there.', 'bad');
+    advHint(left <= 0 ? 'No moves left — answer a question on the QUIZ tab!' : ADV.mode === 'block' ? 'Tap an orange square next to you to drop a block.' : 'Tap a green square to move, or a purple enemy to push them back.', 'bad');
     sfx.wrong(); return;
   }
-  ADV.seq += 1; ADV.q.push({ s: ADV.seq, op: ADV.mode, r: sq.r, c: sq.c }); ADV.q = ADV.q.slice(-6);
+  const op = mark.kind === 'push' ? 'push' : ADV.mode;
+  ADV.seq += 1; ADV.q.push({ s: ADV.seq, op, r: sq.r, c: sq.c }); ADV.q = ADV.q.slice(-6);
   ADV.pending += 1;
   update(G(`inputs/${uid}`), { q: ADV.q }).catch(() => {});
-  if (ADV.mode === 'move') { const me = myPiece(); if (me) { me.r = sq.r; me.c = sq.c; } } // optimistic
+  if (op === 'push') { const t = ADV.board.pieces.find((q) => q.r === sq.r && q.c === sq.c); if (t) { t.r = mark.to[0]; t.c = mark.to[1]; } } // optimistic
+  else if (ADV.mode === 'move') { const me = myPiece(); if (me) { me.r = sq.r; me.c = sq.c; } } // optimistic
   sfx.click(); navigator.vibrate?.(25);
-  advHint(ADV.mode === 'block' ? '🧱 Block placed! It lasts for your next 2 answers.' : '♟ Moved!', 'good');
+  advHint(op === 'push' ? '💥 Pushed them back a square!' : ADV.mode === 'block' ? '🧱 Block placed! It lasts for your next 2 answers.' : '♟ Moved!', 'good');
   if (ADV.mode === 'block') setAdvMode('move');
   if ((D.ps.moves || 0) - ADV.pending <= 0) setTimeout(() => setTab('answer'), 650);
 }
@@ -1088,7 +1090,7 @@ function advHud() {
   if (advHintT) return;
   const h = $('#adv-hint'); h.className = 'tw-hint';
   h.textContent = ps.home ? '⭐ You\'re home! Keep answering — your right answers still count for your place on the leaderboard.'
-    : left ? (ADV.mode === 'block' ? 'Tap an orange square next to you to drop a hay-bale block.' : 'Tap a green square: forward, diagonal or sideways.')
+    : left ? (ADV.mode === 'block' ? 'Tap an orange square next to you to drop a hay-bale block.' : (advMarks().some((m) => m.kind === 'push') ? 'Tap a green square to move — or tap a PURPLE enemy to push them back a square!' : 'Tap a green square: forward, diagonal or sideways.'))
       : 'Answer questions on the QUIZ tab. Each right answer = 1 move.';
 }
 
