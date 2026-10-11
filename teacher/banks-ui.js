@@ -1,12 +1,12 @@
 // Question Banks page: list, editor, Build with Claude, CSV import.
-import { $, $$, html, raw, esc, toast, modal, confirmBox, copyText } from '../js/core/ui.js?v=20261012110022';
-import { subjectIcon } from '../js/core/assets.js?v=20261012110022';
+import { $, $$, html, raw, esc, toast, modal, confirmBox, copyText } from '../js/core/ui.js?v=20261012112135';
+import { subjectIcon } from '../js/core/assets.js?v=20261012112135';
 import {
   saveBank, deleteBank, getPremade, getMyBank, normalizeBank, normalizeQuestion,
   questionProblems, bankProblems, parseCSV, toCSV, subjectsFor,
-} from '../js/quiz/banks.js?v=20261012110022';
-import { buildPrompt, extractBank, TEMPLATE } from '../js/quiz/promptBuilder.js?v=20261012110022';
-import { explainError } from '../js/core/firebase.js?v=20261012110022';
+} from '../js/quiz/banks.js?v=20261012112135';
+import { buildPrompt, extractBank, TEMPLATE } from '../js/quiz/promptBuilder.js?v=20261012112135';
+import { explainError } from '../js/core/firebase.js?v=20261012112135';
 
 let filter = { text: '', subject: '' };
 const CUR_KEY = 'cvt-curriculum';

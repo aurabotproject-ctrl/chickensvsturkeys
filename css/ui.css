@@ -130,3 +130,71 @@
   75% { transform: scale(1.04) rotate(2deg); }
 }
 @media (prefers-reduced-motion: reduce) { .side .logo { animation: none; } }
+
+/* =========================================================
+   HOW TO PLAY card (js/core/howto.js) — projector + devices
+   ========================================================= */
+.howto { width: min(1180px, 96vw); max-height: 100vh; overflow-y: auto; scrollbar-width: none; padding: 1.2vh 1vw 1.6vh; text-align: center; color: var(--white); animation: pop-in .5s var(--ease-pop) both; position: relative; }
+.howto::-webkit-scrollbar { display: none; }
+.ht-head { margin-bottom: 1.2vh; }
+.ht-kicker { display: inline-block; font-family: var(--font-comic); letter-spacing: .12em; font-size: clamp(14px, 2.2vh, 22px); background: var(--yolk); color: var(--ink); border: 3px solid var(--ink); border-radius: 999px; padding: .1em .9em; transform: rotate(-3deg); box-shadow: 3px 3px 0 var(--ink); }
+.ht-title { font-family: var(--font-burst); font-size: clamp(34px, 7vh, 84px); line-height: 1; margin: .15em 0 0; -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 5px 5px 0 var(--ink); }
+.ht-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4vw; }
+.ht-step { position: relative; background: var(--paper, #fff7e6); color: var(--ink); border: 4px solid var(--ink); border-radius: 20px; padding: 1.2vh .8vw 1.4vh; box-shadow: 6px 6px 0 var(--ink); opacity: 0; animation: ht-in .55s var(--ease-pop) var(--d) forwards; }
+@keyframes ht-in { from { opacity: 0; transform: translateY(30px) scale(.85) rotate(-2deg); } to { opacity: 1; transform: none; } }
+.ht-num { position: absolute; top: -16px; left: -12px; width: 40px; height: 40px; display: grid; place-items: center; font-family: var(--font-burst); font-size: 24px; background: var(--chicken); color: #fff; border: 3px solid var(--ink); border-radius: 50%; box-shadow: 2px 2px 0 var(--ink); }
+.ht-big { font-family: var(--font-comic); font-size: clamp(17px, 3.1vh, 34px); letter-spacing: .03em; line-height: 1.05; margin-top: .8vh; }
+.ht-small { font-weight: 800; font-size: clamp(12px, 1.9vh, 19px); line-height: 1.25; margin-top: .4vh; opacity: .85; }
+.ht-win { display: inline-block; margin-top: 2vh; font-family: var(--font-comic); font-size: clamp(18px, 3.4vh, 38px); letter-spacing: .03em; background: var(--grass, #7ed321); color: var(--ink); border: 4px solid var(--ink); border-radius: 16px; padding: .3em 1em; box-shadow: 5px 5px 0 var(--ink); opacity: 0; animation: ht-in .5s var(--ease-pop) 1.7s forwards; }
+.ht-win small { display: block; font-family: var(--font-body); font-weight: 900; font-size: .5em; letter-spacing: 0; }
+.ht-bar { height: 8px; margin: 2vh auto 0; width: min(520px, 70%); background: rgba(255,255,255,.2); border: 2px solid var(--ink); border-radius: 99px; overflow: hidden; }
+.ht-bar i { display: block; height: 100%; background: var(--yolk); transform-origin: left; animation: ht-bar linear forwards; }
+@keyframes ht-bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.ht-skip { position: absolute; right: .5vw; bottom: .2vh; }
+
+/* ---- mini scenes ---- */
+.ht-scene { position: relative; height: clamp(110px, 21vh, 220px); margin: .6vh auto 0; border-radius: 14px; overflow: hidden; background: linear-gradient(#8ed1ff, #cdeeff 60%, #8fd14f 60%); border: 3px solid var(--ink); }
+.ht-scene img { position: absolute; }
+/* 1. quiz tile lights up → egg pops */
+.ht-quiz { background: var(--navy-700, #1b2f6b); }
+.ht-tiles { position: absolute; inset: 12% 22% 26%; display: grid; grid-template-columns: 1fr 1fr; gap: 7%; }
+.ht-tiles i { border: 3px solid var(--ink); border-radius: 10px; }
+.ht-tiles .a { background: #2c7cf0; } .ht-tiles .b { background: #e0402a; } .ht-tiles .c { background: #f0a500; } .ht-tiles .d { background: #8a3df0; }
+.ht-tiles .ok { animation: ht-ok 2.4s infinite; }
+@keyframes ht-ok { 0%, 30% { background: #e0402a; transform: none; } 38% { transform: scale(.9); } 46%, 100% { background: #7ed321; transform: none; } }
+.ht-pop { width: 18%; left: 41%; bottom: 8%; animation: ht-pop 2.4s infinite; }
+@keyframes ht-pop { 0%, 44% { transform: translateY(40px) scale(.3); opacity: 0; } 58% { transform: translateY(-46%) scale(1.15); opacity: 1; } 70%, 92% { transform: translateY(-38%) scale(1); opacity: 1; } 100% { opacity: 0; } }
+.ht-plus { position: absolute; left: 60%; top: 30%; font-family: var(--font-burst); font-size: clamp(18px, 3.4vh, 34px); color: var(--yolk); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; animation: ht-plus 2.4s infinite; }
+@keyframes ht-plus { 0%, 55% { opacity: 0; transform: translateY(10px); } 65%, 90% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-10px); } }
+/* 2. joystick drives the chicken */
+.ht-pad { position: absolute; left: 5%; top: 50%; width: 38%; aspect-ratio: 1; transform: translateY(-50%); }
+.ht-pad img { width: 100%; position: static; }
+.ht-knob { position: absolute; left: 50%; top: 50%; width: 34%; aspect-ratio: 1; margin: -17% 0 0 -17%; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff, #ffc72c 55%, #d18f00); border: 3px solid var(--ink); animation: ht-knob 2.4s ease-in-out infinite; }
+.ht-finger { position: absolute; left: 50%; top: 50%; width: 22%; aspect-ratio: 1; margin: -11% 0 0 -11%; border-radius: 50%; background: rgba(255,255,255,.65); box-shadow: 0 0 0 4px rgba(255,255,255,.35); animation: ht-knob 2.4s ease-in-out infinite; }
+@keyframes ht-knob { 0%, 100% { transform: translate(-60%, 0); } 25% { transform: translate(0, -55%); } 50% { transform: translate(60%, 0); } 75% { transform: translate(0, 55%); } }
+.ht-runner { height: 62%; bottom: 8%; left: 58%; animation: ht-run 2.4s ease-in-out infinite; }
+@keyframes ht-run { 0%, 100% { transform: translate(-30%, 0) scaleX(-1); } 12.4% { transform: translate(-15%, -9%) scaleX(-1); } 12.5% { transform: translate(-15%, -9%) scaleX(1); } 25% { transform: translate(0, -18%) scaleX(1); } 50% { transform: translate(30%, 0) scaleX(1); } 62.4% { transform: translate(15%, 5%) scaleX(1); } 62.5% { transform: translate(15%, 5%) scaleX(-1); } 75% { transform: translate(0, 10%) scaleX(-1); } }
+/* 3. throw: egg arcs to the turkey → splat */
+.ht-thrower { height: 64%; left: 4%; bottom: 6%; animation: ht-wind 2.6s infinite; transform-origin: 50% 90%; }
+@keyframes ht-wind { 0%, 10% { transform: rotate(0); } 18% { transform: rotate(-12deg); } 26%, 100% { transform: rotate(4deg); } }
+.ht-egg { width: 11%; left: 22%; bottom: 46%; animation: ht-fly 2.6s infinite; }
+@keyframes ht-fly { 0%, 24% { opacity: 0; transform: none; } 26% { opacity: 1; transform: translate(0, 0) rotate(0); } 40% { transform: translate(130%, -60%) rotate(200deg); } 54% { opacity: 1; transform: translate(330%, 10%) rotate(420deg); } 56%, 100% { opacity: 0; transform: translate(330%, 10%); } }
+.ht-target, .ht-target-hit { height: 60%; right: 6%; bottom: 6%; }
+.ht-target { animation: ht-show 2.6s infinite; }
+.ht-target-hit { animation: ht-hide 2.6s infinite; }
+@keyframes ht-show { 0%, 54% { opacity: 1; } 56%, 92% { opacity: 0; } 100% { opacity: 1; } }
+@keyframes ht-hide { 0%, 54% { opacity: 0; } 56%, 92% { opacity: 1; transform: rotate(-8deg); } 100% { opacity: 0; } }
+.ht-splat { width: 34%; right: 4%; bottom: 28%; animation: ht-splat 2.6s infinite; }
+@keyframes ht-splat { 0%, 54% { opacity: 0; transform: scale(.2); } 60% { opacity: 1; transform: scale(1.1); } 85% { opacity: 1; transform: scale(1); } 95%, 100% { opacity: 0; } }
+
+/* devices: steps stack and shrink */
+@media (max-width: 760px) {
+  .ht-steps { grid-template-columns: 1fr; gap: 14px; }
+  .ht-step { display: grid; grid-template-columns: 42% 1fr; grid-template-rows: auto auto; column-gap: 10px; text-align: left; align-items: center; padding: 8px 10px; }
+  .ht-step .ht-scene { grid-row: 1 / span 2; height: 96px; margin: 0; }
+  .ht-big { margin-top: 0; font-size: 18px; align-self: end; }
+  .ht-small { font-size: 12.5px; align-self: start; }
+  .ht-title { font-size: 40px; }
+  .ht-win { font-size: 19px; }
+}
+@media (prefers-reduced-motion: reduce) { .ht-scene * { animation: none !important; } }

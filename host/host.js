@@ -6,29 +6,30 @@
 import {
   isConfigured, db, ref, get, set, update, remove, onValue, onChildAdded, onChildChanged,
   currentUser, isTeacher, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261012110022';
-import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261012110022';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261012110022';
-import { playUrl } from '../js/core/games.js?v=20261012110022';
-import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261012110022';
-import { loadBankByKey } from '../js/quiz/banks.js?v=20261012110022';
-import { QuizEngine } from '../js/quiz/engine.js?v=20261012110022';
-import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261012110022';
-import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261012110022';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261012110022';
-import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261012110022';
-import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261012110022';
-import { TowerArena } from '../js/modes/towers/arena.js?v=20261012110022';
-import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261012110022';
-import { CrossArena } from '../js/modes/cross/arena.js?v=20261012110022';
-import { StackArena } from '../js/modes/stack/arena.js?v=20261012110022';
-import { PaintArena } from '../js/modes/paint/arena.js?v=20261012110022';
-import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261012110022';
-import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261012110022';
-import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261012110022';
-import { SiegeArena } from '../js/modes/siege/arena.js?v=20261012110022';
-import { defenderFor } from '../js/modes/siege/rules.js?v=20261012110022';
-import { EVENTS, randomEvent } from '../js/events/events.js?v=20261012110022';
+} from '../js/core/firebase.js?v=20261012112135';
+import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261012112135';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261012112135';
+import { playUrl } from '../js/core/games.js?v=20261012112135';
+import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261012112135';
+import { loadBankByKey } from '../js/quiz/banks.js?v=20261012112135';
+import { QuizEngine } from '../js/quiz/engine.js?v=20261012112135';
+import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261012112135';
+import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261012112135';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261012112135';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261012112135';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261012112135';
+import { TowerArena } from '../js/modes/towers/arena.js?v=20261012112135';
+import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261012112135';
+import { CrossArena } from '../js/modes/cross/arena.js?v=20261012112135';
+import { hasHowto, howtoHTML } from '../js/core/howto.js?v=20261012112135';
+import { StackArena } from '../js/modes/stack/arena.js?v=20261012112135';
+import { PaintArena } from '../js/modes/paint/arena.js?v=20261012112135';
+import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261012112135';
+import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261012112135';
+import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261012112135';
+import { SiegeArena } from '../js/modes/siege/arena.js?v=20261012112135';
+import { defenderFor } from '../js/modes/siege/rules.js?v=20261012112135';
+import { EVENTS, randomEvent } from '../js/events/events.js?v=20261012112135';
 
 const gameId = params.get('g');
 const G = (p = '') => ref(db, `games/${gameId}${p ? '/' + p : ''}`);
@@ -310,6 +311,7 @@ async function startRound() {
   for (const uid of arena.players.keys()) dirty.add(uid);
   if (isSiege()) { const d = defenderFor(S.round); phaseBanner(`<b>${S.round === 1 ? 'FIRST HALF' : 'SECOND HALF'}: ${d === 'chicken' ? `${teamIco('chicken')} CHICKENS DEFEND · ${teamIco('turkey')} TURKEYS ATTACK` : `${teamIco('turkey')} TURKEYS DEFEND · ${teamIco('chicken')} CHICKENS ATTACK`}</b><small>Answer questions for corn 🌽 — defenders build on the lawn, attackers pick a row!</small>`, 6000); }
   $('#round-label').textContent = isSiege() ? `HALF ${S.round} / 2` : `ROUND ${S.round} / ${meta.settings.rounds}`;
+  if (S.round === 1 && hasHowto(S.mode)) await howToPlay(); // "How to play" card before the first round
   const ms = meta.settings.roundSeconds * 1000;
   $('#timer').textContent = meta.settings.roundSeconds >= 60 ? `${Math.floor(meta.settings.roundSeconds / 60)}:${String(meta.settings.roundSeconds % 60).padStart(2, '0')}` : meta.settings.roundSeconds;
   await countdown();
@@ -377,6 +379,20 @@ function phaseBanner(htmlText, ms = 0) {
   if (!htmlText) { b.classList.add('hidden'); return; }
   b.innerHTML = htmlText; b.classList.remove('hidden'); b.classList.remove('anim-pop'); void b.offsetWidth; b.classList.add('anim-pop');
   if (ms) bannerTimer = setTimeout(() => b.classList.add('hidden'), ms);
+}
+
+/** Show the "How to play" card on the big screen and every device (~12 s, the teacher can skip). */
+const HOWTO_MS = 12000;
+async function howToPlay() {
+  S.phase = 'howto'; S.endsAt = serverNow() + HOWTO_MS; S.howto = { koMode: meta.settings.koMode || 'respawn' };
+  await writeState();
+  const ov = $('#overlay'); ov.className = 'overlay'; ov.innerHTML = howtoHTML(S.mode, meta.settings, { big: true, ms: HOWTO_MS, skip: true });
+  await new Promise((done) => {
+    const t = setTimeout(done, HOWTO_MS);
+    $('#ht-skip').onclick = () => { clearTimeout(t); done(); };
+  });
+  ov.className = 'overlay hidden'; ov.innerHTML = '';
+  S.howto = null; S.phase = 'countdown'; await writeState();
 }
 
 async function countdown() {

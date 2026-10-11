@@ -423,3 +423,4 @@ body.mode-stack .egg-bar, body.mode-stack .egg-count { display: none; }
 .sa-build .drop small { display: block; font-family: var(--font-body); font-size: .75rem; font-weight: 900; letter-spacing: 0; }
 .sa-build button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 .sa-build button:disabled { opacity: .4; cursor: not-allowed; }
+.overlay.howto-ov { place-items: start center; overflow-y: auto; padding: 22px 12px; }
