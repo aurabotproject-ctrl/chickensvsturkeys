@@ -80,3 +80,46 @@ export function makePalette(list) {
   }
   return pal;
 }
+
+// ---------- lean syncing: "keyframe + changes" ----------
+// The host sends a full grid now and then (a keyframe), and in between only the cells that differ
+// from that keyframe. Each change list is measured against the KEYFRAME (not the previous change
+// list), so a phone that misses an update is still right as soon as the next one arrives.
+/** Cells of `cur` that differ from `base`, as "start36:rle,start36:rle,…" runs. */
+export function encodeDelta(cur, base) {
+  const out = []; let i = 0; const n = cur.length;
+  while (i < n) {
+    if (cur[i] === base[i]) { i++; continue; }
+    const s = i; while (i < n && cur[i] !== base[i]) i++;
+    out.push(`${s.toString(36)}:${encode(cur.subarray(s, i))}`);
+  }
+  return out.join(',');
+}
+/** Apply a change list onto a copy of the keyframe. */
+export function applyDelta(str, base, into) {
+  into.set(base);
+  if (!str) return into;
+  for (const part of str.split(',')) {
+    const c = part.indexOf(':'); if (c < 0) continue;
+    const s = parseInt(part.slice(0, c), 36); const rle = part.slice(c + 1);
+    let len = 0; for (const m of rle.matchAll(/[.A-Za-z](\d*)/g)) len += m[1] ? +m[1] : 1;
+    into.set(decode(rle, new Uint8Array(len)), s);
+  }
+  return into;
+}
+
+// ---------- packed positions: 9 characters per player ----------
+const B36 = (n, w) => Math.max(0, Math.min(36 ** w - 1, Math.round(n))).toString(36).padStart(w, '0');
+const HEAD = '0123456789abcdefghijklmnopqrstuv'; // 32 headings; alive = lowercase/digits, out = UPPERCASE
+export function packPos(p) {
+  const h = HEAD[((Math.round((p.ang / (Math.PI * 2)) * 32) % 32) + 32) % 32];
+  return B36(p.i, 2) + B36(p.x * 10, 3) + B36(p.y * 10, 3) + (p.alive ? h : h.toUpperCase());
+}
+export function unpackPos(str) {
+  const out = [];
+  for (let k = 0; k + 9 <= str.length; k += 9) {
+    const c = str[k + 8]; const alive = c === c.toLowerCase() || /\d/.test(c);
+    out.push({ i: parseInt(str.slice(k, k + 2), 36), x: parseInt(str.slice(k + 2, k + 5), 36) / 10, y: parseInt(str.slice(k + 5, k + 8), 36) / 10, alive, ang: (HEAD.indexOf(c.toLowerCase()) / 32) * Math.PI * 2 });
+  }
+  return out;
+}

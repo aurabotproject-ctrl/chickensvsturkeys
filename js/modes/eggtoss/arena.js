@@ -5,13 +5,13 @@
 //   flingers: inputs/{uid}.q  = [{ s, x, y }] (fling an egg at x, y)
 // and get the stall back through et/info + et/s.
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010230402';
-import { allCombos } from '../advance/rules.js?v=20261010230402';
+import { sfx } from '../../core/sfx.js?v=20261011223804';
+import { allCombos } from '../advance/rules.js?v=20261011223804';
 import {
   GW, LANES, X_MIN, X_MAX, SPEED, FLIGHT, EGGS_PER_CORRECT, COOLDOWN, LANE_Y,
-  targetScale, attackerFor, other, targetCentre, launchX, findHit, eggAt,
-} from './rules.js?v=20261010230402';
-import { drawGallery } from './draw.js?v=20261010230402';
+  targetScale, attackerFor, other, targetCentre, launchX, findHit, eggAt, packDefs,
+} from './rules.js?v=20261011223804';
+import { drawGallery } from './draw.js?v=20261011223804';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -220,18 +220,34 @@ export class EggTossArena {
       a: this.attackers().map((p) => p.uid),
     };
   }
+  /**
+   * Lean syncing: et/info (who's who), et/dp = all targets packed (4 characters each);
+   * et/e/{id} = one egg, sent once at launch (phones fly it) and removed when it lands;
+   * et/sp/{id} = one splat, sent once (misses are cleared after a few seconds).
+   */
   pushSync(force = false) {
     if (!this.round) return;
-    const info = this.info(); const infoS = JSON.stringify(info);
-    const idx = new Map(info.d.map((r, i) => [r[0], i]));
-    const dp = this.defenders().map((p) => `${idx.get(p.uid)},${Math.round(p.x)},${p.out ? 1 : 0},${Math.round(p.ts * 100)},${p.d}`).join(';');
-    const ai = new Map(info.a.map((u, i) => [u, i]));
-    const eg = this.eggs.map((e) => `${e.id},${Math.round(e.x0)},${Math.round(e.x1)},${Math.round(e.y1)},${Math.round(e.k * 100)},${ai.get(e.o) ?? -1}`).join(';');
-    const sp = this.splats.filter((s) => s.kind === 'hit' || this.time - s.t < 5).map((s) => `${s.id},${Math.round(s.x)},${Math.round(s.y)},${s.kind === 'hit' ? 'h' : 'm'}`).join(';');
-    const s = `${dp}|${eg}|${sp}`;
+    const S = this.sync; const info = this.info(); const infoS = JSON.stringify(info);
+    if (force || S.round !== this.round || !S.e) {
+      S.round = this.round; S.e = new Set(); S.sp = new Map(); S.info = ''; S.dp = null;
+      this.onSync({ 'et/dp': null, 'et/e': null, 'et/sp': null, 'et/s': null, 'et/d': null });
+    }
     const up = {};
-    if (force || infoS !== this.sync.info) { this.sync.info = infoS; up['et/info'] = info; }
-    if (force || s !== this.sync.s) { this.sync.s = s; up['et/s'] = s; }
+    if (infoS !== S.info) { S.info = infoS; up['et/info'] = info; S.dp = null; } // targets follow the info list order — re-send them
+    // targets: one compact string, 4 characters each (x, target size, out), at most 5 times a second
+    const now = performance.now();
+    const dp = packDefs(this.defenders());
+    if (dp !== S.dp && (now - (S.dAt || 0) >= 200 || S.dp == null)) { S.dp = dp; S.dAt = now; up['et/dp'] = dp; }
+    const ai = new Map(info.a.map((u, i) => [u, i])); const flying = new Set();
+    for (const e of this.eggs) {
+      flying.add(e.id);
+      if (!S.e.has(e.id)) { S.e.add(e.id); up[`et/e/${e.id}`] = `${Math.round(e.x0)},${Math.round(e.x1)},${Math.round(e.y1)},${ai.get(e.o) ?? -1},${Math.round(e.k * 100)}`; }
+    }
+    for (const id of [...S.e]) if (!flying.has(id)) { S.e.delete(id); up[`et/e/${id}`] = null; }
+    for (const sp of this.splats) {
+      if (!S.sp.has(sp.id)) { S.sp.set(sp.id, sp); up[`et/sp/${sp.id}`] = `${Math.round(sp.x)},${Math.round(sp.y)},${sp.kind === 'hit' ? 'h' : 'm'}`; }
+    }
+    for (const [id, sp] of [...S.sp]) if (sp.kind !== 'hit' && this.time - sp.t > 5) { S.sp.delete(id); up[`et/sp/${id}`] = null; }
     if (Object.keys(up).length) this.onSync(up);
   }
   stateFor(uid) {

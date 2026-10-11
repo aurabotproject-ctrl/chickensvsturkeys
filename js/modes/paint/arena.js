@@ -7,9 +7,9 @@
 //   • you can carve into other players' land
 // Speed for the 30-second battle comes from the 1-minute question phase.
 // =========================================================
-import { avatar } from '../../core/assets.js?v=20261010230402';
-import { sfx } from '../../core/sfx.js?v=20261010230402';
-import { GW, GH, START_R, BATTLE_MS, MAX_PLAYERS, speedFor, encode, paintGrid, makePalette } from './common.js?v=20261010230402';
+import { avatar } from '../../core/assets.js?v=20261011223804';
+import { sfx } from '../../core/sfx.js?v=20261011223804';
+import { GW, GH, START_R, BATTLE_MS, MAX_PLAYERS, speedFor, encode, paintGrid, makePalette, encodeDelta, packPos } from './common.js?v=20261011223804';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -49,7 +49,7 @@ export class PaintArena {
       this.time += dt;
       while (dt > 0) { const step = Math.min(0.03, dt); dt -= step; if (this.running && !this.paused) this.simulate(step); }
     }, 33);
-    setInterval(() => this.pushSync(), 250);
+    setInterval(() => this.pushSync(), 300); // positions are smoothed on the phones, so ~3 updates a second looks fine
   }
 
   resize() {
@@ -276,11 +276,18 @@ export class PaintArena {
   // ---------- phone sync ----------
   pushSync(force = false) {
     if (!this.round) return;
-    const g = encode(this.own); const t = encode(this.trail);
-    const p = [...this.players.values()].filter((x) => x.i).map((x) => `${x.i},${x.x.toFixed(1)},${x.y.toFixed(1)},${x.alive ? 1 : 0},${x.ang.toFixed(2)}`).join(';');
     const up = {};
-    if (force || g !== this.sync.g) { this.sync.g = g; up['pt/s/g'] = g; }
-    if (force || t !== this.sync.t) { this.sync.t = t; up['pt/s/t'] = t; }
+    // land + trails: a full keyframe now and then, otherwise only the cells that changed since it
+    for (const [key, arr] of [['g', this.own], ['t', this.trail]]) {
+      const S = (this.sync[key] ||= { seq: 0, base: null, d: null });
+      const delta = !force && S.base ? encodeDelta(arr, S.base) : null;
+      if (delta === null || delta.length > Math.max(400, (S.full || '').length * 0.45)) {
+        const full = encode(arr);
+        if (force || !S.base || full !== S.full) { S.seq += 1; S.base = arr.slice(); S.full = full; S.d = ''; up[`pt/s/${key}`] = `${S.seq}|${full}`; up[`pt/s/${key}d`] = `${S.seq}|`; }
+      } else if (delta !== S.d) { S.d = delta; up[`pt/s/${key}d`] = `${S.seq}|${delta}`; }
+    }
+    // positions packed into 9 characters each: id(2) x·10(3) y·10(3) alive+heading(1) — see unpackPos()
+    const p = [...this.players.values()].filter((x) => x.i).map(packPos).join('');
     if (force || p !== this.sync.p) { this.sync.p = p; up['pt/s/p'] = p; }
     if (Object.keys(up).length) this.onSync(up);
   }

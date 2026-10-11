@@ -5,8 +5,8 @@
 //   THROW: the other team's tower. Press and hold to aim (a dotted arc shows
 //          exactly where the egg will fly), slide to adjust, let go to throw.
 // =========================================================
-import { U, PLATS, PLAT_W, SHAPES, SHAPE_KEYS, SPAWN_GAP, outline, other, LAUNCH, throwVelocity, EGG_STEPS, G_STEP } from './rules.js?v=20261010230402';
-import { drawScene, drawBlock } from './arena.js?v=20261010230402';
+import { U, PLATS, PLAT_W, SHAPES, SHAPE_KEYS, SPAWN_GAP, outline, other, LAUNCH, throwVelocity, EGG_STEPS, G_STEP } from './rules.js?v=20261011223804';
+import { drawScene, drawBlock } from './arena.js?v=20261011223804';
 
 const centroid = (k) => { const o = outline(k); return o.reduce((a, v) => ({ x: a.x + v.x / o.length, y: a.y + v.y / o.length }), { x: 0, y: 0 }); };
 
@@ -32,11 +32,12 @@ export class StackView {
   setTeam(team) { if (team && team !== this.team) { this.team = team; this.gx = PLATS[team].x; } }
   newRound() { this.blocks.clear(); this.eggs = []; this.flying.clear(); this.mine = []; this.mySeqs.clear(); this.splats = []; this.sent = []; this.cam = {}; this.gx = PLATS[this.team].x; this.rot = 0; }
 
-  setState(str) {
-    const [bs = '', es = '', ss = '', hs = ''] = String(str || '').split('|');
+  /** sa/b = { id: "k,t,x,y,a100" } — the big screen only re-sends blocks that move. */
+  setBlocks(obj) {
     const seen = new Set();
-    for (const t of bs.split(';').filter(Boolean)) {
-      const [id, ki, ti, x, y, a] = t.split(',').map(Number); seen.add(id);
+    for (const [key, val] of Object.entries(obj || {})) {
+      const id = +key; seen.add(id);
+      const [ki, ti, x, y, a] = String(val).split(',').map(Number);
       const k = SHAPE_KEYS[ki]; const team = ti ? 'turkey' : 'chicken';
       let b = this.blocks.get(id);
       if (!b) {
@@ -46,34 +47,36 @@ export class StackView {
       b.tx = x; b.ty = y; b.ta = a / 100;
     }
     for (const id of [...this.blocks.keys()]) if (!seen.has(id)) this.blocks.delete(id);
-    // eggs in flight: launch point, velocity and age — flown smoothly here between updates
+  }
+  /** sa/e = { id: "x0,y0,vx1000,vy1000,team,seq,age" } — sent once at launch, flown smoothly here. */
+  setEggs(obj) {
     const now = performance.now(); const live = new Set();
-    for (const t of es.split(';').filter(Boolean)) {
-      const [id, x0, y0, vx, vy, step, ti, seq] = t.split(',').map(Number); live.add(id);
-      const f = this.flying.get(id);
-      // my own eggs are already flying on this screen (from the moment I let go), so the copy from the
-      // big screen is hidden — drawing both made it look like the egg was thrown twice
-      if (!f) this.flying.set(id, { x0, y0, vx: vx / 1000, vy: vy / 1000, step, at: now, team: ti ? 'turkey' : 'chicken', seq, hidden: !!seq && this.mySeqs.has(seq) });
-      else { f.step = step; f.at = now; }
+    for (const [key, val] of Object.entries(obj || {})) {
+      const id = +key; live.add(id);
+      if (this.flying.has(id)) continue;
+      const [x0, y0, vx, vy, ti, seq, age] = String(val).split(',').map(Number);
+      // my own eggs are already flying on this screen (from the moment I let go), so the big screen's copy is hidden
+      this.flying.set(id, { x0, y0, vx: vx / 1000, vy: vy / 1000, step: age || 0, at: now, team: ti ? 'turkey' : 'chicken', seq, hidden: !!seq && this.mySeqs.has(seq) });
     }
     for (const [id, f] of [...this.flying]) {
       if (live.has(id)) continue;
       this.flying.delete(id);
       if (f.hidden) this.mine = this.mine.filter((m) => m.seq !== f.seq); // the real egg has landed — so has mine
     }
-    for (const t of ss.split(';').filter(Boolean)) {
-      const [x, y, t0] = t.split(',').map(Number);
-      if (!this.splats.some((s) => s.key === t0)) {
-        this.splats.push({ x, y, key: t0, t0: now });
-        // was that MY egg landing? shake + buzz
-        if (this.marks.some((m) => now - m.t0 < 4000 && Math.hypot(m.x - x, m.y - y) < 3.5 * U)) { this.shake = now; this.onEvent('hit'); }
-        // my preview egg was heading here: it has landed, stop drawing it
-        this.mine = this.mine.filter((m) => Math.hypot(m.tx - x, m.ty - y) > 3.5 * U);
-      }
-    }
-    this.splats = this.splats.filter((s) => now - s.t0 < 1500);
-    const [hc, ht] = hs.split(',').map(Number); this.heights = { chicken: hc || 0, turkey: ht || 0 };
   }
+  /** sa/sp = { id: "x,y" } — each splat once. */
+  setSplats(obj) {
+    const now = performance.now();
+    for (const [key, val] of Object.entries(obj || {})) {
+      if (this.splats.some((s) => s.key === key)) continue;
+      const [x, y] = String(val).split(',').map(Number);
+      this.splats.push({ x, y, key, t0: now });
+      if (this.marks.some((m) => now - m.t0 < 4000 && Math.hypot(m.x - x, m.y - y) < 3.5 * U)) { this.shake = now; this.onEvent('hit'); }
+      this.mine = this.mine.filter((m) => Math.hypot(m.tx - x, m.ty - y) > 3.5 * U);
+    }
+    this.splats = this.splats.filter((s) => now - s.t0 < 1500 || Object.prototype.hasOwnProperty.call(obj || {}, s.key));
+  }
+  setHeights(str) { const [hc, ht] = String(str || '0,0').split(',').map(Number); this.heights = { chicken: hc || 0, turkey: ht || 0 }; }
   setMine({ acts = 0, next = 'crate', hs = 0 } = {}) {
     this.acts = acts; this.sent = this.sent.filter((s) => s > hs);
     if (next !== this.next) { this.next = next; if (SHAPES[next] && SHAPES[next].h > SHAPES[next].w) this.rot = 0; }
@@ -162,16 +165,15 @@ export class StackView {
     const ease = chase && !build ? 0.22 : 0.12;
     cam.x += (cx - cam.x) * ease; cam.y += (cy - cam.y) * ease; cam.s += (s - cam.s) * 0.12;
     const V = this.V = { ox: W / 2 - cam.x * cam.s, oy: H / 2 - cam.y * cam.s, s: cam.s, W, H, viewTop: 0, labels: false };
-    const eggs = []; let myCount = 0;
+    const eggs = [];
     for (const f of [...this.flying.values(), ...this.mine]) {
       if (f.hidden) continue;
       let n = stepNow(f); if (n > EGG_STEPS + 40) continue;
-      if (this.mine.includes(f)) { n = Math.min(n, EGG_STEPS); myCount += 1; } // my egg waits at its target for the real splat
+      if (this.mine.includes(f)) n = Math.min(n, EGG_STEPS); // my egg waits at its target for the real splat
       const pos = StackView.eggAt(f, n);
       eggs.push({ position: pos, team: f.team, trail: [12, 9, 6, 3].map((d) => StackView.eggAt(f, Math.max(0, n - d))) });
     }
     this.mine = this.mine.filter((f) => stepNow(f) <= EGG_STEPS + 30);
-    this.dbgAll = eggs.length; this.dbgMine = myCount + [...this.flying.values()].filter((f) => !f.hidden && f.seq && this.mySeqs.has(f.seq)).length; // test hook: copies of my egg on screen
     // shake when my egg lands
     const sh = now - this.shake < 380 ? (1 - (now - this.shake) / 380) * 7 : 0;
     if (sh) { V.ox += (Math.random() - 0.5) * sh * 2; V.oy += (Math.random() - 0.5) * sh * 2; }

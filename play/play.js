@@ -3,25 +3,25 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010230402';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261010230402';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010230402';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261010230402';
-import { sfx } from '../js/core/sfx.js?v=20261010230402';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261010230402';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261010230402';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261010230402';
-import { PaintView } from '../js/modes/paint/view.js?v=20261010230402';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261010230402';
-import { CrossView } from '../js/modes/cross/view.js?v=20261010230402';
-import { StackView } from '../js/modes/stack/view.js?v=20261010230402';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261010230402';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261010230402';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261010230402';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261010230402';
-import { TowerView } from '../js/modes/towers/view.js?v=20261010230402';
-import * as FE from '../js/modes/farm/economy.js?v=20261010230402';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261010230402';
+} from '../js/core/firebase.js?v=20261011223804';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261011223804';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261011223804';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261011223804';
+import { sfx } from '../js/core/sfx.js?v=20261011223804';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261011223804';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261011223804';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261011223804';
+import { PaintView } from '../js/modes/paint/view.js?v=20261011223804';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261011223804';
+import { CrossView } from '../js/modes/cross/view.js?v=20261011223804';
+import { StackView } from '../js/modes/stack/view.js?v=20261011223804';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261011223804';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261011223804';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261011223804';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261011223804';
+import { TowerView } from '../js/modes/towers/view.js?v=20261011223804';
+import * as FE from '../js/modes/farm/economy.js?v=20261011223804';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261011223804';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -41,6 +41,8 @@ const isStack = () => D.state.mode === 'stack';
 const hasPiece = () => isAdv() || isEt(); // games where you play as a chess piece
 const hasMap = () => isFarm() || isTowers() || isSiege() || isAdv() || isCross() || isStack();
 const UNIT = () => (isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCross() ? 'crossings' : isStack() ? 'blocks + egg hits' : isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
+/** Team totals (Stack Attack scores in metres). */
+const TSCORE = (n) => (isStack() ? `${(Math.round((n || 0) * 10) / 10).toFixed(1)} m` : SCORE(n));
 const SCORE = (n) => (isFarm() ? fmt(n) : isPaint() ? `${Math.round((n || 0) * 10) / 10}%` : Math.floor(n || 0));
 
 // ---------------- join ----------------
@@ -111,17 +113,24 @@ function subscribe() {
   on('tw/lv', (v) => { TW.lv = v; TW.view?.setLevels(v); });
   on('tw/p', (v) => { TW.p = v || ''; TW.view?.setPaths(v || ''); });
   on('players', (v) => { D.all = v || {}; if (hasPiece() && D.me && !D.me.pc) renderPiecePick(true); });
-  on('et/info', (v) => { ET.info = v; ET.view?.setInfo(v); });
-  on('et/s', (v) => { ET.s = v || ''; ET.view?.setState(ET.s); });
+  on('et/info', (v) => { ET.info = v; ET.view?.setInfo(v); ET.view?.setDefs(ET.dp); }); // re-apply positions: they can arrive before the list
+  on('et/dp', (v) => { ET.dp = v; ET.view?.setDefs(v); });
+  on('et/e', (v) => { ET.e = v; ET.view?.setEggs(v); });
+  on('et/sp', (v) => { ET.sp = v; ET.view?.setSplats(v); });
   on('sa/info', (v) => { if (v) { ensureSa(); if (SA.round !== v.round) { SA.round = v.round; SA.view.newRound(); } } });
-  on('sa/s', (v) => { SA.s = v || ''; SA.view?.setState(SA.s); });
-  on('cr/info', (v) => { CR.info = v; if (v) { ensureCr(); CR.view.setInfo(v); if (CR.s) CR.view.setState(CR.s); } });
-  on('cr/s', (v) => { CR.s = v || ''; CR.view?.setState(CR.s); });
+  on('sa/b', (v) => { SA.b = v; SA.view?.setBlocks(v); });
+  on('sa/e', (v) => { SA.e = v; SA.view?.setEggs(v); });
+  on('sa/sp', (v) => { SA.sp = v; SA.view?.setSplats(v); });
+  on('sa/h', (v) => { SA.h = v; SA.view?.setHeights(v); });
+  on('cr/info', (v) => { CR.info = v; if (v) { ensureCr(); CR.view.setInfo(v); if (CR.p) CR.view.setBirds(CR.p); } });
+  on('cr/p', (v) => { CR.p = v; CR.view?.setBirds(v); });
   on('adv/info', (v) => { ADV.info = v; advBuild(); });
-  on('adv/s', (v) => { ADV.s = v || ''; advBuild(); });
+  on('adv/z', (v) => { ADV.s = v || ''; advBuild(); });
   on('pt/info', (v) => { PT.info = v; PT.view?.setInfo(v); });
   on('pt/s/g', (v) => { PT.g = v; PT.view?.setGrid(v || ''); });
   on('pt/s/t', (v) => { PT.t = v; PT.view?.setTrail(v || ''); });
+  on('pt/s/gd', (v) => { PT.gd = v; PT.view?.setGridDelta(v || ''); });
+  on('pt/s/td', (v) => { PT.td = v; PT.view?.setTrailDelta(v || ''); });
   on('pt/s/p', (v) => { PT.p = v; PT.view?.setPos(v || ''); });
   on('sg/info', (v) => { SG.info = v; if (v) { ensureSg(); SG.view?.setInfo(v); drawSgHud(); } });
   on('sg/g', (v) => { SG.g = v || ''; SG.view?.setGrid(SG.g); });
@@ -265,7 +274,7 @@ function showRoundEnd() {
   ov.innerHTML = html`<div class="box">
     <h1 class="comic-title slant">ROUND ${D.state.round} OVER!</h1>
     ${raw(ps.rank ? `<div>You're</div><div class="rank">#${ps.rank}</div><div>out of ${ps.of}</div>` : '')}
-    <div class="scores"><div style="background:var(--chicken)">${raw(teamIco('chicken'))} ${SCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">${raw(teamIco('turkey'))} ${SCORE(D.teams.turkey)}</div></div>
+    <div class="scores"><div style="background:var(--chicken)">${raw(teamIco('chicken'))} ${TSCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">${raw(teamIco('turkey'))} ${TSCORE(D.teams.turkey)}</div></div>
     <p>💥 ${SCORE(ps.score)} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} correct</p>
     <img src="${sprite(isFarm() ? `fm_coop_${me.team === 'chicken' ? 'c' : 't'}${ps.coop || 1}` : (isCannon() ? 'c_' : '') + me.team + '_idle')}" alt="" style="width:${isFarm() ? 200 : 120}px">
     <p>${isEt() ? `Next round you ${ps.role === 'att' ? 'DODGE 🛡️' : 'FLING 🥚'}!` : isSiege() ? `HALF TIME! Teams swap — next half you ${ps.role === 'def' ? 'ATTACK ⚔️' : 'DEFEND 🛡️'}.` : 'Next round soon — watch the big screen!'}</p></div>`;
@@ -280,7 +289,7 @@ function showFinal() {
     <img src="${sprite(tie || won ? me.team + '_win' : me.team + '_dizzy')}" alt="" style="width:150px">
     <h2 class="comic-title">${tie ? 'IT\'S A DRAW!' : won ? 'YOUR TEAM WON!' : 'SO CLOSE!'}</h2>
     ${raw(ps.rank ? `<div class="rank">#${ps.rank}</div><div>out of ${ps.of} players</div>` : '')}
-    <div class="scores"><div style="background:var(--chicken)">${raw(teamIco('chicken'))} ${SCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">${raw(teamIco('turkey'))} ${SCORE(D.teams.turkey)}</div></div>
+    <div class="scores"><div style="background:var(--chicken)">${raw(teamIco('chicken'))} ${TSCORE(D.teams.chicken)}</div><div style="background:var(--turkey)">${raw(teamIco('turkey'))} ${TSCORE(D.teams.turkey)}</div></div>
     <p>💥 ${SCORE(ps.score)} ${UNIT()} · ✅ ${ps.correct || 0}/${ps.answered || 0} questions right</p></div>`;
   if (won || tie) sfx.win();
 }
@@ -979,7 +988,7 @@ function ensurePt() {
   if (!PT.view) {
     PT.view = new PaintView($('#pt-scene'), { uid, onSteer: (a) => sendSteer(a) });
     if (PT.info) PT.view.setInfo(PT.info);
-    PT.view.setGrid(PT.g || ''); PT.view.setTrail(PT.t || ''); PT.view.setPos(PT.p || '');
+    PT.view.setGrid(PT.g || ''); PT.view.setTrail(PT.t || ''); PT.view.setGridDelta(PT.gd || ''); PT.view.setTrailDelta(PT.td || ''); PT.view.setPos(PT.p || '');
   }
   drawPtHud();
 }
@@ -1023,13 +1032,16 @@ function advBuild() {
   const info = ADV.info; if (!info) return;
   const [ps = '', bs = ''] = String(ADV.s || '').split('|');
   const old = new Map((ADV.board?.pieces || []).map((p) => [p.uid, p]));
-  const meta = new Map((info.players || []).map(([u, team, pc, name]) => [u, { team, pc, name }]));
-  const pieces = ps.split(';').filter(Boolean).map((t) => {
-    const [u, r, c, h] = t.split('.'); const m = meta.get(u) || { team: 'chicken', pc: 'pw', name: '' };
-    const o = old.get(u) || {};
-    return { uid: u, team: m.team, pc: m.pc, name: m.name, r: +r, c: +c, home: h === '1', dx: o.dx, dy: o.dy };
-  });
-  const blocks = bs.split(';').filter(Boolean).map((t) => { const [r, c, left, owner] = t.split('.'); return { r: +r, c: +c, left: +left, owner }; });
+  const players = info.players || [];
+  // 3 characters per piece in adv/info order: row, column, home
+  const pieces = [];
+  for (let i = 0; i < players.length && i * 3 + 3 <= ps.length; i++) {
+    const [u, team, pc, name] = players[i]; const o = old.get(u) || {};
+    pieces.push({ uid: u, team, pc, name, r: parseInt(ps[i * 3], 36), c: parseInt(ps[i * 3 + 1], 36), home: ps[i * 3 + 2] === '1', vc: o.vc, vr: o.vr, vflip: o.vflip });
+  }
+  // 5 characters per hay bale: row, column, answers left, owner number (2)
+  const blocks = [];
+  for (let k = 0; k + 5 <= bs.length; k += 5) blocks.push({ r: parseInt(bs[k], 36), c: parseInt(bs[k + 1], 36), left: parseInt(bs[k + 2], 36), owner: players[parseInt(bs.slice(k + 3, k + 5), 36)]?.[0] });
   ADV.board = { W: info.W, L: info.L, pieces, blocks };
   ADV.pending = 0;
   ensureAdvCanvas();
@@ -1134,7 +1146,7 @@ function ensureEt() {
     });
     ET.view.onEmpty = () => { etHint('No eggs left! Answer more questions next time you fling.', 'bad'); sfx.wrong(); };
     if (ET.info) ET.view.setInfo(ET.info);
-    ET.view.setState(ET.s);
+    ET.view.setDefs(ET.dp); ET.view.setEggs(ET.e); ET.view.setSplats(ET.sp);
     // debug/test hook: screen position of a standing enemy target
     window.cvtEt = { me: () => { const v = ET.view; const m = v?.defs.find((q) => q.uid === uid); return m ? { x: m.x, tx: m.tx, out: m.out } : null; }, target: () => { const v = ET.view; const p = v?.defs.find((q) => !q.out); if (!p || !v.L) return null; const r = v.canvas.getBoundingClientRect(); const y = p.lane != null ? (v.L.oy + (TGT(p).y) * v.L.s) : 0; return { x: r.left + v.L.ox + p.x * v.L.s, y: r.top + y }; } };
   }
@@ -1244,6 +1256,7 @@ function ensureSa() {
       if (SA.view.actsLeft() <= 0 && (e === 'drop' || e === 'egg')) setTimeout(() => { if (SA.view.actsLeft() <= 0 && L.tab === 'fight' && D.state.phase === 'playing') setTab('answer'); }, e === 'egg' ? 2600 : 1800);
     },
   });
+  if (SA.b) SA.view.setBlocks(SA.b); if (SA.e) SA.view.setEggs(SA.e); if (SA.h) SA.view.setHeights(SA.h);
   window.cvtSa = { view: SA.view }; // test hook
   $$('#sa-modes [data-mode]').forEach((b) => { b.onclick = () => { SA.view.mode = b.dataset.mode; sfx.click(); saHud(); }; });
   $('#sa-rot').onclick = () => SA.view.rotate();

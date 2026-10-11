@@ -5,8 +5,8 @@
 // the host. Controls: tap = hop forward, swipe = hop that way,
 // or the arrow buttons / arrow keys.
 // =========================================================
-import { W, L, makeField, tryHop, stepBird, startCol } from './rules.js?v=20261010230402';
-import { drawField } from './draw.js?v=20261010230402';
+import { W, L, makeField, tryHop, stepBird, startCol } from './rules.js?v=20261011223804';
+import { drawField } from './draw.js?v=20261011223804';
 
 export class CrossView {
   constructor(el, { uid, now, onOp, onEvent } = {}) {
@@ -39,17 +39,21 @@ export class CrossView {
     this.info = info;
     if (newRound) { this.field = makeField(info.seed); this.me = null; this.sent = []; this.fx = []; this.cam = {}; this.others.clear(); }
   }
-  setState(str) {
+  /** cr/p = { i: "row,x100,deaths,crossings" } — each bird only changes when it hops, splats or crosses. */
+  setBirds(obj) {
     if (!this.info) return;
     const rows = this.info.players || [];
     const now = performance.now();
-    for (const part of String(str || '').split(';').filter(Boolean)) {
+    for (const [key, val] of Object.entries(obj || {})) {
+      const part = `${key},${val}`;
       const [i, r, x100, deaths, crosses] = part.split(',').map(Number);
       const row = rows[i]; if (!row) continue;
       const [uid, team, name] = row;
       if (uid === this.uid) { if (!this.me) this.me = { uid, team, name, r, x: x100 / 100, face: 1 }; continue; }
       let b = this.others.get(uid);
-      if (!b) { b = { uid, team, name, r, x: x100 / 100, face: 1, deaths, crosses }; this.others.set(uid, b); }
+      if (!b) { b = { uid, team, name, r, x: x100 / 100, face: 1, deaths, crosses, last: part }; this.others.set(uid, b); }
+      if (b.last === part) continue; // unchanged since last time — keep drifting along on the log
+      b.last = part;
       if (deaths > b.deaths) this.fx.push({ kind: this.field?.lanes[b.r]?.type === 'river' ? 'river' : 'road', r: b.r, x: b.x, team, t0: now });
       if (crosses > b.crosses) this.fx.push({ kind: 'cross', r: L - 1, x: b.x, team, t0: now });
       const nx = x100 / 100; if (nx !== b.x) b.face = nx > b.x ? 1 : -1;

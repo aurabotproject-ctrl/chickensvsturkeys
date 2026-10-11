@@ -2,15 +2,15 @@
 // STACK ATTACK — host game logic (Matter.js physics) + big-screen drawing.
 // Phones send inputs/{uid}.q = [{ s, op: 'drop', k, x, rot } | { s, op: 'egg', x, y }]
 // The host keeps everyone's actions, runs the physics and sends
-//   sa/info = { round }   sa/b = "id,k,t,x,y,a100;…|egg x,y,t;…|splat x,y;…"
+//   sa/info = { round }   sa/b/{id} = "k,t,x,y,a100" (only when it moves)   sa/e/{id} = egg launch   sa/sp/{id} = splat   sa/h = heights
 // =========================================================
 /* global Matter */
-import { sfx } from '../../core/sfx.js?v=20261010230402';
-import { img } from '../advance/draw.js?v=20261010230402';
+import { sfx } from '../../core/sfx.js?v=20261011223804';
+import { img } from '../advance/draw.js?v=20261011223804';
 import {
   U, PLATS, PLAT_W, MAX_ACTIONS, FALL_Y, SPAWN_GAP, SHAPES, SHAPE_KEYS, outline, randomShape, colourOf, other,
   LAUNCH, throwVelocity, BLAST, BLAST_R, EGG_STEPS, FILTER,
-} from './rules.js?v=20261010230402';
+} from './rules.js?v=20261011223804';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -50,7 +50,7 @@ export class StackArena {
       const now = performance.now(); acc += Math.min(250, now - last); last = now;
       while (acc >= 1000 / 60) { acc -= 1000 / 60; if (!this.paused) this.step(); }
     }, 1000 / 60);
-    setInterval(() => this.pushSync(), 120);
+    setInterval(() => this.pushSync(), 120); // eggs/splats go out quickly; blocks are batched (see pushSync)
     setInterval(() => this.measure(), 250);
   }
   resize() {
@@ -242,17 +242,45 @@ export class StackArena {
   }
 
   // ---------- phone sync ----------
+  /**
+   * Lean syncing: every block is its own little entry (sa/b/{id}) and is only re-sent when it
+   * actually moves, so a settled tower costs nothing. Eggs are sent once at launch (phones fly them
+   * themselves) and removed when they land; splats are sent once; heights only when they change.
+   */
   pushSync(force = false) {
     if (!this.round) return;
-    const bs = this.blocks.map((b) => `${b.id},${SHAPE_KEYS.indexOf(b.k)},${b.team === 'turkey' ? 1 : 0},${Math.round(b.position.x)},${Math.round(b.position.y)},${Math.round(b.angle * 100)}`).join(';');
-    // eggs: launch point + velocity + age, so phones can fly them smoothly between updates
-    const es = this.eggs.map((e) => `${e.id || (e.id = ++this.bid)},${Math.round(e.from.x)},${Math.round(e.from.y)},${Math.round(e.v0.x * 1000)},${Math.round(e.v0.y * 1000)},${e.steps},${e.team === 'turkey' ? 1 : 0},${e.seq || 0}`).join(';');
-    const now = performance.now();
-    const ss = this.splats.filter((s) => now - s.t0 < 1500).map((s) => `${Math.round(s.x)},${Math.round(s.y)},${Math.round(s.t0)}`).join(';');
-    const str = `${bs}|${es}|${ss}|${this.heights.chicken},${this.heights.turkey}`;
-    const up = {};
-    if (force || this.sync.round !== this.round) { this.sync.round = this.round; up['sa/info'] = { round: this.round }; }
-    if (force || str !== this.sync.s) { this.sync.s = str; up['sa/s'] = str; }
+    const S = this.sync;
+    if (force || S.round !== this.round || !S.b) {
+      S.round = this.round; S.b = new Map(); S.e = new Set(); S.sp = new Map(); S.h = '';
+      this.onSync({ 'sa/info': { round: this.round }, 'sa/b': null, 'sa/e': null, 'sa/sp': null, 'sa/h': null, 'sa/s': null });
+    }
+    const up = {}; const now = performance.now();
+    const live = new Set();
+    const blocksDue = now - (S.bAt || 0) >= 240; if (blocksDue) S.bAt = now; // block movement: about 4 times a second
+    for (const b of this.blocks) {
+      if (!blocksDue && S.b.has(b.id)) { live.add(b.id); continue; }
+      live.add(b.id);
+      const x = Math.round(b.position.x); const y = Math.round(b.position.y); const a = Math.round(b.angle * 100);
+      const last = S.b.get(b.id);
+      if (!last || Math.abs(last.x - x) >= 3 || Math.abs(last.y - y) >= 3 || Math.abs(last.a - a) >= 3) {
+        S.b.set(b.id, { x, y, a }); up[`sa/b/${b.id}`] = `${SHAPE_KEYS.indexOf(b.k)},${b.team === 'turkey' ? 1 : 0},${x},${y},${a}`;
+      }
+    }
+    for (const id of [...S.b.keys()]) if (!live.has(id)) { S.b.delete(id); up[`sa/b/${id}`] = null; }
+    const flying = new Set();
+    for (const e of this.eggs) {
+      if (!e.id) e.id = ++this.bid; flying.add(e.id);
+      if (!S.e.has(e.id)) { S.e.add(e.id); up[`sa/e/${e.id}`] = `${Math.round(e.from.x)},${Math.round(e.from.y)},${Math.round(e.v0.x * 1000)},${Math.round(e.v0.y * 1000)},${e.team === 'turkey' ? 1 : 0},${e.seq || 0},${e.steps}`; }
+    }
+    for (const id of [...S.e]) if (!flying.has(id)) { S.e.delete(id); up[`sa/e/${id}`] = null; }
+    for (const sp of this.splats) {
+      if (!sp.id) sp.id = ++this.bid;
+      if (!S.sp.has(sp.id) && now - sp.t0 < 1000) { S.sp.set(sp.id, now); up[`sa/sp/${sp.id}`] = `${Math.round(sp.x)},${Math.round(sp.y)}`; }
+    }
+    for (const [id, t] of [...S.sp]) if (now - t > 2500) { S.sp.delete(id); up[`sa/sp/${id}`] = null; }
+    this.splats = this.splats.filter((sp) => now - sp.t0 < 3000);
+    const h = `${this.heights.chicken},${this.heights.turkey}`;
+    if (h !== S.h) { S.h = h; up['sa/h'] = h; }
     if (Object.keys(up).length) this.onSync(up);
   }
   stateFor(uid) {

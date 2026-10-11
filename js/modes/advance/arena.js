@@ -1,11 +1,11 @@
 // =========================================================
 // ADVANCE — host game logic + projector drawing.
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010230402';
+import { sfx } from '../../core/sfx.js?v=20261011223804';
 import {
   boardSize, BLOCK_QUESTIONS, MAX_BLOCKS, allCombos, startRow, goalRow, progressOf, legalMoves, blockSpots, pushTargets, isFree,
-} from './rules.js?v=20261010230402';
-import { drawBoard } from './draw.js?v=20261010230402';
+} from './rules.js?v=20261011223804';
+import { drawBoard } from './draw.js?v=20261011223804';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -209,10 +209,13 @@ export class AdvanceArena {
     const B = this.board;
     const info = { W: B.W, L: B.L, round: this.round, players: B.pieces.map((p) => [p.uid, p.team, p.pc || 'pw', first(p.name)]) };
     const infoS = JSON.stringify(info);
-    const s = `${B.pieces.map((p) => `${p.uid}.${p.r}.${p.c}.${p.home ? 1 : 0}`).join(';')}|${B.blocks.map((b) => `${b.r}.${b.c}.${b.left}.${b.owner}`).join(';')}`;
+    // compact board: 3 characters per piece (row, column, home) in adv/info order, and 5 per hay bale
+    // (row, column, answers left, owner number) — instead of long player IDs on every move
+    const ix = new Map(B.pieces.map((p, i) => [p.uid, i])); const b36 = (n, w = 1) => Math.max(0, n).toString(36).padStart(w, '0');
+    const s = `${B.pieces.map((p) => b36(p.r) + b36(p.c) + (p.home ? 1 : 0)).join('')}|${B.blocks.map((b) => b36(b.r) + b36(b.c) + b36(b.left) + b36(ix.get(b.owner) ?? 0, 2)).join('')}`;
     const up = {};
     if (force || infoS !== this.sync.info) { this.sync.info = infoS; up['adv/info'] = info; }
-    if (force || s !== this.sync.s) { this.sync.s = s; up['adv/s'] = s; }
+    if (force || s !== this.sync.s) { this.sync.s = s; up['adv/z'] = s; }
     if (this.result && (force || this.sync.res !== this.round)) { this.sync.res = this.round; up['adv/res'] = { round: this.round, ...this.result }; }
     if (Object.keys(up).length) this.onSync(up);
   }

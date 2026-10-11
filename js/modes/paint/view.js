@@ -3,8 +3,8 @@
 // character. Put a finger down anywhere and drag the way you want to go
 // (like a joystick); arrow keys work too. When out, the whole field shows.
 // =========================================================
-import { avatar } from '../../core/assets.js?v=20261010230402';
-import { GW, GH, decode, paintGrid, makePalette } from './common.js?v=20261010230402';
+import { avatar } from '../../core/assets.js?v=20261011223804';
+import { GW, GH, decode, paintGrid, makePalette, applyDelta, unpackPos } from './common.js?v=20261011223804';
 
 export class PaintView {
   constructor(el, { uid, onSteer } = {}) {
@@ -35,13 +35,31 @@ export class PaintView {
     this.palette = makePalette([...this.players.values()].map((p) => ({ i: p.i, team: p.team, k: p.k })));
     const me = this.players.get(this.me); if (me) this.myColor = this.palette[me.i]?.css;
   }
-  setGrid(g) { if (g != null) decode(g, this.own.fill(0)); }
-  setTrail(t) { if (t != null) decode(t, this.trail.fill(0)); }
+  // keyframe "seq|rle" + changes "seq|runs" (changes only apply to the keyframe with the same seq)
+  setGrid(g) { this.key('g', g); }
+  setTrail(t) { this.key('t', t); }
+  setGridDelta(d) { this.delta('g', d); }
+  setTrailDelta(d) { this.delta('t', d); }
+  key(k, v) {
+    if (v == null) return;
+    const [seq, rle] = String(v).includes('|') ? String(v).split('|') : ['0', String(v)];
+    const K = (this.kf ||= {}); K[k] = { seq, base: decode(rle, new Uint8Array(GW * GH)) };
+    this.rebuild(k);
+  }
+  delta(k, v) { const [seq, runs = ''] = String(v || '').split('|'); (this.dl ||= {})[k] = { seq, runs }; this.rebuild(k); }
+  rebuild(k) {
+    const K = this.kf?.[k]; if (!K) return;
+    const into = k === 'g' ? this.own : this.trail; const D = this.dl?.[k];
+    applyDelta(D && D.seq === K.seq ? D.runs : '', K.base, into);
+  }
   setPos(str) {
-    for (const part of String(str || '').split(';').filter(Boolean)) {
-      const [i, x, y, a, ang] = part.split(',');
-      const p = this.players.get(+i); if (!p) continue;
-      p.tx = +x; p.ty = +y; p.alive = a === '1'; p.ang = +ang;
+    str = String(str || '');
+    const list = str.includes(',') // older format "i,x,y,alive,ang;…"
+      ? str.split(';').filter(Boolean).map((part) => { const [i, x, y, a, ang] = part.split(','); return { i: +i, x: +x, y: +y, alive: a === '1', ang: +ang }; })
+      : unpackPos(str);
+    for (const q of list) {
+      const p = this.players.get(q.i); if (!p) continue;
+      p.tx = q.x; p.ty = q.y; p.alive = q.alive; p.ang = q.ang;
       if (!p.seen) { p.x = p.tx; p.y = p.ty; p.seen = true; }
     }
   }

@@ -6,11 +6,13 @@
 //   cr/info = { round, seed, t0, players: [[uid, team, name]] }
 //   cr/s    = "i,r,x100,deaths,crossings;…"
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261010230402';
-import { W, L, HOPS_PER, MAX_HOPS, makeField, tryHop, stepBird, startCol, danger, dangerAhead } from './rules.js?v=20261010230402';
-import { drawField } from './draw.js?v=20261010230402';
+import { sfx } from '../../core/sfx.js?v=20261011223804';
+import { W, L, HOPS_PER, MAX_HOPS, makeField, tryHop, stepBird, startCol, danger, dangerAhead } from './rules.js?v=20261011223804';
+import { drawField } from './draw.js?v=20261011223804';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
+/** Remember where a bird was at its last event (what the phones are told). */
+const mark = (p) => { p.sr = p.r; p.sx = p.x; };
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
 
 export class CrossArena {
@@ -74,7 +76,7 @@ export class CrossArena {
     this.field = makeField(Math.floor(Math.random() * 2 ** 31));
     this.t0 = this.now(); this.pausedAt = this._paused ? this.t0 : 0;
     this.roundTotals = { chicken: 0, turkey: 0 }; this.fx = []; this.lastCmd.clear();
-    for (const p of this.players.values()) { p.r = 0; p.x = startCol(); p.hops = 0; p.roundCross = 0; p.face = 1; p.dr = null; }
+    for (const p of this.players.values()) { p.r = 0; p.x = startCol(); p.hops = 0; p.roundCross = 0; p.face = 1; p.dr = null; mark(p); }
     this.running = false; this.lastRound = null;
     this.sync = {}; this.pushSync(true);
     for (const p of this.players.values()) this.onChange(p);
@@ -115,7 +117,7 @@ export class CrossArena {
       if (p.hops <= 0) return;
       const r = Math.round(+c.r); const x = +c.x;
       if (!Number.isFinite(x) || r < 0 || r > L - 1 || Math.abs(r - p.r) > 1) return;
-      p.hops -= 1; if (x !== p.x) p.face = x > p.x ? 1 : -1; p.r = r; p.x = x;
+      p.hops -= 1; if (x !== p.x) p.face = x > p.x ? 1 : -1; p.r = r; p.x = x; mark(p);
     } else if (c.op === 'splat') {
       this.die(p, c.why === 'river' ? 'river' : 'road', +c.nx);
     } else if (c.op === 'cross') {
@@ -125,7 +127,7 @@ export class CrossArena {
   }
   die(p, why, nx) {
     this.fx.push({ kind: why, r: p.r, x: p.x, team: p.team, t0: performance.now() });
-    p.deaths += 1; p.r = 0; p.x = Number.isFinite(nx) ? Math.max(0, Math.min(W - 1, Math.round(nx))) : startCol();
+    p.deaths += 1; p.r = 0; p.x = Number.isFinite(nx) ? Math.max(0, Math.min(W - 1, Math.round(nx))) : startCol(); mark(p);
     sfx.splat?.();
     this.onChange(p);
   }
@@ -134,7 +136,7 @@ export class CrossArena {
     this.totals[p.team] += 1; this.roundTotals[p.team] += 1;
     p.score += 1; p.crosses += 1; p.roundCross += 1;
     this.pop(`${first(p.name)} made it across!`, p.team);
-    p.r = 0; p.x = Number.isFinite(nx) ? Math.max(0, Math.min(W - 1, Math.round(nx))) : startCol();
+    p.r = 0; p.x = Number.isFinite(nx) ? Math.max(0, Math.min(W - 1, Math.round(nx))) : startCol(); mark(p);
     sfx.correct?.();
     this.onChange(p);
   }
@@ -171,7 +173,7 @@ export class CrossArena {
     const tryDir = (d) => {
       const res = tryHop(this.field, p, d, t); if (!res || res.dead) return false;
       if (res.r !== p.r && res.r < L - 1 && danger(this.field, res.r, res.x, t, 0.7) && Math.random() < 0.85) return false;
-      p.hops -= 1; if (res.x !== p.x) p.face = res.x > p.x ? 1 : -1; p.r = res.r; p.x = res.x;
+      p.hops -= 1; if (res.x !== p.x) p.face = res.x > p.x ? 1 : -1; p.r = res.r; p.x = res.x; mark(p);
       if (res.cross) this.cross(p);
       this.onChange(p); return true;
     };
@@ -185,15 +187,25 @@ export class CrossArena {
   }
 
   // ---------- phone sync ----------
+  /**
+   * Lean syncing: cr/info (field + who's who), and cr/p/{i} = one bird ("row,x100,deaths,crossings"),
+   * re-sent only when THAT bird hops, splats or crosses (phones drift log-riders themselves).
+   */
   pushSync(force = false) {
     if (!this.field) return;
-    const list = [...this.players.values()];
+    const S = this.sync; const list = [...this.players.values()];
     const info = { round: this.round, seed: this.field.seed, t0: this.t0, paused: this._paused ? 1 : 0, players: list.map((p) => [p.uid, p.team, first(p.name)]) };
     const infoS = JSON.stringify(info);
-    const s = list.map((p, i) => `${i},${p.r},${Math.round(p.x * 100)},${p.deaths},${p.crosses}`).join(';');
     const up = {};
-    if (force || infoS !== this.sync.info) { this.sync.info = infoS; up['cr/info'] = info; }
-    if (force || s !== this.sync.s) { this.sync.s = s; up['cr/s'] = s; }
+    if (force || infoS !== S.info) {
+      const reorder = !S.info || S.round !== this.round || JSON.stringify(JSON.parse(S.info).players) !== JSON.stringify(info.players);
+      S.info = infoS; S.round = this.round; up['cr/info'] = info;
+      if (reorder) { S.p = new Map(); this.onSync({ 'cr/p': null, 'cr/s': null }); } // birds are numbered by the info list — re-send them all
+    }
+    list.forEach((p, i) => {
+      const v = `${p.sr ?? p.r},${Math.round((p.sx ?? p.x) * 100)},${p.deaths},${p.crosses}`;
+      if (S.p.get(i) !== v) { S.p.set(i, v); up[`cr/p/${i}`] = v; }
+    });
     if (Object.keys(up).length) this.onSync(up);
   }
   stateFor(uid) {

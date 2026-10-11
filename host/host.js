@@ -6,29 +6,29 @@
 import {
   isConfigured, db, ref, get, set, update, remove, onValue, onChildAdded, onChildChanged,
   currentUser, isTeacher, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261010230402';
-import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261010230402';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261010230402';
-import { playUrl } from '../js/core/games.js?v=20261010230402';
-import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261010230402';
-import { loadBankByKey } from '../js/quiz/banks.js?v=20261010230402';
-import { QuizEngine } from '../js/quiz/engine.js?v=20261010230402';
-import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261010230402';
-import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261010230402';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261010230402';
-import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261010230402';
-import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261010230402';
-import { TowerArena } from '../js/modes/towers/arena.js?v=20261010230402';
-import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261010230402';
-import { CrossArena } from '../js/modes/cross/arena.js?v=20261010230402';
-import { StackArena } from '../js/modes/stack/arena.js?v=20261010230402';
-import { PaintArena } from '../js/modes/paint/arena.js?v=20261010230402';
-import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261010230402';
-import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261010230402';
-import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261010230402';
-import { SiegeArena } from '../js/modes/siege/arena.js?v=20261010230402';
-import { defenderFor } from '../js/modes/siege/rules.js?v=20261010230402';
-import { EVENTS, randomEvent } from '../js/events/events.js?v=20261010230402';
+} from '../js/core/firebase.js?v=20261011223804';
+import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261011223804';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261011223804';
+import { playUrl } from '../js/core/games.js?v=20261011223804';
+import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261011223804';
+import { loadBankByKey } from '../js/quiz/banks.js?v=20261011223804';
+import { QuizEngine } from '../js/quiz/engine.js?v=20261011223804';
+import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261011223804';
+import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261011223804';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261011223804';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261011223804';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261011223804';
+import { TowerArena } from '../js/modes/towers/arena.js?v=20261011223804';
+import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261011223804';
+import { CrossArena } from '../js/modes/cross/arena.js?v=20261011223804';
+import { StackArena } from '../js/modes/stack/arena.js?v=20261011223804';
+import { PaintArena } from '../js/modes/paint/arena.js?v=20261011223804';
+import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261011223804';
+import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261011223804';
+import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261011223804';
+import { SiegeArena } from '../js/modes/siege/arena.js?v=20261011223804';
+import { defenderFor } from '../js/modes/siege/rules.js?v=20261011223804';
+import { EVENTS, randomEvent } from '../js/events/events.js?v=20261011223804';
 
 const gameId = params.get('g');
 const G = (p = '') => ref(db, `games/${gameId}${p ? '/' + p : ''}`);
@@ -47,6 +47,7 @@ const QUOTA = 5;          // Egg Cannon: questions per round
 const BATTLE_MS = 45000;  // Egg Cannon: battle length
 const roundAnswered = new Map();
 let settledSince = 0;
+const lastPs = new Map(); // last status sent to each student (only changes are sent)
 const isCannon = () => meta?.mode === 'cannon';
 const isFarm = () => meta?.mode === 'farm';
 const isTowers = () => meta?.mode === 'towers';
@@ -79,6 +80,7 @@ async function boot() {
   document.body.classList.add(`mode-${S.mode}`);
 
   // Fresh start: clear any old game state (keeps the players).
+  lastPs.clear();
   await update(G(), { state: { phase: 'lobby', round: 0, mode: S.mode, teamPick: teamPick() }, current: null, fb: null, sub: null, inputs: null, pstate: null, tw: null, sg: null, pt: null, adv: null, et: null, cr: null, sa: null, teams: { chicken: 0, turkey: 0 }, standings: null, answers: null });
 
   setupLobby();
@@ -565,6 +567,7 @@ async function playAgain() {
   for (const p of players.values()) { p.correct = 0; p.answered = 0; }
   S.round = 0; S.phase = 'lobby'; S.winner = null;
   lastThrow.clear();
+  lastPs.clear();
   await update(G(), { pstate: null, standings: null, answers: null, fb: null, current: null, sub: null, inputs: null, tw: null, sg: null, pt: null, adv: null, et: null, cr: null, sa: null, teams: { chicken: 0, turkey: 0 }, 'meta/status': 'lobby', state: { phase: 'lobby', round: 0, mode: S.mode, teamPick: teamPick() } });
   $('#game').classList.add('hidden');
   $('#lobby').classList.remove('hidden');
@@ -687,6 +690,7 @@ function drawStandings() {
 }
 
 /** Writes changed player states + team scores (throttled). */
+let lastTeamsSent = '';
 function flush(force = false) {
   if (!arena || (!dirty.size && !force)) return;
   const updates = {};
@@ -696,7 +700,11 @@ function flush(force = false) {
     if (!p || !info || info.bot) continue;
     const st = engine.stats(uid);
     if (isTimed() || isCustom()) {
-      updates[`pstate/${uid}`] = { ...arena.stateFor(uid), correct: st.correct, answered: st.answered, streak: st.streak, ...(standings ? { rank: standings.findIndex((s) => s.uid === uid) + 1, of: standings.length } : {}) };
+      const ps = { ...arena.stateFor(uid), correct: st.correct, answered: st.answered, streak: st.streak, ...(standings ? { rank: standings.findIndex((s) => s.uid === uid) + 1, of: standings.length } : {}) };
+      // only send what changed since this student's last update (the once-a-second refresh used to resend everything)
+      const prev = lastPs.get(uid);
+      if (!prev || force) { updates[`pstate/${uid}`] = ps; lastPs.set(uid, { ...ps }); continue; }
+      for (const [k, v] of Object.entries(ps)) if (JSON.stringify(prev[k]) !== JSON.stringify(v)) { updates[`pstate/${uid}/${k}`] = v ?? null; prev[k] = v; }
       continue;
     }
     updates[`pstate/${uid}`] = {
@@ -712,8 +720,11 @@ function flush(force = false) {
     }
   }
   dirty.clear();
-  const tsc = teamScores(); updates.teams = isPaint() ? { chicken: Math.round(tsc.chicken * 10) / 10, turkey: Math.round(tsc.turkey * 10) / 10 } : { chicken: Math.floor(tsc.chicken), turkey: Math.floor(tsc.turkey) };
-  update(G(), updates).catch(console.error);
+  const tsc = teamScores();
+  const teams = isPaint() || isStack() ? { chicken: Math.round(tsc.chicken * 10) / 10, turkey: Math.round(tsc.turkey * 10) / 10 } : { chicken: Math.floor(tsc.chicken), turkey: Math.floor(tsc.turkey) };
+  const teamsKey = `${teams.chicken}|${teams.turkey}`;
+  if (force || teamsKey !== lastTeamsSent) { lastTeamsSent = teamsKey; updates.teams = teams; } // only when the score actually changes
+  if (Object.keys(updates).length) update(G(), updates).catch(console.error);
 }
 // KO countdowns change every second — keep phones in sync.
 setInterval(() => { if (arena && S.phase === 'playing') for (const p of arena.players.values()) if (p.ko || p.shieldT > 0) dirty.add(p.uid); }, 1000);

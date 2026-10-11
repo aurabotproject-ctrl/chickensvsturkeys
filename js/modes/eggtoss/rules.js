@@ -74,3 +74,13 @@ export function findHit(defenders, x, y) {
   }
   return best;
 }
+
+/** Targets packed for phones: 4 characters each — x (2, base 36, in 1.25-unit steps), target size (1), out (1). */
+export function packDefs(defs) {
+  return defs.map((p) => Math.max(0, Math.min(1295, Math.round(p.x / 1.25))).toString(36).padStart(2, '0') + Math.round((p.ts ?? 1) * 35).toString(36) + (p.out ? '1' : '0')).join('');
+}
+export function unpackDefs(str) {
+  const out = [];
+  for (let k = 0; k + 4 <= str.length; k += 4) out.push({ x: parseInt(str.slice(k, k + 2), 36) * 1.25, ts: parseInt(str[k + 2], 36) / 35, out: str[k + 3] === '1' });
+  return out;
+}

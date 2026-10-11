@@ -4,8 +4,8 @@
 //             your finger (only YOU can see it). Let go to fling an egg.
 //   Dodgers:  hold ◀ / ▶ (or the arrow keys) to slide your piece along its rail.
 // =========================================================
-import { GW, GH, SPEED, FLIGHT, X_MIN, X_MAX, COOLDOWN, PHONE_VIEW } from './rules.js?v=20261010230402';
-import { drawGallery, toStall } from './draw.js?v=20261010230402';
+import { GW, GH, SPEED, FLIGHT, X_MIN, X_MAX, COOLDOWN, PHONE_VIEW, unpackDefs } from './rules.js?v=20261011223804';
+import { drawGallery, toStall } from './draw.js?v=20261011223804';
 
 const AIM_LIFT = 70; // css px the crosshair sits above the finger
 
@@ -35,31 +35,37 @@ export class EtView {
     const old = new Map(this.defs.map((p) => [p.uid, p]));
     this.defs = (info.d || []).map(([uid, team, pc, name, lane]) => { const o = old.get(uid); return { uid, team, pc, name, lane, x: o?.x ?? GW / 2, tx: o?.tx ?? GW / 2, out: o?.out || false, outAt: o?.outAt, ts: o?.ts ?? 1, seen: o?.seen }; });
   }
-  setState(str) {
-    const [dp = '', eg = '', sp = ''] = String(str || '').split('|');
+  /** et/dp = all targets packed, 4 characters each, in the same order as et/info. */
+  setDefs(str) {
     const now = performance.now();
-    for (const t of dp.split(';').filter(Boolean)) {
-      const [i, x, out, ts] = t.split(',').map(Number); const p = this.defs[i]; if (!p) continue;
-      p.tx = x; p.ts = ts / 100;
+    unpackDefs(String(str || '')).forEach((q, i) => {
+      const p = this.defs[i]; if (!p) return;
+      const x = q.x; const out = q.out;
+      p.tx = x; p.ts = q.ts;
       if (!p.seen) { p.x = x; p.seen = true; }
       if (out && !p.out) { p.out = true; p.outAt = now; if (p.uid === this.uid) this.onOut?.(); }
       if (!out) p.out = false;
-    }
+    });
+  }
+  /** et/e = { id: "x0,x1,y1,thrower,k100" } — each egg once at launch; flown here; removed when it lands. */
+  setEggs(obj) {
     const ids = new Set();
-    for (const t of eg.split(';').filter(Boolean)) {
-      const [id, x0, x1, y1, k, ai] = t.split(',').map(Number); ids.add(id);
+    for (const [key, val] of Object.entries(obj || {})) {
+      const id = +key; ids.add(id); if (this.eggs.has(id)) continue;
+      const [x0, x1, y1, ai, k] = String(val).split(',').map(Number);
       const mine = this.info?.a?.[ai] === this.uid;
-      const e = this.eggs.get(id);
-      if (!e) {
-        if (mine) { const loc = this.local.findIndex((l) => Math.abs(l.x1 - x1) < 2 && Math.abs(l.y1 - y1) < 2); if (loc >= 0) { const l = this.local.splice(loc, 1)[0]; this.eggs.set(id, { ...l, x0 }); continue; } }
-        this.eggs.set(id, { x0, x1, y1, k: k / 100 });
-      } else if (!mine) e.k = Math.max(e.k, k / 100);
+      if (mine) { const loc = this.local.findIndex((l) => Math.abs(l.x1 - x1) < 2 && Math.abs(l.y1 - y1) < 2); if (loc >= 0) { const l = this.local.splice(loc, 1)[0]; this.eggs.set(id, { ...l, x0 }); continue; } }
+      this.eggs.set(id, { x0, x1, y1, k: (k || 0) / 100 });
     }
     for (const id of [...this.eggs.keys()]) if (!ids.has(id) && this.eggs.get(id).k < 0.9) this.eggs.delete(id);
-    const sids = new Set();
-    for (const t of sp.split(';').filter(Boolean)) {
-      const [id, x, y, kind] = t.split(','); sids.add(+id);
-      if (!this.splats.has(+id)) this.splats.set(+id, { x: +x, y: +y, kind: kind === 'h' ? 'hit' : 'miss', t0: now });
+  }
+  /** et/sp = { id: "x,y,h|m" } — each splat once. */
+  setSplats(obj) {
+    const now = performance.now(); const sids = new Set();
+    for (const [key, val] of Object.entries(obj || {})) {
+      const id = +key; sids.add(id); if (this.splats.has(id)) continue;
+      const [x, y, kind] = String(val).split(',');
+      this.splats.set(id, { x: +x, y: +y, kind: kind === 'h' ? 'hit' : 'miss', t0: now });
     }
     for (const id of [...this.splats.keys()]) if (!sids.has(id)) this.splats.delete(id);
   }
