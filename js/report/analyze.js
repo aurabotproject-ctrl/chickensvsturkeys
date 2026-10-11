@@ -39,7 +39,7 @@ export function analyze(result) {
 
   const students = players.map((p) => {
     const list = vals(answersBy[p.uid]);
-    const s = { uid: p.uid, name: p.name || '?', team: p.team, score: p.score || 0, a: 0, c: 0, ms: 0, cats: emptyCats(), strands: Object.fromEntries(strands.map((x) => [x, { a: 0, c: 0 }])), blindQs: [] };
+    const s = { uid: p.uid, name: p.name || '?', team: p.team, score: p.score || 0, a: 0, c: 0, ms: 0, cats: emptyCats(), strands: Object.fromEntries(strands.map((x) => [x, { a: 0, c: 0 }])), blindQs: [], qTally: new Map() };
     for (const ans of list) {
       const q = qById.get(ans.qid); if (!q) continue;
       const st = q.strand || 'General';
@@ -48,6 +48,7 @@ export function analyze(result) {
       s.cats[cat] += 1; classCats[cat] += 1;
       s.strands[st].a += 1; s.strands[st].c += ans.correct ? 1 : 0;
       strandStats[st].a += 1; strandStats[st].c += ans.correct ? 1 : 0;
+      { const t = s.qTally.get(q.id) || { id: q.id, asked: 0, wrong: 0 }; t.asked += 1; t.wrong += ans.correct ? 0 : 1; s.qTally.set(q.id, t); }
       if (cat === 'blind') { strandStats[st].blind += 1; if (!s.blindQs.includes(q.id)) s.blindQs.push(q.id); }
       const qs = qStats.get(q.id);
       qs.asked += 1; qs.correct += ans.correct ? 1 : 0; qs.ms += ans.ms || 0;
@@ -60,6 +61,9 @@ export function analyze(result) {
     }
     totalA += s.a; totalC += s.c; totalMs += s.ms;
     s.acc = pct(s.c, s.a);
+    // questions to practise: everything they got wrong, most-missed first (blind spots listed separately)
+    s.wrongQs = [...s.qTally.values()].filter((t) => t.wrong > 0).sort((x, y) => y.wrong - x.wrong || (y.wrong / y.asked) - (x.wrong / x.asked)).map((t) => t.id);
+    delete s.qTally;
     s.blind = s.cats.blind;
     s.lucky = s.cats.lucky;
     const rated = s.cats.mastered + s.cats.blind + s.cats.fragile + s.cats.developing + s.cats.lucky + s.cats.aware;
@@ -80,7 +84,8 @@ export function analyze(result) {
     let common = -1; let max = 0;
     st.choices.forEach((n, i) => { if (i !== q.correct && n > max) { max = n; common = i; } });
     return {
-      ...q, options: opts, ...st,
+      ...st, ...q, options: opts, // q.correct = the right option's index (st.correct is a COUNT — kept as rightCount)
+      rightCount: st.correct,
       pct: pct(st.correct, st.asked),
       blindPct: pct(st.blind, st.sure),
       avgMs: st.asked ? Math.round(st.ms / st.asked) : null,

@@ -1,8 +1,8 @@
 // Master Teacher Print Diagnostic page: teacher/report.html?r=<resultId>
-import { isConfigured, db, ref, get, currentUser, isTeacher } from '../js/core/firebase.js?v=20261012112135';
-import { $, $$, esc, params, sleep } from '../js/core/ui.js?v=20261012112135';
-import { sprite } from '../js/core/assets.js?v=20261012112135';
-import { analyze, CATS, level, LEVEL_TEXT, SYM, toCSV } from '../js/report/analyze.js?v=20261012112135';
+import { isConfigured, db, ref, get, currentUser, isTeacher } from '../js/core/firebase.js?v=20261012124656';
+import { $, $$, esc, params, sleep } from '../js/core/ui.js?v=20261012124656';
+import { sprite } from '../js/core/assets.js?v=20261012124656';
+import { analyze, CATS, level, LEVEL_TEXT, SYM, toCSV } from '../js/report/analyze.js?v=20261012124656';
 
 const root = $('#report');
 let result; let A;
@@ -118,12 +118,28 @@ function questions() {
     <div class="qgrid">${qs.length ? qs.map(card).join('') : '<p>No questions were answered.</p>'}</div></section>`;
 }
 
+/** What each student should work on: blind spots first (sure but wrong), then their most-missed questions, then their weakest strand. */
+function practise(s, qById) {
+  const card = (id) => { const q = qById.get(id); return q ? `<div class="bs">${esc(q.q)}<br>✔ <b>${esc(q.options[q.correct])}</b>${q.explanation ? ` — ${esc(q.explanation)}` : ''}</div>` : ''; };
+  const blind = s.blindQs.slice(0, 3);
+  const others = (s.wrongQs || []).filter((id) => !blind.includes(id)).slice(0, Math.max(0, 3 - blind.length));
+  const weak = A.strands.map((x) => ({ x, p: s.strandPct[x] })).filter((o) => o.p != null && o.p < 80).sort((a, b) => a.p - b.p)[0];
+  let out = '';
+  if (weak && A.strands.length > 1) out += `<div><b>Focus on:</b> ${esc(weak.x)} (${weak.p}%)</div>`;
+  if (blind.length) out += `<div><b>Check these — you were sure, but…</b></div>${blind.map(card).join('')}`;
+  if (others.length) out += `<div><b>${blind.length ? 'Also practise' : 'Practise these'}:</b></div>${others.map(card).join('')}`;
+  if (!s.a) out += '<div class="bs">No answers recorded.</div>';
+  else if (!blind.length && !others.length) out += '<div class="bs" style="border-color:var(--grass);background:#f0fbe8">Every answer right — amazing! 🌟</div>';
+  else if (!blind.length && s.rated) out += '<div style="font-size:.78rem;margin-top:2px">👏 No blind spots — when you were sure, you were right.</div>';
+  return out;
+}
+
 function slips() {
   const qById = new Map(A.qRows.map((q) => [q.id, q]));
   const slip = (s) => `<div class="slip"><h3>${esc(nm(s.name))}</h3>
     <div>Accuracy <b>${s.acc ?? '–'}%</b> (${s.c}/${s.a}) · 💥 ${s.score} points</div>
     <div class="mini">${A.strands.map((x) => { const p = s.strandPct[x]; return p == null ? '' : `<span>${esc(x)}</span><span>${SYM[level(p)]} ${p}%</span>`; }).join('')}</div>
-    ${s.blindQs.length ? `<div><b>Check these — you were sure, but…</b></div>${s.blindQs.slice(0, 3).map((id) => { const q = qById.get(id); return q ? `<div class="bs">${esc(q.q)}<br>✔ <b>${esc(q.options[q.correct])}</b> — ${esc(q.explanation)}</div>` : ''; }).join('')}` : '<div class="bs" style="border-color:var(--grass);background:#f0fbe8">No blind spots — your confidence matched your answers. 👏</div>'}
+    ${practise(s, qById)}
     <div style="margin-top:6px;font-size:.8rem">My next step: ________________________________</div></div>`;
   return `<section class="sheet portrait" data-sec="slips">${head('Student Slips', 'Cut along the dashed lines')}
     <div class="slips">${sortedStudents().map(slip).join('')}</div></section>`;
