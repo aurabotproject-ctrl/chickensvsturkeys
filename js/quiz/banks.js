@@ -1,5 +1,5 @@
 // Question banks: premade (static JSON files) + teacher banks (Realtime Database).
-import { db, ref, set, push, remove, get, onValue } from '../core/firebase.js?v=20261011223804';
+import { db, ref, set, push, remove, get, onValue } from '../core/firebase.js?v=20261012110022';
 
 const DATA = new URL('../../data/', import.meta.url).href;
 
@@ -127,7 +127,8 @@ export function questionProblems(q, allowedStrands = null) {
   if (q.type === 'mc') {
     if (q.options.length !== 4) p.push('Needs exactly 4 options');
     if (q.options.some((o) => !o)) p.push('An option is empty');
-    if (new Set(q.options.map((o) => o.toLowerCase())).size !== q.options.length) p.push('Two options are the same');
+    // exact match only — options that differ just by capitals or punctuation are different (grammar questions!)
+    if (new Set(q.options.map((o) => o.trim())).size !== q.options.length) p.push('Two options are the same');
     if (q.options.some((o) => o.length > 80)) p.push('An option is too long for a phone button');
   }
   if (!(q.correct >= 0 && q.correct < q.options.length)) p.push('Correct answer is not set');
@@ -146,7 +147,9 @@ export function bankProblems(bank, strandsMap) {
   });
   const seen = new Map();
   bank.questions.forEach((q, i) => {
-    const k = q.q.toLowerCase().replace(/\W+/g, ' ').trim();
+    // a duplicate is the SAME question with the SAME answers (exactly — capitals and punctuation count).
+    // Re-using a question stem like "Which sentence is in the present tense?" with new options is fine.
+    const k = JSON.stringify([q.q.trim(), q.options.map((o) => o.trim())]);
     if (seen.has(k)) out.push({ i, problems: [`Duplicate of question ${seen.get(k) + 1}`] });
     else seen.set(k, i);
   });
