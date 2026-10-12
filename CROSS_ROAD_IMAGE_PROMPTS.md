@@ -19,9 +19,9 @@
 **Save as:** `cross-road-1.png`
 
 ```
-Create a game sprite sheet of FARM ROAD AND RIVER PROPS for a comic-book style classroom game called "Chickens vs Turkeys: Cross the Road" (a Crossy Road style game). Match the attached comic style reference.
+Create a game sprite sheet of FARM ROAD AND RIVER PROPS for a comic-book style classroom game called "Chickens vs Turkeys: Cross the Road" (a road-and-river hopping game). Match the attached comic style reference.
 
-STYLE: chunky toy-like comic cartoon, thick black outlines with a thin white outer stroke, cel-shaded 2–3 tone shading, subtle halftone dots, saturated punchy colours, light from the top-left, family-friendly. Everything is seen from the SIDE with a slight three-quarter top-down angle (like the vehicles in Crossy Road), all facing RIGHT.
+STYLE: chunky toy-like comic cartoon, thick black outlines with a thin white outer stroke, cel-shaded 2–3 tone shading, subtle halftone dots, saturated punchy colours, light from the top-left, family-friendly. Everything is seen from the SIDE with a slight three-quarter top-down angle, all facing RIGHT.
 
 THE 6 PROPS (spread out, not touching):
 1. HAY CART: a wooden farm cart piled high with golden hay bales, two big wooden wheels, a short pull bar at the front. About twice as long as it is tall.
@@ -82,7 +82,7 @@ BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no green in 
 The egg truck, pickup and semi borrowed from Egg Farm are drawn at a front three-quarter angle, so on the road they look like they're driving diagonally off the lane. This sheet redraws them (plus the two tractors, so they all match) **side-on**, driving straight along the road.
 
 ```
-Create a game sprite sheet of 5 FARM ROAD VEHICLES for a comic-book style classroom game called "Chickens vs Turkeys: Cross the Road" (a Crossy Road style game where vehicles drive left and right across the screen). Match the attached comic style reference and the attached hay cart / quad bike sheet exactly.
+Create a game sprite sheet of 5 FARM ROAD VEHICLES for a comic-book style classroom game called "Chickens vs Turkeys: Cross the Road" (a hopping game where vehicles drive left and right across the screen). Match the attached comic style reference and the attached hay cart / quad bike sheet exactly.
 
 STYLE: chunky toy-like comic cartoon, thick black outlines with a thin white outer stroke, cel-shaded 2–3 tone shading, subtle halftone dots, saturated punchy colours, light from the top-left, family-friendly.
 

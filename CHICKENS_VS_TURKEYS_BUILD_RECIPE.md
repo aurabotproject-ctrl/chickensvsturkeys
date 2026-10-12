@@ -8,9 +8,9 @@
 
 ## 1. The Vision
 
-**Chickens vs Turkeys** is a classroom quiz-battle platform that makes Blooket feel old. Teachers pick (or create) a question bank, launch a game, and students join on their own devices with a **code or QR code**. The **teacher/host screen is the main show**: it displays the live arena, team scores, individual standings, and dramatic events. Student devices are **controllers + question screens**.
+**Chickens vs Turkeys** is a classroom quiz-battle platform built to feel fresh and exciting. Teachers pick (or create) a question bank, launch a game, and students join on their own devices with a **code or QR code**. The **teacher/host screen is the main show**: it displays the live arena, team scores, individual standings, and dramatic events. Student devices are **controllers + question screens**.
 
-Everything is **comic-book styled**: thick black outlines, halftone dots, big burst-shaped sound effects (SPLAT! BOK! BLAST!), screen shake, squash-and-stretch. Students should say "can we play Chickens vs Turkeys?" and never mention Blooket again.
+Everything is **comic-book styled**: thick black outlines, halftone dots, big burst-shaped sound effects (SPLAT! BOK! BLAST!), screen shake, squash-and-stretch. Students should say "can we play Chickens vs Turkeys?" first.
 
 **Two teams:** 🐔 Chickens (blue) vs 🦃 Turkeys (red). Students are auto-balanced onto teams. Everyone earns **individual points** and **team points**.
 
@@ -19,7 +19,7 @@ Everything is **comic-book styled**: thick black outlines, halftone dots, big bu
 |---|------|------|-----------|------------------|
 | 1 | **Dodge Egg** | Top-down fake-3D arena, dodgeball layout | Answer questions → each correct answer = 1 egg of ammo. Move around your half to dodge, aim and throw eggs at the other team. 1-minute rounds. | Number of opponents you knock out |
 | 2 | **Egg Cannon** | Side-scrolling, artillery/Worms-style | Answer 5 questions per round → each correct answer = 1 egg. Fire eggs from the bird's rear-end egg cannon using angle + power bar to wreck the enemy fort. | Number of enemy targets you destroy |
-| 3 | **Egg Farm** | Fake-2D bird's-eye idle tycoon (Egg Inc style) | Each student runs their own farm on their device; questions give cash boosts; host screen shows the race. | Money earned |
+| 3 | **Egg Farm** | Fake-2D bird's-eye idle tycoon | Each student runs their own farm on their device; questions give cash boosts; host screen shows the race. | Money earned |
 
 Plus **Random Events** the teacher can trigger (or auto-trigger) in any mode.
 
@@ -238,7 +238,7 @@ Join screen (code + name + avatar pick) → "You're a CHICKEN!" team reveal → 
 - Special eggs earned by streaks: Golden egg (bigger damage), Bomb egg (area damage), Splitter egg.
 
 ### 8.3 Egg Farm (idle tycoon)
-**Phone = the game.** Each student has their own farm (fake-2D bird's-eye, like Egg Inc but in our comic style): coops, chickens/turkeys (their team bird), silo, egg machine, truck.
+**Phone = the game.** Each student has their own farm (fake-2D bird's-eye, in our comic style): coops, chickens/turkeys (their team bird), silo, egg machine, truck.
 - Eggs auto-produce cash per second. Tap bird/coop for bonus eggs. Spend cash on upgrades (more birds, bigger coop, egg machine, truck, silo).
 - **Questions** pop up regularly (or on a tap on a "Quiz Crate"): correct = cash bonus and temporary multiplier (e.g. ×2 for 20 s); wrong = small delay.
 - **Score = total money earned** (not current balance, so spending doesn't hurt).
@@ -465,8 +465,8 @@ More modes, avatar unlocks, class leaderboards across games, progress over time 
 - Throw = drag on the right pad and let go (a quick tap throws straight ahead). Gentle aim assist helps younger students.
 - **Teacher Report** (`teacher/report.html?r=…`): opens from Results or the 📊 View Results button on the winners screen. Toolbar: print/save PDF, choose sections, sort, initials-only, CSV export. Overview + matrix print A4 landscape; question cards + student slips print A4 portrait.
 - **Egg Cannon flow per round:** answer phase (5 questions each, ends when everyone's done or time runs out) → 45 s battle (drag the dial to set angle, tap FIRE as the power bar sweeps) → round ends when all eggs are fired and the dust settles. 3 fort designs (Twin Towers, Castle Keep, Hay Fortress) rotate randomly; scarecrow dummies/pumpkin/barrel/TNT = 1 point, bullseye = 2. Wind changes each round. Fox Raid is skipped in this mode.
-- **Egg Farm (v2, Egg Inc style):** one round of 5 / 8 / 12 minutes. Phone shows the whole farm map (PixiJS): HOLD the HATCH button → chicks run from the hatchery into coops; 4 coop plots × 5 levels; trucks drive along the road and cap eggs sold per second ("trucks full" warning); egg machines multiply egg value; balloons float past (tap for cash / golden eggs); a fox sneaks toward a coop (tap 3× to chase it). Right answer = STAMPEDE of free chicks + cash + golden eggs + ⚡×3 boost + full hatch charge. Golden eggs buy Research (Speedy Hatchery, Happy Hens, Golden Feed, Mega Stampede, Fox Fence). Host runs all economies; numbers in `js/modes/farm/economy.js`, phone scene in `js/modes/farm/scene.js`.
-- **Coop Wars (Tower War style, mode id `towers`):** map generated for the class size (point-symmetric, chickens left/turkeys right), each student owns a start coop; drag to draw lines (max 1/2/3 paths at levels 0/10/20), swipe to cut; troops drain the source's level, lower enemy/neutral levels (0 = capture, owner = the student whose troop captured it), raise friendly ones; tractor sheds (troops worth 2), Egg Snipers (range defence), golden egg piles (+2 to source per egg), hay-bale walls block lines, Grand Barn fort (max 150, ×3 growth). Growth: auto (slow passive growth when ≤4 students, questions-only otherwise) / questions / slow. Correct answer = +8 troops (+3 sure, +4 streak, ×2 Golden Rush) split across the student's buildings. Team score = buildings owned; individual score = damage + 10 per capture. Phones show the same map rotated so their team is at the bottom (synced at `games/{id}/tw/*`). Art prompts: `COOP_WARS_IMAGE_PROMPTS.md`.
+- **Egg Farm (v2, idle-tycoon style):** one round of 5 / 8 / 12 minutes. Phone shows the whole farm map (PixiJS): HOLD the HATCH button → chicks run from the hatchery into coops; 4 coop plots × 5 levels; trucks drive along the road and cap eggs sold per second ("trucks full" warning); egg machines multiply egg value; balloons float past (tap for cash / golden eggs); a fox sneaks toward a coop (tap 3× to chase it). Right answer = STAMPEDE of free chicks + cash + golden eggs + ⚡×3 boost + full hatch charge. Golden eggs buy Research (Speedy Hatchery, Happy Hens, Golden Feed, Mega Stampede, Fox Fence). Host runs all economies; numbers in `js/modes/farm/economy.js`, phone scene in `js/modes/farm/scene.js`.
+- **Coop Wars (draw-a-line troop battle, mode id `towers`):** map generated for the class size (point-symmetric, chickens left/turkeys right), each student owns a start coop; drag to draw lines (max 1/2/3 paths at levels 0/10/20), swipe to cut; troops drain the source's level, lower enemy/neutral levels (0 = capture, owner = the student whose troop captured it), raise friendly ones; tractor sheds (troops worth 2), Egg Snipers (range defence), golden egg piles (+2 to source per egg), hay-bale walls block lines, Grand Barn fort (max 150, ×3 growth). Growth: auto (slow passive growth when ≤4 students, questions-only otherwise) / questions / slow. Correct answer = +8 troops (+3 sure, +4 streak, ×2 Golden Rush) split across the student's buildings. Team score = buildings owned; individual score = damage + 10 per capture. Phones show the same map rotated so their team is at the bottom (synced at `games/{id}/tw/*`). Art prompts: `COOP_WARS_IMAGE_PROMPTS.md`.
 - Events available: Golden Egg Rush, Double Trouble, Shield Up, Egg Storm, Fog of Feathers, Fox Raid (+ automatic Clean Sweep). Team Swap is not used (it scrambles scoring).
 
 ## 13. Starter Prompts (paste after this file)

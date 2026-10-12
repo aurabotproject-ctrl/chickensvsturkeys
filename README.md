@@ -70,7 +70,7 @@ After any game: **Teacher HQ → Results → click a game**, or **View Results**
 ## Egg Cannon (Phases 9–10)
 Create Game → **Egg Cannon**. Each round: students answer 5 questions (each right answer loads 1 egg), then everyone aims with the dial and taps **FIRE** while the power bar swings. Knock over or smash the other team's scarecrows, pumpkins, barrels, TNT and bullseyes for points.
 
-## Egg Farm (Egg Inc style)
+## Egg Farm (idle egg-farm tycoon)
 Create Game → **Egg Farm** → 5, 8 or 12 minutes. Each student runs a farm on their device:
 - **Hold HATCH** → chicks run from the hatchery into your coops (the ring shows hatch charge).
 - **Tap any building** (coop, truck, egg machine) to see its level and choose **⬆ Upgrade** (shows the price) or **💥 Destroy** (gives back half what you paid). Tap **🔨 BUILD** on an empty plot or the machine spot to choose what to build, with prices. A green ⬆ means you can afford an upgrade. The Coops / Trucks / Egg Machine buttons at the bottom open the same choices.
@@ -78,7 +78,7 @@ Create Game → **Egg Farm** → 5, 8 or 12 minutes. Each student runs a farm on
 - **Golden eggs** buy **Research** upgrades. Tap **balloons** for bonuses; tap the **fox** 3 times before it reaches a coop.
 The big screen shows the live team race. Most money earned wins.
 
-## Coop Wars (Tower War style)
+## Coop Wars (draw-a-line troop battle)
 Create Game → **Coop Wars** → 5, 8 or 12 minutes, and choose **Troop growth** (Auto / Questions only / Slow + questions).
 - Every building your team holds belongs to the **whole team** (gold ring on devices). Each student's starting coop shows their name on the big screen.
 - **Tap** one of your team's buildings → a question pops up over the map. Get it right and the troops (+8, more for streaks and 🔥 Sure answers) go to **that building**.
@@ -136,7 +136,7 @@ Create Game → **Egg Toss** → rounds (2 / 4 / 6), and the answer time per rou
 
 ⚠️ Egg Toss adds `et` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
 
-## Land Grab (paper.io style)
+## Land Grab (territory-grab race)
 Create Game → **Land Grab** → number of rounds, and the answer time per round (45 / 60 / 90 s — 60 s recommended).
 - **Each round = 1 minute of questions, then 30 seconds of land grab.** Every right answer in the question minute makes your character faster in the land grab (speed 5, +1 per right answer, up to 14).
 - Everyone starts with a small patch of land. **Starting spots** (Create Game): *Separate sides* = chickens on the left, turkeys on the right; *Mixed* = everyone scattered across the field (harder, more competitive). Each student is their avatar, with their own colour shade.
@@ -167,3 +167,6 @@ Create Game → **Coop Siege** → each half lasts 2½, 3½ or 5 minutes. There 
 
 ## Updating the code
 Before committing a change, run `python3 tools/stamp_version.py`. It adds a version tag (`?v=…`) to every script and stylesheet link so browsers and iPads load the new files straight away instead of an old cached copy.
+
+## Credits
+Open-source libraries and fonts used by this app, with their licences, are listed in [CREDITS.md](CREDITS.md).

@@ -182,7 +182,7 @@ BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no shadows o
 **Save as:** `farm-buildings.png`   **Size:** landscape 1536×1024
 
 ```
-Create a sprite sheet of farm buildings and upgrade objects for a bird's-eye (high-angle three-quarter isometric-style) comic-book idle tycoon game about a chicken and turkey egg farm, like the mobile game Egg Inc but in a bolder comic style, for a game called "Chickens vs Turkeys". Match the attached comic style reference.
+Create a sprite sheet of farm buildings and upgrade objects for a bird's-eye (high-angle three-quarter isometric-style) comic-book idle tycoon game about a chicken and turkey egg farm, in a bold comic style, for a game called "Chickens vs Turkeys". Match the attached comic style reference.
 
 STYLE: modern comic-book / arcade cartoon game art, low-poly-meets-cartoon feel. Thick black outlines with a thin white outer stroke, cel-shaded flat colour, halftone dot shading, saturated punchy colours, chunky toy-like proportions, family-friendly. Light from the top-left; every object has a simple soft oval shadow baked beneath it. All objects share the SAME camera angle (about 45° down, rotated 45°).
 
@@ -202,7 +202,7 @@ BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no green in 
 **Save as:** `farm-ground.jpg`   **Size:** portrait 1024×1536 (phone) — repeat once in landscape if possible
 
 ```
-Create an EMPTY bird's-eye (high-angle three-quarter) farm landscape background for a comic-book style idle tycoon game called "Chickens vs Turkeys". Match the attached comic style reference and the look of the mobile game Egg Inc (a farm seen from above with a winding dirt road), but bolder and more comic.
+Create an EMPTY bird's-eye (high-angle three-quarter) farm landscape background for a comic-book style idle tycoon game called "Chickens vs Turkeys". Match the attached comic style reference (a farm seen from above with a winding dirt road), bold and comic.
 
 STYLE: modern comic-book / arcade cartoon game art, low-poly-meets-cartoon feel. Thick black outlines on objects, cel-shaded flat colour, subtle halftone dot shading, saturated punchy colours, family-friendly. Light from the top-left. 
 

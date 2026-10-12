@@ -5,9 +5,9 @@
 // raise friendly ones. Right answers add troops to your coops.
 // =========================================================
 /* global PIXI */
-import { MAP_W, MAP_H, KINDS, generateMap, maxPaths, pathProblem, tier } from './map.js?v=20261012131233';
-import { loadTextures, drawBackground, makeBuilding, updateBuilding, rangeOf, guardsSelf, COLORS } from './draw.js?v=20261012131233';
-import { sfx } from '../../core/sfx.js?v=20261012131233';
+import { MAP_W, MAP_H, KINDS, generateMap, maxPaths, pathProblem, tier } from './map.js?v=20261012133603';
+import { loadTextures, drawBackground, makeBuilding, updateBuilding, rangeOf, guardsSelf, COLORS } from './draw.js?v=20261012133603';
+import { sfx } from '../../core/sfx.js?v=20261012133603';
 
 const SPEED = 95;            // troop speed (map px / s)
 const SEND_EVERY = 0.55;     // seconds between troops on each path
@@ -153,7 +153,7 @@ export class TowerArena {
     if (a.paths.includes(to)) return false;
     a.paths.push(to);
     (a.by ||= {})[to] = uid; // who drew this line (gets the points)
-    // drawing towards a building that already sends to you replaces its old line? no — both run (classic tower war)
+    // drawing towards a building that already sends to you replaces its old line? no — both run (by design)
     return true;
   }
   cutPath(uid, from, to) {

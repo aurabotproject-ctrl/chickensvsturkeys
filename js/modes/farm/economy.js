@@ -1,5 +1,5 @@
 // =========================================================
-// Egg Farm economy (Egg Inc style) — shared by the host, which runs
+// Egg Farm economy (idle-tycoon style) — shared by the host, which runs
 // it for real, and the phones, which show prices and predictions.
 //
 //   chickens lay eggs → trucks carry eggs away → eggs × value = $

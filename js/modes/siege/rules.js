@@ -1,6 +1,6 @@
 // =========================================================
 // COOP SIEGE — shared rules (host + phones)
-// Plants-vs-Zombies style: one team DEFENDS its coop by placing
+// Lane-defence style: one team DEFENDS its coop by placing
 // defences on a 5 × 9 lawn, the other ATTACKS by sending troops
 // down the rows. Two halves — the teams swap roles at half time.
 // Right answers earn 🌽 corn to spend.

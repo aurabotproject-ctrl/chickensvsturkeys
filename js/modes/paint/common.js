@@ -1,5 +1,5 @@
 // =========================================================
-// LAND GRAB (paper.io style) — shared by the host and the phones.
+// LAND GRAB (territory-grab style) — shared by the host and the phones.
 // The field is a grid. Each cell is owned by a player (or empty);
 // trails are a second grid. Both are sent to phones run-length encoded.
 // =========================================================
@@ -58,7 +58,7 @@ export function rgbOf(c, dl = 0) {
 
 /**
  * Paint the territory + trails into a small canvas (1 pixel per cell);
- * the caller scales it up with smoothing for soft, paper.io-like edges.
+ * the caller scales it up with smoothing for soft, rounded edges.
  */
 export function paintGrid(ctx, own, trail, palette, { shade = 0 } = {}) {
   const img = ctx.createImageData(GW, GH); const d = img.data;

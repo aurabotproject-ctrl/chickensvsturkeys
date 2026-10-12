@@ -18,9 +18,9 @@
 **Save as:** `sg-defences.png`
 
 ```
-Create a game sprite sheet of farm DEFENCES for a comic-book style lawn-defence game called "Chickens vs Turkeys: Coop Siege" (gameplay like Plants vs Zombies: defences sit on squares of a lawn and protect a coop from attackers coming from the right). Match the attached comic style reference.
+Create a game sprite sheet of farm DEFENCES for a comic-book style lawn-defence game called "Chickens vs Turkeys: Coop Siege" (lane-defence gameplay: defences sit on squares of a lawn and protect a coop from attackers coming from the right). Match the attached comic style reference.
 
-STYLE: modern comic-book / arcade cartoon game art, toy-like and chunky. Thick black outlines with a thin white outer stroke, cel-shaded flat colour with 2–3 tone shading, subtle halftone dots, saturated punchy colours, family-friendly, readable at small sizes. Seen from a slight three-quarter front view (like Plants vs Zombies). Every item FACES RIGHT, stands on its own small soft oval shadow, and is drawn at the same scale.
+STYLE: modern comic-book / arcade cartoon game art, toy-like and chunky. Thick black outlines with a thin white outer stroke, cel-shaded flat colour with 2–3 tone shading, subtle halftone dots, saturated punchy colours, family-friendly, readable at small sizes. Seen from a slight three-quarter front view. Every item FACES RIGHT, stands on its own small soft oval shadow, and is drawn at the same scale.
 
 LAYOUT: 2 rows × 7 columns, evenly spaced with generous green space (at least 60 px) around every item, nothing overlapping, nothing cut off, no text or numbers.
 ROW 1 — BLUE CHICKEN TEAM versions (blue trim, blue bandanas):
@@ -43,7 +43,7 @@ BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no green in 
 **Save as:** `sg-attackers-chicken.png`
 
 ```
-Create a sprite sheet of ATTACKING chicken characters for a comic-book style lawn-defence game called "Chickens vs Turkeys: Coop Siege" (like the zombies in Plants vs Zombies, but cute and silly farm chickens on the BLUE team). Match the attached comic style reference.
+Create a sprite sheet of ATTACKING chicken characters for a comic-book style lawn-defence game called "Chickens vs Turkeys: Coop Siege" (a marching wave of cute and silly farm chickens on the BLUE team). Match the attached comic style reference.
 
 STYLE: chunky cute comic-book cartoon, thick black outlines with a thin white outer stroke, cel-shaded flat colour, saturated punchy colours, family-friendly and funny, not scary. Slight three-quarter side view. Everyone FACES RIGHT and walks to the right, on a small soft oval shadow, all at the same scale.
 
@@ -63,7 +63,7 @@ BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no green in 
 **Save as:** `sg-attackers-turkey.png`
 
 ```
-Create a sprite sheet of ATTACKING turkey characters for a comic-book style lawn-defence game called "Chickens vs Turkeys: Coop Siege" (like the zombies in Plants vs Zombies, but cute and silly farm turkeys on the RED team). Match the attached comic style reference.
+Create a sprite sheet of ATTACKING turkey characters for a comic-book style lawn-defence game called "Chickens vs Turkeys: Coop Siege" (a marching wave of cute and silly farm turkeys on the RED team). Match the attached comic style reference.
 
 STYLE: chunky cute comic-book cartoon, thick black outlines with a thin white outer stroke, cel-shaded flat colour, saturated punchy colours, family-friendly and funny, not scary. Slight three-quarter side view. Everyone FACES RIGHT and walks to the right, on a small soft oval shadow, all at the same scale.
 

@@ -17,7 +17,7 @@
 **Save as:** `tw-coops.png` · **Size:** landscape 1536×1024
 
 ```
-Create a game sprite sheet of stackable farm "coop towers" for a comic-book style strategy game called "Chickens vs Turkeys: Coop Wars", in the style of the mobile game Tower War (chunky toy-like buildings seen from a high three-quarter top-down angle, about 50° down). Match the attached comic style reference.
+Create a game sprite sheet of stackable farm "coop towers" for a comic-book style strategy game called "Chickens vs Turkeys: Coop Wars" (chunky toy-like buildings seen from a high three-quarter top-down angle, about 50° down). Match the attached comic style reference.
 
 STYLE: modern comic-book / arcade cartoon game art, toy-like and chunky. Thick black outlines with a thin white outer stroke, cel-shaded flat colour with 2–3 tone shading, subtle halftone dot shading, saturated punchy colours, family-friendly. Light from the top-left. Every building sits on its own small soft oval shadow and is drawn from exactly the same camera angle.
 
@@ -37,7 +37,7 @@ BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no green in 
 **Save as:** `tw-troops.png` · **Size:** landscape 1536×1024
 
 ```
-Create a sprite sheet of tiny marching "troop" characters for a comic-book style farm strategy game called "Chickens vs Turkeys: Coop Wars" (like the soldiers in Tower War, seen from a high three-quarter top-down angle). Match the attached comic style reference.
+Create a sprite sheet of tiny marching "troop" characters for a comic-book style farm strategy game called "Chickens vs Turkeys: Coop Wars" (seen from a high three-quarter top-down angle). Match the attached comic style reference.
 
 STYLE: chunky cute comic-book cartoon, thick black outlines with a thin white outer stroke, cel-shaded flat colour, saturated punchy colours, family-friendly, readable at very small sizes (they will be shown about 30 pixels tall). Light from the top-left.
 
@@ -56,7 +56,7 @@ BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no green in 
 **Save as:** `tw-specials.png` · **Size:** landscape 1536×1024
 
 ```
-Create a sprite sheet of special farm buildings for a comic-book style strategy game called "Chickens vs Turkeys: Coop Wars", in the style of the mobile game Tower War (chunky toy-like buildings seen from a high three-quarter top-down angle). Match the attached comic style reference.
+Create a sprite sheet of special farm buildings for a comic-book style strategy game called "Chickens vs Turkeys: Coop Wars" (chunky toy-like buildings seen from a high three-quarter top-down angle). Match the attached comic style reference.
 
 STYLE: modern comic-book / arcade cartoon game art, toy-like and chunky. Thick black outlines with a thin white outer stroke, cel-shaded flat colour, halftone dot shading, saturated punchy colours, family-friendly. Light from the top-left. Each object sits on a small soft oval shadow, all drawn from the same camera angle, each with a blank round badge plate on top for a number.
 
@@ -75,7 +75,7 @@ BACKGROUND: perfectly flat solid pure green (#00FF00), no gradient, no green in 
 **Save as:** `tw-map-farm.png`, `tw-map-autumn.png`, `tw-map-winter.png` (run the prompt 3 times, changing THEME) · **Size:** landscape 1536×864 (16:9)
 
 ```
-Create an EMPTY top-down battle map background for a comic-book style farm strategy game called "Chickens vs Turkeys: Coop Wars", in the style of the mobile game Tower War (a flat open playing field seen from a high top-down angle, with scenery only around the edges). Match the attached comic style reference.
+Create an EMPTY top-down battle map background for a comic-book style farm strategy game called "Chickens vs Turkeys: Coop Wars" (a flat open playing field seen from a high top-down angle, with scenery only around the edges). Match the attached comic style reference.
 
 THEME: [FARM SUMMER — bright green grass, wildflowers, a duck pond, hay bales, a red barn in one corner]
 (or) [AUTUMN — orange and gold grass, fallen leaves, pumpkins, a corn field edge]
@@ -92,7 +92,7 @@ LAYOUT: a wide 16:9 rectangle. The LEFT quarter of the field has a subtle blue t
 **Save as:** `tw-obstacles.png` · **Size:** landscape 1536×1024
 
 ```
-Create a sprite sheet of obstacles for a comic-book style farm strategy game called "Chickens vs Turkeys: Coop Wars", seen from a high three-quarter top-down angle like the mobile game Tower War. Match the attached comic style reference.
+Create a sprite sheet of obstacles for a comic-book style farm strategy game called "Chickens vs Turkeys: Coop Wars", seen from a high three-quarter top-down angle. Match the attached comic style reference.
 
 STYLE: chunky toy-like comic-book cartoon, thick black outlines with a thin white outer stroke, cel-shaded flat colour, halftone shading, saturated colours, family-friendly. Light from the top-left. Each object sits on a soft oval shadow.
 
