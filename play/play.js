@@ -3,26 +3,26 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261012133603';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261012133603';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261012133603';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261012133603';
-import { sfx } from '../js/core/sfx.js?v=20261012133603';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261012133603';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261012133603';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261012133603';
-import { PaintView } from '../js/modes/paint/view.js?v=20261012133603';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261012133603';
-import { CrossView } from '../js/modes/cross/view.js?v=20261012133603';
-import { howtoHTML } from '../js/core/howto.js?v=20261012133603';
-import { StackView } from '../js/modes/stack/view.js?v=20261012133603';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261012133603';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261012133603';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261012133603';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261012133603';
-import { TowerView } from '../js/modes/towers/view.js?v=20261012133603';
-import * as FE from '../js/modes/farm/economy.js?v=20261012133603';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261012133603';
+} from '../js/core/firebase.js?v=20261012150442';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261012150442';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261012150442';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261012150442';
+import { sfx } from '../js/core/sfx.js?v=20261012150442';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261012150442';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261012150442';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261012150442';
+import { PaintView } from '../js/modes/paint/view.js?v=20261012150442';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261012150442';
+import { CrossView } from '../js/modes/cross/view.js?v=20261012150442';
+import { howtoHTML } from '../js/core/howto.js?v=20261012150442';
+import { StackView } from '../js/modes/stack/view.js?v=20261012150442';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261012150442';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261012150442';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261012150442';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261012150442';
+import { TowerView } from '../js/modes/towers/view.js?v=20261012150442';
+import * as FE from '../js/modes/farm/economy.js?v=20261012150442';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261012150442';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -47,13 +47,39 @@ const TSCORE = (n) => (isStack() ? `${(Math.round((n || 0) * 10) / 10).toFixed(1
 const SCORE = (n) => (isFarm() ? fmt(n) : isPaint() ? `${Math.round((n || 0) * 10) / 10}%` : Math.floor(n || 0));
 
 // ---------------- join ----------------
+/** The 2D graphics engine is only needed for Egg Farm and Coop Wars, so it is
+ *  fetched when one of those games starts — not before a student can join. */
+let pixiP = null;
+function loadPixi() {
+  if (window.PIXI) return Promise.resolve();
+  pixiP ||= new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js';
+    s.onload = () => resolve(); s.onerror = () => { pixiP = null; reject(new Error('Could not load the game graphics')); };
+    document.head.appendChild(s);
+  });
+  return pixiP;
+}
+/** Look the code up as soon as 6 characters are typed, so JOIN is instant. */
+const codeLookups = new Map();
+function lookupEarly(code) {
+  if (code.length !== 6) return null;
+  if (!codeLookups.has(code)) {
+    const pr = ensureSignedIn().then(() => lookupCode(code));
+    pr.catch(() => codeLookups.delete(code));
+    codeLookups.set(code, pr);
+  }
+  return codeLookups.get(code);
+}
+
 async function boot() {
   if (!isConfigured) { $('#join-err').textContent = 'Game server not set up yet.'; return; }
   const saved = (() => { try { return JSON.parse(sessionStorage.getItem(SAVE_KEY) || 'null'); } catch { return null; } })();
   $('#code').value = cleanCode(params.get('code') || saved?.code || '');
   $('#name').value = saved?.name || '';
   if (params.get('code') && !saved) $('#name').focus();
-  $('#code').addEventListener('input', (e) => { e.target.value = cleanCode(e.target.value); });
+  $('#code').addEventListener('input', (e) => { e.target.value = cleanCode(e.target.value); lookupEarly(e.target.value); });
+  lookupEarly($('#code').value);
   $('#join-form').addEventListener('submit', (e) => { e.preventDefault(); join(); });
   try { uid = (await ensureSignedIn()).uid; } catch (e) { $('#join-err').textContent = explainError(e); return; }
   if (saved?.g && saved?.name) join(saved);
@@ -70,21 +96,25 @@ async function join(saved) {
   if (!name) { err.textContent = 'Type your name.'; return; }
   if (BAD.test(name)) { err.textContent = 'Please use your real first name.'; return; }
   btn.disabled = true; btn.textContent = 'Joining…';
+  // on slow school Wi-Fi, let them know it's still working
+  const slowT = setTimeout(() => { err.textContent = 'Still connecting… slow Wi-Fi, hang tight!'; }, 6000);
   try {
-    gameId = saved?.g || await lookupCode(code);
+    if (!uid) uid = (await ensureSignedIn()).uid; // they tapped JOIN before sign-in had finished
+    gameId = saved?.g || await lookupEarly(code);
     if (!gameId) throw new Error('No game with that code. Check the big screen!');
-    const kicked = await get(G(`kicked/${uid}`));
+    const [kicked, existing] = await Promise.all([get(G(`kicked/${uid}`)), get(G(`players/${uid}`))]); // both at once
     if (kicked.val()) throw new Error('The teacher removed you from this game.');
-    const existing = await get(G(`players/${uid}`));
     const upd = { [`players/${uid}/name`]: existing.val()?.name || name, [`players/${uid}/online`]: true };
     if (!existing.exists()) upd[`players/${uid}/joinedAt`] = Date.now();
     await update(ref(db, `games/${gameId}`), upd);
     onDisconnect(G(`players/${uid}/online`)).set(false);
     try { sessionStorage.setItem(SAVE_KEY, JSON.stringify({ g: gameId, code, name })); } catch { /* ignore */ }
+    clearTimeout(slowT); err.textContent = '';
     sfx.join();
     subscribe();
     keepAwake();
   } catch (e) {
+    clearTimeout(slowT);
     console.error(e);
     try { sessionStorage.removeItem(SAVE_KEY); } catch { /* ignore */ }
     err.textContent = e.message?.includes('PERMISSION') ? explainError(e) : e.message;
@@ -103,7 +133,7 @@ function subscribe() {
     D.me = v; render();
   });
   on(`kicked/${uid}`, (v) => { if (v) leave('The teacher removed you from this game.'); });
-  on('state', (v) => { D.state = v || {}; onState(); render(); });
+  on('state', (v) => { D.state = v || {}; if (isFarm() || isTowers()) loadPixi().catch(() => {}); onState(); render(); });
   on(`pstate/${uid}`, (v) => { D.ps = v || {}; onPstate(); });
   on(`current/${uid}`, (v) => { D.cur = v; drawQuestion(); });
   on(`fb/${uid}`, (v) => { D.fb = v; drawFeedback(); });
@@ -641,7 +671,7 @@ function ensureScene() {
   });
   $('#fm-chick-ico').src = sprite(`${D.me?.team || 'chicken'}_idle`);
   const doneFm = showLoading('Building your farm…', $('#fm-wrap'));
-  FM.scene.init().then(() => { doneFm(); if (D.ps.coops) FM.scene.update(D.ps); }).catch((e) => { doneFm(); console.error(e); });
+  loadPixi().then(() => FM.scene.init()).then(() => { doneFm(); if (D.ps.coops) FM.scene.update(D.ps); }).catch((e) => { doneFm(); console.error(e); });
 }
 
 function sendFarm(extra = {}) {
@@ -799,7 +829,7 @@ function ensureTw() {
     onTap: (b) => openTwQuiz(b.i),
   });
   const doneTw = showLoading('Loading the map…', $('#tw-scene').parentElement);
-  TW.view.init().then(() => {
+  loadPixi().then(() => TW.view.init()).then(() => {
     doneTw();
     if (TW.static) TW.view.setStatic(TW.static);
     if (TW.own) TW.view.setOwn(TW.own);

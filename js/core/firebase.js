@@ -41,7 +41,7 @@ export let db = null;
 if (isConfigured) {
   app = initializeApp(firebaseConfig);
   auth = isStudentPage
-    ? initializeAuth(app, { persistence: browserSessionPersistence, popupRedirectResolver: browserPopupRedirectResolver })
+    ? initializeAuth(app, { persistence: browserSessionPersistence }) // students never use popups — skipping the popup helper avoids loading Google's sign-in iframe on iPads
     : getAuth(app);
   db = getDatabase(app);
 }
@@ -56,13 +56,21 @@ export function currentUser() {
 /** Calls cb(user|null) now and whenever sign-in changes. */
 export function watchUser(cb) { return onAuthStateChanged(auth, cb); }
 
-/** Students + test pages: anonymous sign-in (one player per tab). */
-export async function ensureSignedIn() {
-  if (!isConfigured) throw new Error('Firebase is not configured yet.');
-  const u = await currentUser();
-  if (u) return u;
-  const cred = await signInAnonymously(auth);
-  return cred.user;
+/** Students + test pages: anonymous sign-in (one player per tab).
+ *  Shared promise: the page starts signing in the moment it opens (play/early.js),
+ *  and everything else just waits on that same sign-in. A failed try can be retried. */
+let signInP = null;
+export function ensureSignedIn() {
+  if (!isConfigured) return Promise.reject(new Error('Firebase is not configured yet.'));
+  if (!signInP) {
+    signInP = (async () => {
+      const u = await currentUser();
+      if (u) return u;
+      return (await signInAnonymously(auth)).user;
+    })();
+    signInP.catch(() => { signInP = null; });
+  }
+  return signInP;
 }
 
 /** Teachers: Google sign-in popup. */

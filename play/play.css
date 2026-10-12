@@ -7,7 +7,7 @@ body.team-turkey { --team: var(--turkey); --team-dark: var(--turkey-dark); }
 
 /* Join */
 #join { display: grid; align-content: center; justify-items: center; gap: 14px; }
-.join-logo { width: min(380px, 90vw); filter: drop-shadow(4px 4px 0 var(--ink)); }
+.join-logo { width: min(380px, 90vw); height: auto; filter: drop-shadow(4px 4px 0 var(--ink)); }
 .join-form { width: min(380px, 100%); display: grid; gap: 12px; }
 .code-input { font-family: var(--font-burst); font-size: 2.2rem; text-align: center; letter-spacing: .25em; text-transform: uppercase; }
 
