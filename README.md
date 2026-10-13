@@ -68,7 +68,7 @@ CHICKENS_VS_TURKEYS_BUILD_RECIPE.md / _IMAGE_PROMPTS.md
 After any game: **Teacher HQ → Results → click a game**, or **View Results** on the winners screen. Print it or *Save as PDF*.
 
 ## Egg Cannon (Phases 9–10)
-Create Game → **Egg Cannon**. Each round: students answer 5 questions (each right answer loads 1 egg), then everyone aims with the dial and taps **FIRE** while the power bar swings. Knock over or smash the other team's scarecrows, pumpkins, barrels, TNT and bullseyes for points.
+Create Game → **Egg Cannon**. Each round: students answer 5 questions (each right answer loads 1 egg), then each student sees just their own bird: hold a finger on the screen (the power bar bounces up and down), slide it to aim, and let go to **FIRE** with that power and direction. Knock over or smash the other team's scarecrows, pumpkins, barrels, TNT and bullseyes for points.
 
 ## Egg Farm (idle egg-farm tycoon)
 Create Game → **Egg Farm** → 5, 8 or 12 minutes. Each student runs a farm on their device:

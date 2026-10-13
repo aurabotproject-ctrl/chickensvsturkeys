@@ -107,16 +107,29 @@ body.mode-cannon .tabs, body.mode-cannon #ko { display: none !important; }
 .qprog { text-align: center; font-family: var(--font-comic); letter-spacing: .06em; font-size: 1.3rem; color: var(--yolk); }
 .cn-info { display: flex; justify-content: space-between; gap: 8px; font-family: var(--font-comic); letter-spacing: .05em; font-size: 1.4rem; }
 .cn-info span { background: var(--navy-700); border: 3px solid var(--ink); border-radius: 999px; padding: 2px 14px; }
-.cn-dial { position: relative; flex: 1; min-height: 0; border: 4px solid var(--ink); border-radius: 22px; background: radial-gradient(circle at 50% 100%, #2a4f9a, #13306e); touch-action: none; box-shadow: var(--pop-shadow-sm); }
-.cn-dial svg { position: absolute; inset: 8px; width: calc(100% - 16px); height: calc(100% - 16px); }
-.cn-angle { position: absolute; top: 8px; left: 0; right: 0; text-align: center; font-family: var(--font-burst); font-size: 2.4rem; color: var(--yolk); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; pointer-events: none; }
-.cn-hint { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; font-size: .8rem; opacity: .75; pointer-events: none; }
+.cn-stage { position: relative; flex: 1; min-height: 0; border: 4px solid var(--ink); border-radius: 22px; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; background: linear-gradient(#5fb8ff, #a8dcff 70%); box-shadow: var(--pop-shadow-sm); }
+.cn-hills { position: absolute; left: -10%; right: -10%; bottom: 12%; height: 22%; background: radial-gradient(ellipse at 25% 100%, #77c043 0 45%, transparent 46%), radial-gradient(ellipse at 75% 100%, #6ab934 0 50%, transparent 51%); pointer-events: none; }
+.cn-ground { position: absolute; left: 0; right: 0; bottom: 0; height: 14%; background: linear-gradient(#5aa82a 0 18%, #8a5a2b 18%); border-top: 4px solid var(--ink); pointer-events: none; }
+.cn-svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.cn-bird { position: absolute; bottom: 9%; width: min(48%, 44vh); aspect-ratio: 1; pointer-events: none; transition: transform 120ms; }
+.cn-bird img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(3px 3px 0 var(--ink)); }
+.cn-bird.flip img { transform: scaleX(-1); }
+.cn-bird b { position: absolute; left: 0; right: 0; bottom: -4px; text-align: center; font-family: var(--font-burst); font-size: 1.3rem; letter-spacing: .04em; color: #fff; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; }
+.cn-bird.hold { animation: cn-wobble .18s linear infinite; }
+.cn-bird.recoil { transform: scale(1.12, .9); }
+@keyframes cn-wobble { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(2px) rotate(.6deg); } }
+.cn-shot { position: absolute; width: 34px; height: 40px; left: 0; top: 0; opacity: 0; pointer-events: none; filter: drop-shadow(2px 2px 0 var(--ink)); }
+.cn-puff { position: absolute; width: 90px; left: 0; top: 0; opacity: 0; pointer-events: none; }
+.cn-angle { position: absolute; top: 6px; left: 0; right: 0; text-align: center; font-family: var(--font-burst); font-size: 2.2rem; color: var(--yolk); -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; pointer-events: none; }
+.cn-word { position: absolute; top: 28%; left: 0; right: 0; text-align: center; font-family: var(--font-burst); font-size: 2.6rem; color: #fff; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; pointer-events: none; opacity: 0; }
+.cn-word.show { animation: pop-in 300ms var(--ease-pop) both; opacity: 1; }
+.cn-hint { position: absolute; top: 22%; left: 8%; right: 8%; text-align: center; font-weight: 900; font-size: 1.15rem; background: rgba(11,31,75,.78); border: 3px solid var(--ink); border-radius: 16px; padding: 8px 10px; pointer-events: none; transition: opacity .25s; }
+.cn-hint small { font-weight: 800; font-size: .85rem; opacity: .85; }
+.cn-stage.holding .cn-hint, .cn-stage.used .cn-hint { opacity: 0; }
 .cn-meter { position: relative; height: 54px; border: 4px solid var(--ink); border-radius: 16px; overflow: hidden; background: linear-gradient(90deg, #3dab2b, #ffc72c 60%, #e5462d); box-shadow: var(--pop-shadow-sm); }
 .cn-meter i { position: absolute; top: 0; bottom: 0; right: 0; background: rgba(6,18,46,.82); }
 .cn-meter b { position: absolute; top: -4px; bottom: -4px; width: 6px; background: #fff; border: 2px solid var(--ink); }
 .cn-meter span { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-comic); letter-spacing: .2em; font-size: 1.3rem; color: #fff; text-shadow: 2px 2px 0 var(--ink); pointer-events: none; }
-.cn-fire { width: 100%; font-size: 2.4rem; }
-.cn-fire:disabled { filter: grayscale(.9) brightness(.8); }
 
 /* ---------- Egg Farm ---------- */
 body.mode-farm .egg-bar, body.mode-farm .egg-count { display: none; }

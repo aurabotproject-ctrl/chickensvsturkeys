@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://chickens-vs-turkeys-default-rtdb.asia-southeast1.firebasedatabase.app" crossorigin>
-  <script type="module" src="early.js?v=20261012150442"></script>
-  <link rel="stylesheet" href="../css/tokens.css?v=20261012150442">
-  <link rel="stylesheet" href="../css/ui.css?v=20261012150442">
-  <link rel="stylesheet" href="play.css?v=20261012150442">
+  <script type="module" src="early.js?v=20261013152436"></script>
+  <link rel="stylesheet" href="../css/tokens.css?v=20261013152436">
+  <link rel="stylesheet" href="../css/ui.css?v=20261013152436">
+  <link rel="stylesheet" href="play.css?v=20261013152436">
 </head>
 <body>
   <!-- JOIN -->
@@ -67,18 +67,16 @@
     </div>
     <div id="view-cannon" class="view hidden">
       <div class="cn-info"><span id="cn-eggs">🥚 0 eggs</span><span id="cn-wind">NO WIND</span></div>
-      <div class="cn-dial" id="cn-dial">
-        <svg viewBox="0 0 220 130" aria-hidden="true">
-          <path id="cn-arc" d="" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="22" stroke-linecap="round"/>
-          <line id="cn-arrow" x1="0" y1="0" x2="0" y2="0" stroke="#ffc72c" stroke-width="10" stroke-linecap="round"/>
-          <circle id="cn-tip" r="13" fill="#ffc72c" stroke="#111" stroke-width="4"/>
-          <circle id="cn-pivot" r="12" fill="#fff" stroke="#111" stroke-width="4"/>
-        </svg>
+      <div class="cn-stage" id="cn-stage">
+        <div class="cn-hills"></div><div class="cn-ground"></div>
+        <svg class="cn-svg" id="cn-svg" aria-hidden="true"><g id="cn-dots"></g><circle id="cn-tip" r="12" fill="#ffc72c" stroke="#111" stroke-width="4"/></svg>
+        <div class="cn-bird" id="cn-bird"><img id="cn-bird-img" alt=""><b id="cn-name"></b></div>
+        <img class="cn-shot" id="cn-shot" alt=""><img class="cn-puff" id="cn-puff" alt="">
         <div class="cn-angle" id="cn-angle">45°</div>
-        <div class="cn-hint">drag to aim</div>
+        <div class="cn-word" id="cn-word"></div>
+        <div class="cn-hint" id="cn-hint">👆 HOLD your finger down<br><small>slide to aim · let go to FIRE</small></div>
       </div>
       <div class="cn-meter"><i id="cn-fill"></i><b id="cn-last" class="hidden"></b><span>POWER</span></div>
-      <button id="cn-fire" class="btn big red cn-fire">🔥 FIRE!</button>
     </div>
     <div id="view-farm" class="view hidden">
       <div class="fm-top">
@@ -184,6 +182,6 @@
   </section>
 
   <div id="overlay" class="overlay hidden"></div>
-  <script type="module" src="play.js?v=20261012150442"></script>
+  <script type="module" src="play.js?v=20261013152436"></script>
 </body>
 </html>

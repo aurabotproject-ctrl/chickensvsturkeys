@@ -4,7 +4,7 @@
 // Each game has 3 steps with a little looping animation, plus "how to win".
 // Games without an entry simply skip the card.
 // =========================================================
-import { sprite } from './assets.js?v=20261012150442';
+import { sprite } from './assets.js?v=20261013152436';
 
 const S = (n) => sprite(n);
 
@@ -81,7 +81,7 @@ export const HOWTO = {
     title: 'EGG CANNON',
     steps: [
       { scene: 'answer', big: 'Answer 5 questions', small: 'Every right answer loads 1 egg into your cannon' },
-      { scene: 'tap', p: { img: 'c_chicken_aim', pop: 'FIRE!' }, big: 'Aim, then tap FIRE', small: 'Turn the dial to aim — fire when the power bar is just right' },
+      { scene: 'tap', p: { img: 'c_chicken_aim', pop: 'FIRE!' }, big: 'Hold, aim, let go!', small: 'Hold your finger down and slide it to aim — let go when the power bar is just right' },
       { scene: 'throwAt', p: { from: 'c_chicken_fire', target: 't_turkey', hit: 't_turkey_ko' }, big: 'Smash their fort!', small: 'Knock over scarecrows, pumpkins, barrels and TNT' },
     ],
     win: 'Most target points wins!',

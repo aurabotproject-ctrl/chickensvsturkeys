@@ -3,26 +3,26 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261012150442';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261012150442';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261012150442';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261012150442';
-import { sfx } from '../js/core/sfx.js?v=20261012150442';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261012150442';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261012150442';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261012150442';
-import { PaintView } from '../js/modes/paint/view.js?v=20261012150442';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261012150442';
-import { CrossView } from '../js/modes/cross/view.js?v=20261012150442';
-import { howtoHTML } from '../js/core/howto.js?v=20261012150442';
-import { StackView } from '../js/modes/stack/view.js?v=20261012150442';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261012150442';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261012150442';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261012150442';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261012150442';
-import { TowerView } from '../js/modes/towers/view.js?v=20261012150442';
-import * as FE from '../js/modes/farm/economy.js?v=20261012150442';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261012150442';
+} from '../js/core/firebase.js?v=20261013152436';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261013152436';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261013152436';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261013152436';
+import { sfx } from '../js/core/sfx.js?v=20261013152436';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261013152436';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261013152436';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261013152436';
+import { PaintView } from '../js/modes/paint/view.js?v=20261013152436';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261013152436';
+import { CrossView } from '../js/modes/cross/view.js?v=20261013152436';
+import { howtoHTML } from '../js/core/howto.js?v=20261013152436';
+import { StackView } from '../js/modes/stack/view.js?v=20261013152436';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261013152436';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261013152436';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261013152436';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261013152436';
+import { TowerView } from '../js/modes/towers/view.js?v=20261013152436';
+import * as FE from '../js/modes/farm/economy.js?v=20261013152436';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261013152436';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -266,7 +266,7 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross() || isStack()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); $('#cn-stage').classList.remove('used'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross() || isStack()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
   document.body.classList.toggle('mode-paint', isPaint());
@@ -350,7 +350,7 @@ function onPstate() {
   if (eggs === 0) $('#tab-fight').classList.remove('nudge');
   L.prevEggs = eggs;
   $('#cn-eggs').textContent = `🥚 ${eggs} egg${eggs === 1 ? '' : 's'}`;
-  $('#cn-fire').disabled = eggs === 0;
+  if (isCannon()) drawDial();
   drawProgress();
   if (!D.cur && isCannon()) drawQuestion();
   const ko = $('#ko');
@@ -583,21 +583,40 @@ function drawProgress() {
   }
 }
 
-const CN = { angle: 45, power: 0, t0: performance.now(), raf: 0, lastSent: 0 };
+// ---------------- Egg Cannon: just YOUR bird ----------------
+// Hold a finger anywhere on the picture: the power bar starts bouncing up and down
+// and the aim follows your finger. Let go = FIRE with that power and direction.
+const CN = { angle: 45, power: 0, holding: false, t0: 0, raf: 0, lastSent: 0, lastFire: 0, pid: null, team: '' };
+const CN_COOLDOWN = 750; // the big screen needs 0.7 s between eggs
 function cnGeom() {
+  const st = $('#cn-stage'); const bird = $('#cn-bird');
   const dir = D.me?.team === 'turkey' ? -1 : 1;
-  return { dir, px: dir > 0 ? 24 : 196, py: 118, r: 92 };
+  const W = st.clientWidth; const H = st.clientHeight;
+  const bw = bird.offsetWidth; const bl = bird.offsetLeft; const bt = bird.offsetTop;
+  // the cannon's mouth is near the top corner of the picture, on the enemy's side
+  return { dir, W, H, px: bl + bw * (dir > 0 ? 0.86 : 0.14), py: bt + bw * 0.16 };
 }
 function drawDial() {
-  const { dir, px, py, r } = cnGeom();
+  if (!D.me?.team) return;
+  const team = D.me.team; const bird = $('#cn-bird');
+  if (CN.team !== team) {
+    CN.team = team;
+    bird.classList.toggle('flip', team === 'chicken'); // chickens face left so the cannon points right
+    bird.style.left = team === 'chicken' ? '3%' : ''; bird.style.right = team === 'chicken' ? '' : '3%';
+    $('#cn-shot').src = sprite(team === 'turkey' ? 'egg_red' : 'egg_blue');
+    $('#cn-puff').src = sprite('puff');
+  }
+  const src = sprite(`c_${team}_aim`); const img = $('#cn-bird-img'); // the aiming pose shows the cannon where the dots start
+  if (img.getAttribute('src') !== src) img.setAttribute('src', src);
+  $('#cn-name').textContent = D.me.name || '';
+  const { dir, W, H, px, py } = cnGeom(); if (!W) return;
   const a = (CN.angle * Math.PI) / 180;
-  const ex = px + dir * Math.cos(a) * r; const ey = py - Math.sin(a) * r;
-  const pts = []; for (let d = 5; d <= 85; d += 5) { const t = (d * Math.PI) / 180; pts.push(`${(px + dir * Math.cos(t) * r).toFixed(1)} ${(py - Math.sin(t) * r).toFixed(1)}`); }
-  $('#cn-arc').setAttribute('d', `M ${pts.join(' L ')}`);
-  const arrow = $('#cn-arrow');
-  arrow.setAttribute('x1', px); arrow.setAttribute('y1', py); arrow.setAttribute('x2', ex); arrow.setAttribute('y2', ey);
-  $('#cn-tip').setAttribute('cx', ex); $('#cn-tip').setAttribute('cy', ey);
-  $('#cn-pivot').setAttribute('cx', px); $('#cn-pivot').setAttribute('cy', py);
+  const len = Math.min(W * 0.8, H * 0.85) * (CN.holding ? 0.3 + 0.7 * CN.power : 0.45);
+  let dots = '';
+  for (let i = 1; i <= 7; i++) { const d = (len * i) / 8; dots += `<circle cx="${(px + dir * Math.cos(a) * d).toFixed(1)}" cy="${(py - Math.sin(a) * d).toFixed(1)}" r="${3 + i * 0.6}" fill="#fff" stroke="#111" stroke-width="2" opacity="${CN.holding ? 1 : 0.55}"/>`; }
+  $('#cn-dots').innerHTML = dots;
+  const tip = $('#cn-tip'); tip.setAttribute('cx', px + dir * Math.cos(a) * len); tip.setAttribute('cy', py - Math.sin(a) * len);
+  tip.setAttribute('opacity', CN.holding ? 1 : 0.55);
   $('#cn-angle').textContent = `${Math.round(CN.angle)}°`;
   const w = D.state.wind || 0;
   $('#cn-wind').textContent = w ? `WIND ${w > 0 ? '→' : '←'} ${Math.abs(w)}` : 'NO WIND';
@@ -609,43 +628,83 @@ function sendAim(force = false) {
   input.angle = Math.round(CN.angle); input.power = +CN.power.toFixed(3);
   update(G(`inputs/${uid}`), { ...input }).catch(() => {});
 }
+function cnWord(text) {
+  const w = $('#cn-word'); w.textContent = text; w.classList.remove('show'); void w.offsetWidth; w.classList.add('show');
+  clearTimeout(cnWord.t); cnWord.t = setTimeout(() => w.classList.remove('show'), 900);
+}
 function startMeter() {
   drawDial();
   cancelAnimationFrame(CN.raf);
   const loop = (t) => {
-    // power sweeps up and down every 1.6 s
-    const k = ((t - CN.t0) / 800) % 2;
-    CN.power = k < 1 ? k : 2 - k;
+    if (CN.holding) {
+      // power bounces 0 → 100% → 0 every 1.6 s while the finger is down
+      const k = ((t - CN.t0) / 800) % 2;
+      CN.power = k < 1 ? k : 2 - k;
+      drawDial();
+    }
     $('#cn-fill').style.width = `${(1 - CN.power) * 100}%`;
     if (!$('#view-cannon').classList.contains('hidden')) CN.raf = requestAnimationFrame(loop);
   };
   CN.raf = requestAnimationFrame(loop);
 }
+function cnShotAnim() {
+  const { dir, px, py } = cnGeom(); const a = (CN.angle * Math.PI) / 180;
+  const d = 260 + CN.power * 340;
+  const egg = $('#cn-shot');
+  egg.animate([
+    { transform: `translate(${px - 17}px, ${py - 20}px) rotate(0deg)`, opacity: 1 },
+    { transform: `translate(${px - 17 + dir * Math.cos(a) * d}px, ${py - 20 - Math.sin(a) * d}px) rotate(${dir * 540}deg)`, opacity: 1, offset: 0.85 },
+    { transform: `translate(${px - 17 + dir * Math.cos(a) * d * 1.1}px, ${py - 20 - Math.sin(a) * d * 1.1}px) rotate(${dir * 600}deg)`, opacity: 0 },
+  ], { duration: 650, easing: 'cubic-bezier(.2,.7,.4,1)' });
+  $('#cn-puff').animate([
+    { transform: `translate(${px - 45}px, ${py - 45}px) scale(.3)`, opacity: 1 },
+    { transform: `translate(${px - 45}px, ${py - 45}px) scale(1.2)`, opacity: 0 },
+  ], { duration: 450, easing: 'ease-out' });
+  $('#cn-stage').classList.add('used');
+  const bird = $('#cn-bird'); bird.classList.add('recoil'); setTimeout(() => bird.classList.remove('recoil'), 160);
+}
 (function setupCannon() {
-  const dial = $('#cn-dial');
-  const svg = dial.querySelector('svg');
+  const st = $('#cn-stage');
   const aimAt = (e) => {
-    const r = svg.getBoundingClientRect();
-    const sx = 220 / r.width; const sy = 130 / r.height; const s = Math.max(sx, sy);
-    const ox = (r.width * s - 220) / 2; const oy = (r.height * s - 130) / 2;
-    const x = (e.clientX - r.left) * s - ox; const y = (e.clientY - r.top) * s - oy;
+    const r = st.getBoundingClientRect();
     const { dir, px, py } = cnGeom();
-    const ang = (Math.atan2(py - y, dir * (x - px)) * 180) / Math.PI;
+    const x = e.clientX - r.left; const y = e.clientY - r.top;
+    let ang = (Math.atan2(py - y, dir * (x - px)) * 180) / Math.PI;
+    if (ang < -90) ang = 85; // finger behind and below the bird → straight up-ish
     CN.angle = Math.max(5, Math.min(85, ang));
-    drawDial(); sendAim();
   };
-  let dragging = false;
-  dial.addEventListener('pointerdown', (e) => { dragging = true; dial.setPointerCapture(e.pointerId); aimAt(e); });
-  dial.addEventListener('pointermove', (e) => { if (dragging) aimAt(e); });
-  dial.addEventListener('pointerup', () => { dragging = false; sendAim(true); });
-  $('#cn-fire').addEventListener('click', () => {
-    if ((D.ps.eggs || 0) <= 0 || D.state.phase !== 'playing') return;
+  const canPlay = () => D.state.phase === 'playing' && !D.state.paused;
+  st.addEventListener('contextmenu', (e) => e.preventDefault());
+  st.addEventListener('pointerdown', (e) => {
+    if (CN.pid !== null || !canPlay()) return;
+    e.preventDefault();
+    CN.pid = e.pointerId; st.setPointerCapture(e.pointerId);
+    CN.holding = true; CN.t0 = performance.now(); CN.power = 0;
+    st.classList.add('holding'); $('#cn-bird').classList.add('hold');
+    $('#cn-last').classList.add('hidden');
+    aimAt(e); drawDial(); sendAim(true);
+    if ((D.ps.eggs || 0) <= 0) cnWord('NO EGGS!');
+    navigator.vibrate?.(10);
+  });
+  st.addEventListener('pointermove', (e) => { if (e.pointerId !== CN.pid) return; aimAt(e); drawDial(); sendAim(); });
+  const release = (e, cancelled) => {
+    if (e.pointerId !== CN.pid) return;
+    CN.pid = null; CN.holding = false;
+    st.classList.remove('holding'); $('#cn-bird').classList.remove('hold');
+    const last = $('#cn-last'); last.classList.remove('hidden'); last.style.left = `calc(${CN.power * 100}% - 3px)`;
+    if (cancelled || !canPlay()) { drawDial(); return; }
+    if ((D.ps.eggs || 0) <= 0) { cnWord('NO EGGS!'); sendAim(true); drawDial(); sfx.wrong?.(); return; }
+    if (Date.now() - CN.lastFire < CN_COOLDOWN) { cnWord('RELOADING…'); sendAim(true); drawDial(); return; }
+    CN.lastFire = Date.now();
     input.throws += 1;
     sendAim(true);
-    const last = $('#cn-last'); last.classList.remove('hidden'); last.style.left = `calc(${CN.power * 100}% - 3px)`;
+    cnShotAnim(); cnWord(CN.power > 0.92 ? 'MAX POWER!' : 'FIRE!');
     sfx.egg(); navigator.vibrate?.(30);
-  });
-  drawDial();
+    drawDial(); setTimeout(drawDial, 420);
+  };
+  st.addEventListener('pointerup', (e) => release(e, false));
+  st.addEventListener('pointercancel', (e) => release(e, true));
+  new ResizeObserver(() => { if (isCannon()) drawDial(); }).observe(st);
 })();
 
 // ---------------- Egg Farm ----------------
