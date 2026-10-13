@@ -67,8 +67,11 @@ CHICKENS_VS_TURKEYS_BUILD_RECIPE.md / _IMAGE_PROMPTS.md
 ## Teacher Report (Phase 8)
 After any game: **Teacher HQ → Results → click a game**, or **View Results** on the winners screen. Print it or *Save as PDF*.
 
-## Egg Cannon (Phases 9–10)
-Create Game → **Egg Cannon**. Each round: students answer 5 questions (each right answer loads 1 egg), then each student sees just their own bird: hold a finger on the screen (the power bar bounces up and down), slide it to aim, and let go to **FIRE** with that power and direction. Knock over or smash the other team's scarecrows, pumpkins, barrels, TNT and bullseyes for points.
+## Egg Cannon
+Create Game → **Egg Cannon**. Each round: students answer 5 questions (each right answer loads 1 egg). Then **everyone plays their own cannon game on their own device** (iPads sideways — portrait shows a "turn sideways" card): just their bird and the other team's fort. Hold a finger on the screen (the power bar bounces), slide to aim, let go to fire. Every target knocked over = **1 point** for their team.
+- The big screen is a live **Targets Hit** leaderboard: ranked players, their targets for this round, eggs left, and the team totals (e.g. 3 players × 4 targets each = up to 12 per round).
+- The round ends when time runs out or everyone has used their eggs. Random events: bonus eggs or feather fog.
+- Code: `js/modes/cannon/board.js` (big-screen scoreboard), `js/modes/cannon/arena.js` (the physics game, `solo` mode on devices).
 
 ## Egg Farm (idle egg-farm tycoon)
 Create Game → **Egg Farm** → 5, 8 or 12 minutes. Each student runs a farm on their device:

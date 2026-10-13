@@ -4,14 +4,18 @@
 // full of targets. Birds fire eggs from their rear-end cannons.
 // =========================================================
 /* global PIXI, Matter */
-import { sprite } from '../../core/assets.js?v=20261013152436';
-import { sfx } from '../../core/sfx.js?v=20261013152436';
-import { FORTS, PIECES, DENSITY } from './forts.js?v=20261013152436';
+import { sprite } from '../../core/assets.js?v=20261013181536';
+import { sfx } from '../../core/sfx.js?v=20261013181536';
+import { FORTS, PIECES, DENSITY } from './forts.js?v=20261013181536';
 
 export const W = 1700; export const H = 1200; export const GROUND = 1040;
 export const VMAX = 22;          // egg speed at full power (px per physics step)
 export const GRAV = 0.001 * (1000 / 60) ** 2; // Matter gravity per step²
 const FORT_X = 300;              // chicken fort starts here (mirrored for turkeys)
+// SOLO (on a student's device): just their bird, standing closer in, and only the other team's fort.
+const SOLO_X = 700;
+const SOLO_VMAX = 16; // closer in, so full power lands just behind the fort
+const SOLO_VIEW = { x0: 590, x1: 1470, y0: GROUND - 560, y1: GROUND + 80 }; // for a chicken (mirrored for turkeys)
 const CAT = { ground: 0x1, cFort: 0x2, tFort: 0x4, cEgg: 0x8, tEgg: 0x10, nEgg: 0x20 };
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -27,8 +31,9 @@ export const CANNON_SPRITES = [
 ];
 
 export class CannonArena {
-  constructor(el, { onTarget, onEggsChanged, lite = false } = {}) {
+  constructor(el, { onTarget, onEggsChanged, lite = false, solo = null } = {}) {
     this.el = el; this.lite = lite;
+    this.solo = solo; // the student's team when this is their own one-player game
     this.onTarget = onTarget || (() => {});
     this.onEggsChanged = onEggsChanged || (() => {});
     this.players = new Map();
@@ -51,18 +56,18 @@ export class CannonArena {
     this.app.stage.addChild(world);
     // Background layers (tiling so they always fill the screen width).
     const tile = (name, y, h, alpha = 1) => {
-      const t = this.tex[name]; const s = new PIXI.TilingSprite(t, W * 2, h);
-      s.tileScale.set(h / t.height); s.position.set(-W / 2, y); s.alpha = alpha; world.addChild(s); return s;
+      const t = this.tex[name]; const s = new PIXI.TilingSprite(t, W * 4, h);
+      s.tileScale.set(h / t.height); s.position.set(-W * 1.5, y); s.alpha = alpha; world.addChild(s); return s;
     };
-    const skyFill = new PIXI.Graphics(); skyFill.beginFill(0x7ec8ff).drawRect(-W / 2, -1400, W * 2, 1500).endFill(); world.addChild(skyFill);
+    const skyFill = new PIXI.Graphics(); skyFill.beginFill(0x7ec8ff).drawRect(-W * 1.5, -1400, W * 4, 1500).endFill(); world.addChild(skyFill);
     this.sky = tile('px_sky', -120, 720);
     this.far = tile('px_far', 560, 210);
     this.mid = tile('px_mid', 690, 330);
-    this.drawHill();
+    if (!this.solo) this.drawHill(); // solo: no hill — the bird stands closer in
     this.layers = {};
     ['back', 'pieces', 'birds', 'eggs', 'fx', 'front', 'fog', 'words'].forEach((k) => { const c = new PIXI.Container(); this.layers[k] = c; world.addChild(c); });
     const groundTile = tile('px_ground', GROUND - 70, 330); this.layers.front.addChild(groundTile);
-    const below = new PIXI.Graphics(); below.beginFill(0x5a3a1c).drawRect(-W / 2, GROUND + 255, W * 2, 1200).endFill(); this.layers.front.addChild(below);
+    const below = new PIXI.Graphics(); below.beginFill(0x5a3a1c).drawRect(-W * 1.5, GROUND + 255, W * 4, 1200).endFill(); this.layers.front.addChild(below);
 
     // physics
     const E = this.engine = Matter.Engine.create({ enableSleeping: true });
@@ -70,7 +75,7 @@ export class CannonArena {
     const ground = Matter.Bodies.rectangle(W / 2, GROUND + 100, W * 3, 200, { isStatic: true, friction: 1, collisionFilter: { category: CAT.ground }, label: 'ground' });
     const hill = Matter.Bodies.fromVertices(W / 2, 0, [[{ x: 690, y: GROUND }, { x: 790, y: 915 }, { x: 910, y: 915 }, { x: 1010, y: GROUND }]], { isStatic: true, friction: 1, collisionFilter: { category: CAT.ground }, label: 'hill' });
     Matter.Body.setPosition(hill, { x: W / 2, y: GROUND - (GROUND - 915) / 2 + 10 });
-    Matter.World.add(E.world, [ground, hill]);
+    Matter.World.add(E.world, this.solo ? [ground] : [ground, hill]);
     Matter.Events.on(E, 'collisionStart', (ev) => this.onCollide(ev));
 
     this.layout();
@@ -90,6 +95,16 @@ export class CannonArena {
 
   layout() {
     const w = this.el.clientWidth; const h = this.el.clientHeight;
+    if (this.solo) {
+      const v = SOLO_VIEW; const vw = v.x1 - v.x0; const vh = v.y1 - v.y0;
+      const x0 = this.solo === 'chicken' ? v.x0 : W - v.x1;
+      const s = Math.min(w / vw, h / vh);
+      this.scale = s; this.world.scale.set(s);
+      this.baseX = (w - vw * s) / 2 - x0 * s;
+      this.baseY = h - v.y1 * s; // ground near the bottom; any spare room becomes sky
+      this.world.position.set(this.baseX, this.baseY);
+      return;
+    }
     const s = Math.min(w / W, h / (GROUND + 70 - 360));
     this.scale = s; this.world.scale.set(s);
     this.baseX = (w - W * s) / 2;
@@ -118,6 +133,10 @@ export class CannonArena {
   setTeam(uid, team) { const p = this.players.get(uid); if (!p || p.team === team) return; const { name, bot } = p; this.removePlayer(uid); this.addPlayer({ uid, name, team, bot }); }
 
   placeBirds() {
+    if (this.solo) {
+      for (const p of this.players.values()) { p.x = p.team === 'chicken' ? SOLO_X : W - SOLO_X; p.y = GROUND + 4; p.depth = 1.5; p.view.root.zIndex = 1; }
+      return;
+    }
     for (const team of ['chicken', 'turkey']) {
       const list = [...this.players.values()].filter((p) => p.team === team);
       const n = list.length; const front = Math.ceil(n / 2);
@@ -133,7 +152,7 @@ export class CannonArena {
     this.layers.birds.sortableChildren = true;
   }
 
-  updateTag(p) { p.view.tag.text = `${(p.name || '?').slice(0, 9)}${p.eggs ? `\n🥚${p.eggs}` : ''}`; }
+  updateTag(p) { if (this.solo) { p.view.tag.text = ''; return; } p.view.tag.text = `${(p.name || '?').slice(0, 9)}${p.eggs ? `\n🥚${p.eggs}` : ''}`; }
 
   addEggs(uid, n) {
     const p = this.players.get(uid); if (!p) return 0;
@@ -161,7 +180,7 @@ export class CannonArena {
     if (!p || !this.running || this.paused || p.eggs <= 0 || p.cd > 0) return false;
     this.setAim(uid, angle);
     const a = (p.angle * Math.PI) / 180; const dir = p.team === 'chicken' ? 1 : -1;
-    const v = VMAX * clamp(+power || 0.5, 0.12, 1);
+    const v = (this.solo ? SOLO_VMAX : VMAX) * clamp(+power || 0.5, 0.12, 1);
     const m = this.mouth(p);
     p.eggs -= 1; p.cd = 0.7; p.fireT = 0.35;
     this.onEggsChanged(p); this.updateTag(p);
@@ -191,6 +210,7 @@ export class CannonArena {
     const tpl = FORTS[fortIndex ?? Math.floor(Math.random() * FORTS.length)];
     this.fortName = tpl.name;
     for (const team of ['chicken', 'turkey']) {
+      if (this.solo && team === this.solo) continue; // solo: only the fort you're shooting at
       const colour = team === 'chicken' ? 'blue' : 'red';
       for (const [type, lx, ly] of tpl.pieces) {
         const def = PIECES[type];
@@ -285,9 +305,10 @@ export class CannonArena {
     this.puff(def.mat === 'stone' || def.mat === 'metal' ? 'debris_stone' : def.mat === 'glass' ? 'sparkle' : 'debris_wood', x, y, def.target ? 0.35 : 0.3, 0.7, true);
     this.puff('puff', x, y, 0.3, 0.5);
     if (def.target) {
-      const owner = pc.lastHitBy && this.time - pc.lastHitAt < 10 ? pc.lastHitBy : null;
+      const owner = this.solo ? this.players.keys().next().value : pc.lastHitBy && this.time - pc.lastHitAt < 10 ? pc.lastHitBy : null;
       const shooter = owner ? this.players.get(owner) : null;
-      const pts = shooter && shooter.team !== pc.team ? def.target * (this.effects.golden > 0 ? 2 : 1) : 0;
+      // solo: every target is worth 1 (it's your fort to knock down — nobody else's eggs are flying)
+      const pts = shooter && shooter.team !== pc.team ? (this.solo ? 1 : def.target * (this.effects.golden > 0 ? 2 : 1)) : 0;
       if (pts) { shooter.score += pts; this.floatText(`+${pts}`, x, y - 70, shooter.team === 'chicken' ? 0x5fa2ff : 0xff7a5c); }
       this.word(pc.type === 'bullseye' ? 'word_bullseye' : pc.team === 'turkey' ? 'word_gobble' : 'word_bok', x, y - 110, 0.7);
       if (!silent) { sfx.splat(); this.shake = Math.max(this.shake, 10); }
@@ -369,7 +390,7 @@ export class CannonArena {
     if (E.golden > 0) E.golden -= dt;
     for (const t of ['chicken', 'turkey']) if (E.shield[t] > 0) E.shield[t] -= dt;
     if (E.fog > 0) { E.fog -= dt; if (E.fog <= 0) this.clearFog(); }
-    if (E.storm > 0 && this.running) {
+    if (E.storm > 0 && this.running && !this.solo) {
       E.storm -= dt; E.stormT -= dt;
       if (E.stormT <= 0) { E.stormT = 0.45; const left = Math.random() < 0.5; const x = left ? rnd(FORT_X - 20, FORT_X + 360) : rnd(W - FORT_X - 360, W - FORT_X + 20); this.spawnEgg(x, -200, rnd(-1, 1), 0, null, null); }
     }
@@ -434,7 +455,7 @@ export class CannonArena {
       v.root.position.set(p.x, p.y);
       v.tag.position.set(0, -hgt - 4 + hop - (p.depth < 1 ? 26 : 0)); v.tag.scale.set(p.depth);
       v.aim.clear();
-      if ((p.aimPing > 0 || p.cd > 0) && this.running) {
+      if ((p.aimPing > 0 || p.cd > 0) && this.running && !this.solo) { // solo: the device draws its own aim line
         const m = this.mouth(p); const a = (p.angle * Math.PI) / 180;
         v.aim.lineStyle(4, 0xffffff, Math.min(1, p.aimPing + 0.3));
         for (let i = 1; i <= 5; i++) { const d = 22 * i; v.aim.drawCircle(m.x - p.x + dir * Math.cos(a) * d, m.y - p.y - Math.sin(a) * d, 3); }

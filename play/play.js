@@ -3,26 +3,27 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261013152436';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261013152436';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261013152436';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261013152436';
-import { sfx } from '../js/core/sfx.js?v=20261013152436';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261013152436';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261013152436';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261013152436';
-import { PaintView } from '../js/modes/paint/view.js?v=20261013152436';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261013152436';
-import { CrossView } from '../js/modes/cross/view.js?v=20261013152436';
-import { howtoHTML } from '../js/core/howto.js?v=20261013152436';
-import { StackView } from '../js/modes/stack/view.js?v=20261013152436';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261013152436';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261013152436';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261013152436';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261013152436';
-import { TowerView } from '../js/modes/towers/view.js?v=20261013152436';
-import * as FE from '../js/modes/farm/economy.js?v=20261013152436';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261013152436';
+} from '../js/core/firebase.js?v=20261013181536';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261013181536';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261013181536';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261013181536';
+import { sfx } from '../js/core/sfx.js?v=20261013181536';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261013181536';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261013181536';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261013181536';
+import { PaintView } from '../js/modes/paint/view.js?v=20261013181536';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261013181536';
+import { CrossView } from '../js/modes/cross/view.js?v=20261013181536';
+import { howtoHTML } from '../js/core/howto.js?v=20261013181536';
+import { StackView } from '../js/modes/stack/view.js?v=20261013181536';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261013181536';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261013181536';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261013181536';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261013181536';
+import { TowerView } from '../js/modes/towers/view.js?v=20261013181536';
+import * as FE from '../js/modes/farm/economy.js?v=20261013181536';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261013181536';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261013181536';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -41,7 +42,7 @@ const isCross = () => D.state.mode === 'cross';
 const isStack = () => D.state.mode === 'stack';
 const hasPiece = () => isAdv() || isEt(); // games where you play as a chess piece
 const hasMap = () => isFarm() || isTowers() || isSiege() || isAdv() || isCross() || isStack();
-const UNIT = () => (isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCross() ? 'crossings' : isStack() ? 'blocks + egg hits' : isCannon() ? 'target points' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
+const UNIT = () => (isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCross() ? 'crossings' : isStack() ? 'blocks + egg hits' : isCannon() ? 'targets hit' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
 /** Team totals (Stack Attack scores in metres). */
 const TSCORE = (n) => (isStack() ? `${(Math.round((n || 0) * 10) / 10).toFixed(1)} m` : SCORE(n));
 const SCORE = (n) => (isFarm() ? fmt(n) : isPaint() ? `${Math.round((n || 0) * 10) / 10}%` : Math.floor(n || 0));
@@ -49,17 +50,19 @@ const SCORE = (n) => (isFarm() ? fmt(n) : isPaint() ? `${Math.round((n || 0) * 1
 // ---------------- join ----------------
 /** The 2D graphics engine is only needed for Egg Farm and Coop Wars, so it is
  *  fetched when one of those games starts — not before a student can join. */
-let pixiP = null;
-function loadPixi() {
-  if (window.PIXI) return Promise.resolve();
-  pixiP ||= new Promise((resolve, reject) => {
+const scriptP = {};
+function loadScript(name, src) {
+  if (window[name]) return Promise.resolve();
+  scriptP[name] ||= new Promise((resolve, reject) => {
     const s = document.createElement('script');
-    s.src = 'https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js';
-    s.onload = () => resolve(); s.onerror = () => { pixiP = null; reject(new Error('Could not load the game graphics')); };
+    s.src = src;
+    s.onload = () => resolve(); s.onerror = () => { scriptP[name] = null; reject(new Error('Could not load the game graphics')); };
     document.head.appendChild(s);
   });
-  return pixiP;
+  return scriptP[name];
 }
+const loadPixi = () => loadScript('PIXI', 'https://cdn.jsdelivr.net/npm/pixi.js@7.4.2/dist/pixi.min.js');
+const loadMatter = () => loadScript('Matter', 'https://cdn.jsdelivr.net/npm/matter-js@0.19.0/build/matter.min.js');
 /** Look the code up as soon as 6 characters are typed, so JOIN is instant. */
 const codeLookups = new Map();
 function lookupEarly(code) {
@@ -133,7 +136,7 @@ function subscribe() {
     D.me = v; render();
   });
   on(`kicked/${uid}`, (v) => { if (v) leave('The teacher removed you from this game.'); });
-  on('state', (v) => { D.state = v || {}; if (isFarm() || isTowers()) loadPixi().catch(() => {}); onState(); render(); });
+  on('state', (v) => { D.state = v || {}; if (isFarm() || isTowers()) loadPixi().catch(() => {}); onState(); render(); if (isCannon()) { ensureCannon(); cnSync(); } });
   on(`pstate/${uid}`, (v) => { D.ps = v || {}; onPstate(); });
   on(`current/${uid}`, (v) => { D.cur = v; drawQuestion(); });
   on(`fb/${uid}`, (v) => { D.fb = v; drawFeedback(); });
@@ -266,7 +269,7 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); $('#cn-stage').classList.remove('used'); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross() || isStack()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); $('#cn-stage').classList.remove('used'); ensureCannon(); cnSync(); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross() || isStack()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
   document.body.classList.toggle('mode-paint', isPaint());
@@ -349,8 +352,7 @@ function onPstate() {
   if (eggs > L.prevEggs && L.tab === 'answer') $('#tab-fight').classList.add('nudge');
   if (eggs === 0) $('#tab-fight').classList.remove('nudge');
   L.prevEggs = eggs;
-  $('#cn-eggs').textContent = `🥚 ${eggs} egg${eggs === 1 ? '' : 's'}`;
-  if (isCannon()) drawDial();
+  if (isCannon()) cnSync();
   drawProgress();
   if (!D.cur && isCannon()) drawQuestion();
   const ko = $('#ko');
@@ -583,53 +585,98 @@ function drawProgress() {
   }
 }
 
-// ---------------- Egg Cannon: just YOUR bird ----------------
-// Hold a finger anywhere on the picture: the power bar starts bouncing up and down
-// and the aim follows your finger. Let go = FIRE with that power and direction.
-const CN = { angle: 45, power: 0, holding: false, t0: 0, raf: 0, lastSent: 0, lastFire: 0, pid: null, team: '' };
-const CN_COOLDOWN = 750; // the big screen needs 0.7 s between eggs
-function cnGeom() {
-  const st = $('#cn-stage'); const bird = $('#cn-bird');
-  const dir = D.me?.team === 'turkey' ? -1 : 1;
-  const W = st.clientWidth; const H = st.clientHeight;
-  const bw = bird.offsetWidth; const bl = bird.offsetLeft; const bt = bird.offsetTop;
-  // the cannon's mouth is near the top corner of the picture, on the enemy's side
-  return { dir, W, H, px: bl + bw * (dir > 0 ? 0.86 : 0.14), py: bt + bw * 0.16 };
+// ---------------- Egg Cannon: YOUR own game ----------------
+// Each student plays on their own device: just their bird and the other team's fort.
+// Hold a finger anywhere on the picture: the power bar bounces up and down and the aim
+// follows your finger. Let go = FIRE. Every target you knock over = 1 point for your team.
+// The device tells the big screen: shots fired, targets hit, and whether it has settled.
+const CN = { arena: null, ready: false, team: '', angle: 45, power: 0, holding: false, t0: 0, raf: 0, pid: null, lastFire: 0, round: 0, shots: 0, hits: 0, sentKey: '', fog: 0 };
+const CN_COOLDOWN = 750;
+
+function ensureCannon() {
+  if (!isCannon() || !D.me?.team) return;
+  if (CN.arena && CN.team !== D.me.team) { CN.arena.destroy(); CN.arena = null; CN.ready = false; $('#cn-scene').innerHTML = ''; }
+  if (CN.arena) return;
+  CN.team = D.me.team;
+  const a = CN.arena = new CannonArena($('#cn-scene'), {
+    lite: true, solo: D.me.team,
+    onTarget: ({ points }) => {
+      if (!points || CN.round !== D.state.round) return;
+      CN.hits += 1; cnWord(`+1 🎯`, true); navigator.vibrate?.(40); cnReport(); drawCnHud();
+    },
+  });
+  const done = showLoading('Loading your cannon…', $('#cn-stage'));
+  Promise.all([loadPixi(), loadMatter()]).then(() => a.init()).then(() => {
+    done(); if (CN.arena !== a) return;
+    a.addPlayer({ uid, name: D.me.name, team: D.me.team });
+    CN.ready = true; CN.round = 0;
+    a.app.resize(); a.layout();
+    cnSync();
+  }).catch((e) => { done(); console.error(e); });
 }
-function drawDial() {
-  if (!D.me?.team) return;
-  const team = D.me.team; const bird = $('#cn-bird');
-  if (CN.team !== team) {
-    CN.team = team;
-    bird.classList.toggle('flip', team === 'chicken'); // chickens face left so the cannon points right
-    bird.style.left = team === 'chicken' ? '3%' : ''; bird.style.right = team === 'chicken' ? '' : '3%';
-    $('#cn-shot').src = sprite(team === 'turkey' ? 'egg_red' : 'egg_blue');
-    $('#cn-puff').src = sprite('puff');
+
+/** Keep my game in step with the big screen's round / phase / eggs. */
+function cnSync() {
+  const a = CN.arena; if (!CN.ready || !a) { drawCnHud(); return; }
+  const s = D.state;
+  if ((s.phase === 'answer' || s.phase === 'playing') && s.round && s.round !== CN.round) {
+    CN.round = s.round; CN.shots = 0; CN.hits = 0; CN.sentKey = ''; CN.lastFire = 0;
+    a.startRound(s.fort ?? 0);
+    a.wind = s.wind || 0;
+    $('#cn-last').classList.add('hidden');
   }
-  const src = sprite(`c_${team}_aim`); const img = $('#cn-bird-img'); // the aiming pose shows the cannon where the dots start
-  if (img.getAttribute('src') !== src) img.setAttribute('src', src);
-  $('#cn-name').textContent = D.me.name || '';
-  const { dir, W, H, px, py } = cnGeom(); if (!W) return;
-  const a = (CN.angle * Math.PI) / 180;
-  const len = Math.min(W * 0.8, H * 0.85) * (CN.holding ? 0.3 + 0.7 * CN.power : 0.45);
-  let dots = '';
-  for (let i = 1; i <= 7; i++) { const d = (len * i) / 8; dots += `<circle cx="${(px + dir * Math.cos(a) * d).toFixed(1)}" cy="${(py - Math.sin(a) * d).toFixed(1)}" r="${3 + i * 0.6}" fill="#fff" stroke="#111" stroke-width="2" opacity="${CN.holding ? 1 : 0.55}"/>`; }
-  $('#cn-dots').innerHTML = dots;
-  const tip = $('#cn-tip'); tip.setAttribute('cx', px + dir * Math.cos(a) * len); tip.setAttribute('cy', py - Math.sin(a) * len);
-  tip.setAttribute('opacity', CN.holding ? 1 : 0.55);
-  $('#cn-angle').textContent = `${Math.round(CN.angle)}°`;
+  if (s.phase === 'playing' && !a.running && CN.round === s.round) a.startBattle();
+  if (s.phase !== 'playing' && s.phase !== 'answer' && a.running) { a.stopRound(); cnReport(); }
+  a.paused = !!s.paused;
+  const me = a.players.get(uid);
+  if (me) me.eggs = Math.max(0, (D.ps.ce || 0) - CN.shots);
+  if (s.event?.type === 'fog' && s.event.at !== CN.fog && s.phase === 'playing') { CN.fog = s.event.at; a.startEvent('fog'); }
+  drawCnHud();
+}
+function cnTotal() { return D.state.targets || 4; }
+function drawCnHud() {
+  const me = CN.arena?.players.get(uid);
+  const eggs = me ? me.eggs : Math.max(0, (D.ps.ce || 0) - CN.shots);
+  $('#cn-eggs').textContent = `🥚 ${eggs}`;
+  $('#cn-hits').textContent = `🎯 ${CN.hits} / ${cnTotal()}`;
   const w = D.state.wind || 0;
   $('#cn-wind').textContent = w ? `WIND ${w > 0 ? '→' : '←'} ${Math.abs(w)}` : 'NO WIND';
 }
-function sendAim(force = false) {
-  const now = Date.now();
-  if (!force && now - CN.lastSent < 150) return;
-  CN.lastSent = now;
-  input.angle = Math.round(CN.angle); input.power = +CN.power.toFixed(3);
-  update(G(`inputs/${uid}`), { ...input }).catch(() => {});
+/** Tell the big screen what's happened (only when something changed). */
+function cnReport() {
+  if (!CN.round) return;
+  const a = CN.arena;
+  const flying = a?.eggs.some((e) => !e.dead);
+  const idle = !flying && Date.now() - CN.lastFire > 2500; // give toppling towers a moment to land
+  const key = `${CN.round}|${CN.shots}|${CN.hits}|${idle}`;
+  if (key === CN.sentKey) return;
+  CN.sentKey = key;
+  update(G(`inputs/${uid}`), { cr: CN.round, cs: CN.shots, ch: CN.hits, ci: idle }).catch(() => {});
 }
-function cnWord(text) {
-  const w = $('#cn-word'); w.textContent = text; w.classList.remove('show'); void w.offsetWidth; w.classList.add('show');
+setInterval(() => { if (isCannon() && CN.ready && D.state.phase === 'playing') cnReport(); }, 500);
+
+/** Where the cannon's mouth is on the screen. */
+function cnMouth() {
+  const a = CN.arena; const p = a?.players.get(uid);
+  if (!p || !a.world) return null;
+  const m = a.mouth(p);
+  return { dir: p.team === 'turkey' ? -1 : 1, px: a.world.position.x + m.x * a.scale, py: a.world.position.y + m.y * a.scale };
+}
+function drawDial() {
+  const st = $('#cn-stage'); const W = st.clientWidth; const H = st.clientHeight;
+  const m = cnMouth();
+  $('#cn-angle').textContent = `${Math.round(CN.angle)}°`;
+  if (!m || !W) { $('#cn-dots').innerHTML = ''; $('#cn-tip').setAttribute('opacity', 0); return; }
+  const { dir, px, py } = m; const a = (CN.angle * Math.PI) / 180;
+  const len = Math.min(W * 0.45, H * 0.6) * (CN.holding ? 0.3 + 0.7 * CN.power : 0.4);
+  let dots = '';
+  for (let i = 1; i <= 7; i++) { const d = (len * i) / 8; dots += `<circle cx="${(px + dir * Math.cos(a) * d).toFixed(1)}" cy="${(py - Math.sin(a) * d).toFixed(1)}" r="${2.5 + i * 0.5}" fill="#fff" stroke="#111" stroke-width="2" opacity="${CN.holding ? 1 : 0.5}"/>`; }
+  $('#cn-dots').innerHTML = dots;
+  const tip = $('#cn-tip'); tip.setAttribute('cx', px + dir * Math.cos(a) * len); tip.setAttribute('cy', py - Math.sin(a) * len);
+  tip.setAttribute('opacity', CN.holding ? 1 : 0.5); tip.setAttribute('r', 10);
+}
+function cnWord(text, good = false) {
+  const w = $('#cn-word'); w.textContent = text; w.classList.toggle('good', good); w.classList.remove('show'); void w.offsetWidth; w.classList.add('show');
   clearTimeout(cnWord.t); cnWord.t = setTimeout(() => w.classList.remove('show'), 900);
 }
 function startMeter() {
@@ -637,74 +684,60 @@ function startMeter() {
   cancelAnimationFrame(CN.raf);
   const loop = (t) => {
     if (CN.holding) {
-      // power bounces 0 → 100% → 0 every 1.6 s while the finger is down
-      const k = ((t - CN.t0) / 800) % 2;
+      // power bounces 0 → 100% → 0 every 2.2 s while the finger is down
+      const k = ((t - CN.t0) / 1100) % 2;
       CN.power = k < 1 ? k : 2 - k;
-      drawDial();
+      const p = CN.arena?.players.get(uid); if (p) { p.aimPing = 0.4; p.angle = CN.angle; }
     }
+    drawDial();
     $('#cn-fill').style.width = `${(1 - CN.power) * 100}%`;
     if (!$('#view-cannon').classList.contains('hidden')) CN.raf = requestAnimationFrame(loop);
   };
   CN.raf = requestAnimationFrame(loop);
 }
-function cnShotAnim() {
-  const { dir, px, py } = cnGeom(); const a = (CN.angle * Math.PI) / 180;
-  const d = 260 + CN.power * 340;
-  const egg = $('#cn-shot');
-  egg.animate([
-    { transform: `translate(${px - 17}px, ${py - 20}px) rotate(0deg)`, opacity: 1 },
-    { transform: `translate(${px - 17 + dir * Math.cos(a) * d}px, ${py - 20 - Math.sin(a) * d}px) rotate(${dir * 540}deg)`, opacity: 1, offset: 0.85 },
-    { transform: `translate(${px - 17 + dir * Math.cos(a) * d * 1.1}px, ${py - 20 - Math.sin(a) * d * 1.1}px) rotate(${dir * 600}deg)`, opacity: 0 },
-  ], { duration: 650, easing: 'cubic-bezier(.2,.7,.4,1)' });
-  $('#cn-puff').animate([
-    { transform: `translate(${px - 45}px, ${py - 45}px) scale(.3)`, opacity: 1 },
-    { transform: `translate(${px - 45}px, ${py - 45}px) scale(1.2)`, opacity: 0 },
-  ], { duration: 450, easing: 'ease-out' });
-  $('#cn-stage').classList.add('used');
-  const bird = $('#cn-bird'); bird.classList.add('recoil'); setTimeout(() => bird.classList.remove('recoil'), 160);
-}
 (function setupCannon() {
   const st = $('#cn-stage');
   const aimAt = (e) => {
+    const m = cnMouth(); if (!m) return;
     const r = st.getBoundingClientRect();
-    const { dir, px, py } = cnGeom();
     const x = e.clientX - r.left; const y = e.clientY - r.top;
-    let ang = (Math.atan2(py - y, dir * (x - px)) * 180) / Math.PI;
+    let ang = (Math.atan2(m.py - y, m.dir * (x - m.px)) * 180) / Math.PI;
     if (ang < -90) ang = 85; // finger behind and below the bird → straight up-ish
     CN.angle = Math.max(5, Math.min(85, ang));
   };
-  const canPlay = () => D.state.phase === 'playing' && !D.state.paused;
+  const canPlay = () => D.state.phase === 'playing' && !D.state.paused && CN.ready && CN.arena?.running && !matchMedia('(orientation: portrait)').matches;
   st.addEventListener('contextmenu', (e) => e.preventDefault());
   st.addEventListener('pointerdown', (e) => {
     if (CN.pid !== null || !canPlay()) return;
     e.preventDefault();
     CN.pid = e.pointerId; st.setPointerCapture(e.pointerId);
     CN.holding = true; CN.t0 = performance.now(); CN.power = 0;
-    st.classList.add('holding'); $('#cn-bird').classList.add('hold');
+    st.classList.add('holding');
     $('#cn-last').classList.add('hidden');
-    aimAt(e); drawDial(); sendAim(true);
-    if ((D.ps.eggs || 0) <= 0) cnWord('NO EGGS!');
+    aimAt(e);
+    if ((CN.arena.players.get(uid)?.eggs || 0) <= 0) cnWord(CN.hits >= cnTotal() ? 'ALL DOWN! 🎉' : 'NO EGGS!');
     navigator.vibrate?.(10);
   });
-  st.addEventListener('pointermove', (e) => { if (e.pointerId !== CN.pid) return; aimAt(e); drawDial(); sendAim(); });
+  st.addEventListener('pointermove', (e) => { if (e.pointerId === CN.pid) aimAt(e); });
   const release = (e, cancelled) => {
     if (e.pointerId !== CN.pid) return;
     CN.pid = null; CN.holding = false;
-    st.classList.remove('holding'); $('#cn-bird').classList.remove('hold');
+    st.classList.remove('holding');
     const last = $('#cn-last'); last.classList.remove('hidden'); last.style.left = `calc(${CN.power * 100}% - 3px)`;
-    if (cancelled || !canPlay()) { drawDial(); return; }
-    if ((D.ps.eggs || 0) <= 0) { cnWord('NO EGGS!'); sendAim(true); drawDial(); sfx.wrong?.(); return; }
-    if (Date.now() - CN.lastFire < CN_COOLDOWN) { cnWord('RELOADING…'); sendAim(true); drawDial(); return; }
-    CN.lastFire = Date.now();
-    input.throws += 1;
-    sendAim(true);
-    cnShotAnim(); cnWord(CN.power > 0.92 ? 'MAX POWER!' : 'FIRE!');
-    sfx.egg(); navigator.vibrate?.(30);
-    drawDial(); setTimeout(drawDial, 420);
+    if (cancelled || !canPlay()) return;
+    const a = CN.arena; const me = a.players.get(uid);
+    if ((me?.eggs || 0) <= 0) { cnWord(CN.hits >= cnTotal() ? 'ALL DOWN! 🎉' : 'NO EGGS!'); sfx.wrong(); return; }
+    if (Date.now() - CN.lastFire < CN_COOLDOWN || me.cd > 0) { cnWord('RELOADING…'); return; }
+    if (!a.fire(uid, CN.angle, Math.max(0.05, CN.power))) return;
+    CN.lastFire = Date.now(); CN.shots += 1;
+    st.classList.add('used');
+    cnWord(CN.power > 0.92 ? 'MAX POWER!' : 'FIRE!');
+    navigator.vibrate?.(30);
+    cnReport(); drawCnHud();
   };
   st.addEventListener('pointerup', (e) => release(e, false));
   st.addEventListener('pointercancel', (e) => release(e, true));
-  new ResizeObserver(() => { if (isCannon()) drawDial(); }).observe(st);
+  new ResizeObserver(() => { const a = CN.arena; if (a?.app) { a.app.resize(); a.layout(); } drawDial(); }).observe(st);
 })();
 
 // ---------------- Egg Farm ----------------

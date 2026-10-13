@@ -207,3 +207,31 @@ body.mode-towers .stage { background: radial-gradient(circle at 50% 55%, #4f8f26
 .overlay.peek { background: transparent; backdrop-filter: none; pointer-events: none; }
 .overlay.peek > * { opacity: 0; pointer-events: none; }
 .peek-btn { position: fixed; z-index: 60; bottom: 2vh; right: 1.2vw; font-size: clamp(14px, 1.3vw, 22px); }
+
+/* ---------- Egg Cannon scoreboard (each student plays on their own device) ---------- */
+#arena.cb { overflow: hidden; }
+.cb-bg { position: absolute; inset: 0; background: url(../assets/sprites/px_sky.webp) center / cover, #7ec8ff; }
+.cb-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(rgba(6,18,46,.25), rgba(6,18,46,.7)); }
+.cb-wrap { position: absolute; left: 2.5%; right: 2.5%; top: 24.5vh; bottom: 10vh; display: grid; grid-template-rows: auto 1fr; gap: 1.2vh; }
+.cb-head { display: flex; justify-content: center; align-items: baseline; gap: 1.5vw; flex-wrap: wrap; }
+.cb-title { font-family: var(--font-burst); font-size: clamp(26px, 3.4vw, 58px); color: var(--yolk); -webkit-text-stroke: 3px var(--ink); paint-order: stroke fill; text-shadow: 4px 4px 0 var(--ink); letter-spacing: .04em; }
+.cb-sub { font-weight: 900; font-size: clamp(14px, 1.35vw, 24px); color: #fff; background: rgba(6,18,46,.7); border: 3px solid var(--ink); border-radius: 999px; padding: .15em .9em; }
+.cb-sub b.c { color: #8ec0ff; } .cb-sub b.t { color: #ff9a85; } .cb-sub i { font-style: normal; opacity: .7; margin-right: .6em; }
+.cb-list { position: relative; min-height: 0; --cols: 1; --rowh: 80px; }
+.cb-empty { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--font-comic); font-size: 4vh; color: #fff; }
+.cb-row { position: absolute; left: 0; top: 0; width: calc(100% / var(--cols)); height: var(--rowh); padding: 3px 6px; box-sizing: border-box; display: grid; grid-template-columns: calc(var(--rowh) * .62) calc(var(--rowh) * .78) minmax(0, 1fr) auto auto calc(var(--rowh) * 1.15); align-items: center; gap: .6vw; transition: transform .6s var(--ease-pop); }
+.cb-row::before { content: ''; position: absolute; inset: 3px 6px; border: 4px solid var(--ink); border-radius: 18px; box-shadow: 4px 4px 0 rgba(0,0,0,.45); z-index: -1; }
+.cb-row.chicken::before { background: linear-gradient(90deg, #2c7cf0, #1a5bc0); }
+.cb-row.turkey::before { background: linear-gradient(90deg, #ef5537, #b8301f); }
+.cb-row.top::before { outline: 4px solid var(--yolk); outline-offset: -9px; }
+.cb-row.flash::before { animation: cb-flash .7s ease-out; }
+.cb-row.flash .cb-sc { animation: squash 420ms var(--ease-pop); }
+@keyframes cb-flash { 0% { filter: brightness(2.2); transform: scale(1.03); } 100% { filter: none; transform: none; } }
+.cb-rk { justify-self: center; font-family: var(--font-burst); font-size: calc(var(--rowh) * .42); color: #fff; -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill; padding-left: 8px; }
+.cb-av { width: calc(var(--rowh) * .72); height: calc(var(--rowh) * .72); border-radius: 50%; border: 3px solid var(--ink); background: #fff; object-fit: cover; }
+.cb-nm { font-family: var(--font-comic); font-size: calc(var(--rowh) * .36); letter-spacing: .04em; color: #fff; text-shadow: 2px 2px 0 var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cb-tg { display: flex; gap: 2px; }
+.cb-tg img { height: calc(var(--rowh) * .62); filter: grayscale(.85) brightness(.75) drop-shadow(1px 1px 0 var(--ink)); opacity: .55; }
+.cb-tg img.hit { filter: drop-shadow(2px 2px 0 var(--ink)); opacity: 1; animation: pop-in .4s var(--ease-pop); }
+.cb-eg { min-width: 2.4em; font-weight: 900; font-size: calc(var(--rowh) * .26); color: #fff; text-shadow: 1px 1px 0 var(--ink); }
+.cb-sc { justify-self: center; margin-right: 10px; min-width: calc(var(--rowh) * .9); text-align: center; font-family: var(--font-burst); font-size: calc(var(--rowh) * .5); color: var(--ink); background: var(--yolk); border: 4px solid var(--ink); border-radius: 14px; line-height: 1.1; }

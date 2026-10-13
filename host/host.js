@@ -6,30 +6,30 @@
 import {
   isConfigured, db, ref, get, set, update, remove, onValue, onChildAdded, onChildChanged,
   currentUser, isTeacher, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261013152436';
-import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261013152436';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261013152436';
-import { playUrl } from '../js/core/games.js?v=20261013152436';
-import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261013152436';
-import { loadBankByKey } from '../js/quiz/banks.js?v=20261013152436';
-import { QuizEngine } from '../js/quiz/engine.js?v=20261013152436';
-import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261013152436';
-import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261013152436';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261013152436';
-import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261013152436';
-import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261013152436';
-import { TowerArena } from '../js/modes/towers/arena.js?v=20261013152436';
-import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261013152436';
-import { CrossArena } from '../js/modes/cross/arena.js?v=20261013152436';
-import { hasHowto, howtoHTML } from '../js/core/howto.js?v=20261013152436';
-import { StackArena } from '../js/modes/stack/arena.js?v=20261013152436';
-import { PaintArena } from '../js/modes/paint/arena.js?v=20261013152436';
-import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261013152436';
-import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261013152436';
-import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261013152436';
-import { SiegeArena } from '../js/modes/siege/arena.js?v=20261013152436';
-import { defenderFor } from '../js/modes/siege/rules.js?v=20261013152436';
-import { EVENTS, randomEvent } from '../js/events/events.js?v=20261013152436';
+} from '../js/core/firebase.js?v=20261013181536';
+import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261013181536';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261013181536';
+import { playUrl } from '../js/core/games.js?v=20261013181536';
+import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261013181536';
+import { loadBankByKey } from '../js/quiz/banks.js?v=20261013181536';
+import { QuizEngine } from '../js/quiz/engine.js?v=20261013181536';
+import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261013181536';
+import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261013181536';
+import { CannonBoard } from '../js/modes/cannon/board.js?v=20261013181536';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261013181536';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261013181536';
+import { TowerArena } from '../js/modes/towers/arena.js?v=20261013181536';
+import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261013181536';
+import { CrossArena } from '../js/modes/cross/arena.js?v=20261013181536';
+import { hasHowto, howtoHTML } from '../js/core/howto.js?v=20261013181536';
+import { StackArena } from '../js/modes/stack/arena.js?v=20261013181536';
+import { PaintArena } from '../js/modes/paint/arena.js?v=20261013181536';
+import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261013181536';
+import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261013181536';
+import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261013181536';
+import { SiegeArena } from '../js/modes/siege/arena.js?v=20261013181536';
+import { defenderFor } from '../js/modes/siege/rules.js?v=20261013181536';
+import { EVENTS, randomEvent } from '../js/events/events.js?v=20261013181536';
 
 const gameId = params.get('g');
 const G = (p = '') => ref(db, `games/${gameId}${p ? '/' + p : ''}`);
@@ -63,7 +63,7 @@ const hasAnswerPhase = () => isCannon() || isPaint() || isEt(); // answer first,
 const teamPick = () => (meta?.settings?.teams || 'choose') === 'choose'; // older games without the setting: students choose
 const isTimed = () => isFarm() || isTowers() || isSiege();
 const showScore = (n) => (isStack() ? `${(Math.round(n * 10) / 10).toFixed(1)}` : isFarm() ? fmt(n) : isPaint() ? `${Math.round(n * 10) / 10}%` : isTowers() || isSiege() ? Math.floor(n) : Math.round(n));
-const UNIT = () => (isCannon() || isSiege() ? 'pts' : isFarm() || isPaint() ? '' : isEt() ? 'hits' : isCross() ? 'crossings' : isStack() ? 'm' : 'KO');
+const UNIT = () => (isCannon() ? 'targets' : isSiege() ? 'pts' : isFarm() || isPaint() ? '' : isEt() ? 'hits' : isCross() ? 'crossings' : isStack() ? 'm' : 'KO');
 
 // ---------------- boot ----------------
 async function boot() {
@@ -272,10 +272,7 @@ async function startGame() {
       : isFarm()
       ? new FarmBoard($('#arena'), { onChange: (p) => dirty.add(p.uid) })
       : isCannon()
-      ? new CannonArena($('#arena'), {
-        onTarget: ({ shooter }) => { if (shooter) dirty.add(shooter.uid); bumpScores(); },
-        onEggsChanged: (p) => dirty.add(p.uid),
-      })
+      ? new CannonBoard($('#arena')) // students play on their own devices; the big screen is the scoreboard
       : new DodgeArena($('#arena'), {
         koMode: meta.settings.koMode,
         onHit: ({ victim, thrower }) => { dirty.add(victim.uid); if (thrower) dirty.add(thrower.uid); bumpScores(); },
@@ -341,6 +338,7 @@ function scheduleEvents(ms) {
 // ----- Egg Cannon: answer phase → battle phase -----
 async function startAnswerPhase() {
   S.phase = 'answer'; S.quota = isPaint() || isEt() ? 0 : QUOTA; S.wind = arena.wind || 0;
+  if (isCannon()) { S.fort = arena.fortIndex; S.targets = arena.total; }
   S.endsAt = serverNow() + meta.settings.roundSeconds * 1000;
   roundAnswered.clear();
   await writeState();
@@ -366,7 +364,7 @@ async function startBattle() {
   await update(G(), { current: null });
   if (isPaint()) phaseBanner('<b>GRAB LAND!</b><small>Leave your land, draw a loop, get back home — don\'t let an enemy cut your trail!</small>', 2600);
   else if (isEt()) phaseBanner('<b>FLING!</b><small>Flingers: drag to aim, let go to throw · Dodgers: slide left and right!</small>', 2600);
-  else phaseBanner('<b>FIRE!</b><small>Set your angle, time your power, hit the enemy fort!</small>', 2200);
+  else phaseBanner('<b>FIRE!</b><small>Look at your own device — hold, aim and let go to knock over the targets!</small>', 2600);
   sfx.go();
   $('#round-label').textContent = `ROUND ${S.round} / ${meta.settings.rounds}`;
   for (const uid of arena.players.keys()) dirty.add(uid);
@@ -423,12 +421,8 @@ function loop() {
   if (S.event && S.event.until && serverNow() > S.event.until) { S.event = null; $('#event-pill').classList.add('hidden'); writeState(); }
   if (S.event?.until) $('#event-pill').textContent = `${EVENTS[S.event.type].name} ${Math.ceil((S.event.until - serverNow()) / 1000)}s`;
   if (isCannon()) {
-    const anyTargets = arena.targetsLeft('chicken') && arena.targetsLeft('turkey');
-    if (arena.isSettled() || !anyTargets) { settledSince ||= serverNow(); } else settledSince = 0;
+    if (arena.isSettled((uid) => players.get(uid)?.online !== false)) { settledSince ||= serverNow(); } else settledSince = 0;
     if (settledSince && serverNow() - settledSince > 2500) endRound();
-    const wind = $('#wind-pill');
-    wind.classList.remove('hidden');
-    wind.textContent = arena.wind ? `WIND ${arena.wind > 0 ? '→' : '←'} ${Math.abs(arena.wind)}` : 'NO WIND';
   }
   if (left <= 0) endRound();
   drawStandings();
@@ -491,7 +485,7 @@ function showRoundOverlay(standings) {
   const ov = $('#overlay');
   ov.className = 'overlay';
   ov.innerHTML = html`<div class="round-box">
-    ${raw(isSiege() ? `<img class="halftime-img" src="${sprite('sg_halftime')}" alt="Half time!">` : `<h1 class="comic-title slant">ROUND ${S.round} COMPLETE!</h1>`)}${raw(isAdv() && arena.result ? `<p class="swap-note">${arena.result.winner === 'tie' ? 'A draw this round!' : `${teamIco(arena.result.winner)} ${arena.result.winner === 'chicken' ? 'Chickens' : 'Turkeys'} win the round — ${arena.result.how === 'home' ? 'everyone made it across!' : `they got further (${teamIco('chicken')} ${Math.round(arena.result.avg.chicken)}% · ${teamIco('turkey')} ${Math.round(arena.result.avg.turkey)}%)`}`}</p>` : '')}${raw(isEt() && arena.lastRound ? `<p class="swap-note">${teamIco(arena.lastRound.att)} ${arena.lastRound.att === 'chicken' ? 'Chickens' : 'Turkeys'} hit ${arena.lastRound.hits} of ${arena.lastRound.of} targets this round! Next round the teams swap: ${teamIco(attackerFor(S.round + 1))} ${attackerFor(S.round + 1) === 'chicken' ? 'Chickens' : 'Turkeys'} fling.</p>` : '')}${raw(isStack() && arena.lastRound ? `<p class="swap-note">Tower heights this round: ${teamIco('chicken')} ${arena.lastRound.chicken.toFixed(1)} m · ${teamIco('turkey')} ${arena.lastRound.turkey.toFixed(1)} m — new towers next round!</p>` : '')}${raw(isCross() && arena.lastRound ? `<p class="swap-note">Crossed this round: ${teamIco('chicken')} ${arena.lastRound.chicken} · ${teamIco('turkey')} ${arena.lastRound.turkey}</p>` : '')}${raw(isPaint() && arena.lastRound ? `<p class="swap-note">This round: ${teamIco('chicken')} ${showScore(arena.lastRound.chicken)} of the field · ${teamIco('turkey')} ${showScore(arena.lastRound.turkey)}</p>` : '')}${raw(isSiege() ? `<p class="swap-note">Teams swap! ${defenderFor(S.round + 1) === 'chicken' ? `${teamIco('chicken')} Chickens defend · ${teamIco('turkey')} Turkeys attack` : `${teamIco('turkey')} Turkeys defend · ${teamIco('chicken')} Chickens attack`}</p>` : '')}
+    ${raw(isSiege() ? `<img class="halftime-img" src="${sprite('sg_halftime')}" alt="Half time!">` : `<h1 class="comic-title slant">ROUND ${S.round} COMPLETE!</h1>`)}${raw(isAdv() && arena.result ? `<p class="swap-note">${arena.result.winner === 'tie' ? 'A draw this round!' : `${teamIco(arena.result.winner)} ${arena.result.winner === 'chicken' ? 'Chickens' : 'Turkeys'} win the round — ${arena.result.how === 'home' ? 'everyone made it across!' : `they got further (${teamIco('chicken')} ${Math.round(arena.result.avg.chicken)}% · ${teamIco('turkey')} ${Math.round(arena.result.avg.turkey)}%)`}`}</p>` : '')}${raw(isEt() && arena.lastRound ? `<p class="swap-note">${teamIco(arena.lastRound.att)} ${arena.lastRound.att === 'chicken' ? 'Chickens' : 'Turkeys'} hit ${arena.lastRound.hits} of ${arena.lastRound.of} targets this round! Next round the teams swap: ${teamIco(attackerFor(S.round + 1))} ${attackerFor(S.round + 1) === 'chicken' ? 'Chickens' : 'Turkeys'} fling.</p>` : '')}${raw(isStack() && arena.lastRound ? `<p class="swap-note">Tower heights this round: ${teamIco('chicken')} ${arena.lastRound.chicken.toFixed(1)} m · ${teamIco('turkey')} ${arena.lastRound.turkey.toFixed(1)} m — new towers next round!</p>` : '')}${raw(isCannon() && arena.lastRound ? `<p class="swap-note">Targets hit this round: ${teamIco('chicken')} ${arena.lastRound.chicken} · ${teamIco('turkey')} ${arena.lastRound.turkey} (each player had ${arena.lastRound.of} to hit)</p>` : '')}${raw(isCross() && arena.lastRound ? `<p class="swap-note">Crossed this round: ${teamIco('chicken')} ${arena.lastRound.chicken} · ${teamIco('turkey')} ${arena.lastRound.turkey}</p>` : '')}${raw(isPaint() && arena.lastRound ? `<p class="swap-note">This round: ${teamIco('chicken')} ${showScore(arena.lastRound.chicken)} of the field · ${teamIco('turkey')} ${showScore(arena.lastRound.turkey)}</p>` : '')}${raw(isSiege() ? `<p class="swap-note">Teams swap! ${defenderFor(S.round + 1) === 'chicken' ? `${teamIco('chicken')} Chickens defend · ${teamIco('turkey')} Turkeys attack` : `${teamIco('turkey')} Turkeys defend · ${teamIco('chicken')} Chickens attack`}</p>` : '')}
     <div class="round-teams">
       <div class="round-team chicken"><img src="${sprite(ts.chicken >= ts.turkey ? 'chicken_win' : 'chicken_dizzy')}" alt=""><div class="big">${showScore(ts.chicken)}</div><div class="lbl">CHICKENS</div></div>
       <div class="vs-burst burst">VS</div>
@@ -644,12 +638,9 @@ function handleInput(uid, inp) {
   if (!inp || !arena) return;
   if (isTimed() || isCustom()) { if (S.phase === 'playing' && !S.paused) arena.handleInput(uid, inp); return; }
   if (isCannon()) {
-    if (inp.angle != null && S.phase === 'playing') arena.setAim(uid, +inp.angle);
-    const n = +inp.throws || 0;
-    if (n > 0 && n !== (lastThrow.get(uid) || 0)) {
-      lastThrow.set(uid, n);
-      if (S.phase === 'playing' && !S.paused) arena.fire(uid, +inp.angle, +inp.power);
-    }
+    // each device runs its own game and reports: round, shots fired, targets hit, settled
+    if (inp.cr != null && arena.report(uid, inp)) { bumpScores(); }
+    dirty.add(uid);
     return;
   }
   if (S.phase === 'playing' && !S.paused) arena.setMove(uid, +inp.mx || 0, +inp.my || 0);
@@ -724,7 +715,7 @@ function flush(force = false) {
       continue;
     }
     updates[`pstate/${uid}`] = {
-      eggs: p.eggs, score: p.score, ko: !!p.ko, koLeft: p.ko && p.koT < 999 ? Math.ceil(p.koT) : 0, shield: p.shieldT > 0, rq: roundAnswered.get(uid) || 0,
+      eggs: p.eggs, score: p.score, ...(isCannon() ? { ce: p.earned || 0, hits: p.hits || 0 } : {}), ko: !!p.ko, koLeft: p.ko && p.koT < 999 ? Math.ceil(p.koT) : 0, shield: p.shieldT > 0, rq: roundAnswered.get(uid) || 0,
       correct: st.correct, answered: st.answered, streak: st.streak,
       ...(standings ? { rank: standings.findIndex((s) => s.uid === uid) + 1, of: standings.length } : {}),
     };
@@ -807,7 +798,7 @@ $('#c-scores').onclick = () => {
   const st = computeStandings();
   modal({
     title: 'Scores', wide: true,
-    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>Correct ✅</th><th>${isCannon() ? 'Target points' : isFarm() ? 'Money earned' : isTowers() || isSiege() ? 'Battle points' : isPaint() ? 'Land owned' : isAdv() ? 'Squares advanced' : isEt() ? 'Targets hit' : isCross() ? 'Crossings' : isStack() ? 'Blocks placed + egg hits' : 'KO points'}</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${teamIco(p.team)}</td><td><b>${p.correct}</b>/${p.answered}</td><td>${showScore(p.score)}</td></tr>`).join('')}</tbody></table>`,
+    body: `<table class="table"><thead><tr><th>#</th><th>Player</th><th>Team</th><th>Correct ✅</th><th>${isCannon() ? 'Targets hit' : isFarm() ? 'Money earned' : isTowers() || isSiege() ? 'Battle points' : isPaint() ? 'Land owned' : isAdv() ? 'Squares advanced' : isEt() ? 'Targets hit' : isCross() ? 'Crossings' : isStack() ? 'Blocks placed + egg hits' : 'KO points'}</th></tr></thead><tbody>${st.map((p, i) => `<tr><td>${i + 1}</td><td>${esc(p.name)}${p.bot ? ' 🤖' : ''}</td><td>${teamIco(p.team)}</td><td><b>${p.correct}</b>/${p.answered}</td><td>${showScore(p.score)}</td></tr>`).join('')}</tbody></table>`,
     buttons: [{ label: 'Close', value: null }],
   });
 };
