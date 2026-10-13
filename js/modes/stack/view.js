@@ -5,8 +5,8 @@
 //   THROW: the other team's tower. Press and hold to aim (a dotted arc shows
 //          exactly where the egg will fly), slide to adjust, let go to throw.
 // =========================================================
-import { U, PLATS, PLAT_W, SHAPES, SHAPE_KEYS, SPAWN_GAP, outline, other, LAUNCH, throwVelocity, EGG_STEPS, G_STEP } from './rules.js?v=20261013181536';
-import { drawScene, drawBlock } from './arena.js?v=20261013181536';
+import { U, PLATS, PLAT_W, SHAPES, SHAPE_KEYS, SPAWN_GAP, outline, other, LAUNCH, throwVelocity, EGG_STEPS, G_STEP } from './rules.js?v=20261013202405';
+import { drawScene, drawBlock } from './arena.js?v=20261013202405';
 
 const centroid = (k) => { const o = outline(k); return o.reduce((a, v) => ({ x: a.x + v.x / o.length, y: a.y + v.y / o.length }), { x: 0, y: 0 }); };
 

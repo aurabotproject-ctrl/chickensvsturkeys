@@ -4,7 +4,7 @@
 // Each game has 3 steps with a little looping animation, plus "how to win".
 // Games without an entry simply skip the card.
 // =========================================================
-import { sprite } from './assets.js?v=20261013181536';
+import { sprite } from './assets.js?v=20261013202405';
 
 const S = (n) => sprite(n);
 

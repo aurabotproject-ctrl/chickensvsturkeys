@@ -4,18 +4,20 @@
 // full of targets. Birds fire eggs from their rear-end cannons.
 // =========================================================
 /* global PIXI, Matter */
-import { sprite } from '../../core/assets.js?v=20261013181536';
-import { sfx } from '../../core/sfx.js?v=20261013181536';
-import { FORTS, PIECES, DENSITY } from './forts.js?v=20261013181536';
+import { sprite } from '../../core/assets.js?v=20261013202405';
+import { sfx } from '../../core/sfx.js?v=20261013202405';
+import { FORTS, PIECES, DENSITY } from './forts.js?v=20261013202405';
 
 export const W = 1700; export const H = 1200; export const GROUND = 1040;
 export const VMAX = 22;          // egg speed at full power (px per physics step)
 export const GRAV = 0.001 * (1000 / 60) ** 2; // Matter gravity per step²
 const FORT_X = 300;              // chicken fort starts here (mirrored for turkeys)
 // SOLO (on a student's device): just their bird, standing closer in, and only the other team's fort.
-const SOLO_X = 700;
-const SOLO_VMAX = 16; // closer in, so full power lands just behind the fort
-const SOLO_VIEW = { x0: 590, x1: 1470, y0: GROUND - 560, y1: GROUND + 80 }; // for a chicken (mirrored for turkeys)
+// The bird stands at the far left edge and the fort sits at the far right edge (mirrored for turkeys),
+// with the hill in between — the full width of the screen to fire over.
+const SOLO_X = 215;
+const SOLO_VMAX = VMAX;
+const SOLO_VIEW = { x0: 95, x1: 1465, y0: GROUND - 560, y1: GROUND + 80, minH: 470 }; // for a chicken
 const CAT = { ground: 0x1, cFort: 0x2, tFort: 0x4, cEgg: 0x8, tEgg: 0x10, nEgg: 0x20 };
 const rnd = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -63,7 +65,7 @@ export class CannonArena {
     this.sky = tile('px_sky', -120, 720);
     this.far = tile('px_far', 560, 210);
     this.mid = tile('px_mid', 690, 330);
-    if (!this.solo) this.drawHill(); // solo: no hill — the bird stands closer in
+    this.drawHill();
     this.layers = {};
     ['back', 'pieces', 'birds', 'eggs', 'fx', 'front', 'fog', 'words'].forEach((k) => { const c = new PIXI.Container(); this.layers[k] = c; world.addChild(c); });
     const groundTile = tile('px_ground', GROUND - 70, 330); this.layers.front.addChild(groundTile);
@@ -75,7 +77,7 @@ export class CannonArena {
     const ground = Matter.Bodies.rectangle(W / 2, GROUND + 100, W * 3, 200, { isStatic: true, friction: 1, collisionFilter: { category: CAT.ground }, label: 'ground' });
     const hill = Matter.Bodies.fromVertices(W / 2, 0, [[{ x: 690, y: GROUND }, { x: 790, y: 915 }, { x: 910, y: 915 }, { x: 1010, y: GROUND }]], { isStatic: true, friction: 1, collisionFilter: { category: CAT.ground }, label: 'hill' });
     Matter.Body.setPosition(hill, { x: W / 2, y: GROUND - (GROUND - 915) / 2 + 10 });
-    Matter.World.add(E.world, this.solo ? [ground] : [ground, hill]);
+    Matter.World.add(E.world, [ground, hill]);
     Matter.Events.on(E, 'collisionStart', (ev) => this.onCollide(ev));
 
     this.layout();
@@ -98,7 +100,7 @@ export class CannonArena {
     if (this.solo) {
       const v = SOLO_VIEW; const vw = v.x1 - v.x0; const vh = v.y1 - v.y0;
       const x0 = this.solo === 'chicken' ? v.x0 : W - v.x1;
-      const s = Math.min(w / vw, h / vh);
+      const s = Math.min(w / vw, h / v.minH); // fit the WIDTH so bird and fort sit at the edges (a bit of sky may be cut off)
       this.scale = s; this.world.scale.set(s);
       this.baseX = (w - vw * s) / 2 - x0 * s;
       this.baseY = h - v.y1 * s; // ground near the bottom; any spare room becomes sky
