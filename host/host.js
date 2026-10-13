@@ -6,30 +6,30 @@
 import {
   isConfigured, db, ref, get, set, update, remove, onValue, onChildAdded, onChildChanged,
   currentUser, isTeacher, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261013202405';
-import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261013202405';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261013202405';
-import { playUrl } from '../js/core/games.js?v=20261013202405';
-import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261013202405';
-import { loadBankByKey } from '../js/quiz/banks.js?v=20261013202405';
-import { QuizEngine } from '../js/quiz/engine.js?v=20261013202405';
-import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261013202405';
-import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261013202405';
-import { CannonBoard } from '../js/modes/cannon/board.js?v=20261013202405';
-import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261013202405';
-import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261013202405';
-import { TowerArena } from '../js/modes/towers/arena.js?v=20261013202405';
-import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261013202405';
-import { CrossArena } from '../js/modes/cross/arena.js?v=20261013202405';
-import { hasHowto, howtoHTML } from '../js/core/howto.js?v=20261013202405';
-import { StackArena } from '../js/modes/stack/arena.js?v=20261013202405';
-import { PaintArena } from '../js/modes/paint/arena.js?v=20261013202405';
-import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261013202405';
-import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261013202405';
-import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261013202405';
-import { SiegeArena } from '../js/modes/siege/arena.js?v=20261013202405';
-import { defenderFor } from '../js/modes/siege/rules.js?v=20261013202405';
-import { EVENTS, randomEvent } from '../js/events/events.js?v=20261013202405';
+} from '../js/core/firebase.js?v=20261013204328';
+import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261013204328';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261013204328';
+import { playUrl } from '../js/core/games.js?v=20261013204328';
+import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261013204328';
+import { loadBankByKey } from '../js/quiz/banks.js?v=20261013204328';
+import { QuizEngine } from '../js/quiz/engine.js?v=20261013204328';
+import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261013204328';
+import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261013204328';
+import { CannonBoard } from '../js/modes/cannon/board.js?v=20261013204328';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261013204328';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261013204328';
+import { TowerArena } from '../js/modes/towers/arena.js?v=20261013204328';
+import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261013204328';
+import { CrossArena } from '../js/modes/cross/arena.js?v=20261013204328';
+import { hasHowto, howtoHTML } from '../js/core/howto.js?v=20261013204328';
+import { StackArena } from '../js/modes/stack/arena.js?v=20261013204328';
+import { PaintArena } from '../js/modes/paint/arena.js?v=20261013204328';
+import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261013204328';
+import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261013204328';
+import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261013204328';
+import { SiegeArena } from '../js/modes/siege/arena.js?v=20261013204328';
+import { defenderFor } from '../js/modes/siege/rules.js?v=20261013204328';
+import { EVENTS, randomEvent } from '../js/events/events.js?v=20261013204328';
 
 const gameId = params.get('g');
 const G = (p = '') => ref(db, `games/${gameId}${p ? '/' + p : ''}`);

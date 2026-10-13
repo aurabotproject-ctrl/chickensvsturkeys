@@ -4,9 +4,9 @@
 // full of targets. Birds fire eggs from their rear-end cannons.
 // =========================================================
 /* global PIXI, Matter */
-import { sprite } from '../../core/assets.js?v=20261013202405';
-import { sfx } from '../../core/sfx.js?v=20261013202405';
-import { FORTS, PIECES, DENSITY } from './forts.js?v=20261013202405';
+import { sprite } from '../../core/assets.js?v=20261013204328';
+import { sfx } from '../../core/sfx.js?v=20261013204328';
+import { FORTS, PIECES, DENSITY } from './forts.js?v=20261013204328';
 
 export const W = 1700; export const H = 1200; export const GROUND = 1040;
 export const VMAX = 22;          // egg speed at full power (px per physics step)
@@ -16,7 +16,9 @@ const FORT_X = 300;              // chicken fort starts here (mirrored for turke
 // The bird stands at the far left edge and the fort sits at the far right edge (mirrored for turkeys),
 // with the hill in between — the full width of the screen to fire over.
 const SOLO_X = 215;
-const SOLO_VMAX = VMAX;
+const BARREL = { len: 165, w: 42 }; // solo cannon size (world units, for a depth-1.5 bird)
+const BARREL_ART = false; // set to true once assets/sprites/cn_barrel_chicken.webp + cn_barrel_turkey.webp are added (EGG_CANNON_IMAGE_PROMPTS.md)
+const SOLO_VMAX = VMAX * 1.15; // a little extra oomph on the devices
 const SOLO_VIEW = { x0: 95, x1: 1465, y0: GROUND - 560, y1: GROUND + 80, minH: 470 }; // for a chicken
 const CAT = { ground: 0x1, cFort: 0x2, tFort: 0x4, cEgg: 0x8, tEgg: 0x10, nEgg: 0x20 };
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -25,7 +27,7 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 export const CANNON_SPRITES = [
   'px_sky', 'px_far', 'px_mid', 'px_ground',
   'c_chicken_idle', 'c_chicken_aim', 'c_chicken_fire', 'c_chicken_win', 'c_chicken_sad',
-  'c_turkey_idle', 'c_turkey_aim', 'c_turkey_fire', 'c_turkey_win', 'c_turkey_sad',
+  'c_turkey_idle', 'c_turkey_aim', 'c_turkey_fire', 'c_turkey_win', 'c_turkey_sad', 'chicken_idle', 'turkey_idle',
   'egg_blue', 'egg_red', 'egg', 'egg_gold', 'splat', 'impact', 'puff', 'sparkle', 'feathers', 'shield', 'debris_wood', 'debris_stone',
   'word_splat', 'word_blast', 'word_pow', 'word_bullseye', 'word_bok', 'word_gobble',
   ...new Set(Object.values(PIECES).flatMap((p) => (p.target ? ['chicken', 'turkey'] : p.mat === 'wood' ? ['blue', 'red'] : ['x'])
@@ -53,6 +55,9 @@ export class CannonArena {
     const urls = names.map(sprite);
     const loaded = await PIXI.Assets.load(urls);
     this.tex = {}; names.forEach((n, i) => { this.tex[n] = loaded[urls[i]]; });
+    if (this.solo && BARREL_ART) { // drawn cannon barrels (cn_barrel_chicken / cn_barrel_turkey)
+      for (const t of ['chicken', 'turkey']) { try { this.tex[`cn_barrel_${t}`] = await PIXI.Assets.load(sprite(`cn_barrel_${t}`)); } catch { /* missing */ } }
+    }
 
     const world = this.world = new PIXI.Container();
     this.app.stage.addChild(world);
@@ -123,9 +128,11 @@ export class CannonArena {
     const aim = new PIXI.Graphics();
     const tag = new PIXI.Text('', { fontFamily: 'Bangers, Impact, sans-serif', fontSize: 20, fill: 0xffffff, stroke: 0x111111, strokeThickness: 5, align: 'center' });
     tag.anchor.set(0.5, 1);
-    root.addChild(aim, body, tag);
+    let barrel = null;
+    if (this.solo) barrel = this.makeBarrel(team); // solo: a cannon on the bird's back that turns freely with the aim
+    root.addChild(aim, body, ...(barrel ? [barrel] : []), tag);
     this.layers.birds.addChild(root);
-    p.view = { root, body, aim, tag };
+    p.view = { root, body, aim, tag, barrel };
     this.players.set(uid, p);
     this.placeBirds();
     this.updateTag(p);
@@ -170,9 +177,36 @@ export class CannonArena {
     p.angle = a;
   }
 
+  /** Solo: a chunky comic cannon strapped to the bird's back, drawn along +x so it can rotate to any angle. */
+  makeBarrel(team) {
+    const c = new PIXI.Container();
+    const art = this.tex[`cn_barrel_${team}`];
+    if (art) { // drawn art: barrel pointing right, pivot 22% from the left, mouth at the right edge
+      const s = new PIXI.Sprite(art); s.anchor.set(0.22, 0.5); s.scale.set((BARREL.len * 1.08) / art.width); c.addChild(s); return c;
+    }
+    const g = new PIXI.Graphics(); c.addChild(g);
+    const L = BARREL.len; const w = BARREL.w; const band = team === 'chicken' ? 0x2c6fe0 : 0xd93a2a;
+    g.lineStyle(7, 0x111111);
+    g.beginFill(0x4a4f5a).drawCircle(-L * 0.18, 0, w * 0.62).endFill();                      // breech knob
+    g.beginFill(0xd9a43a).drawRoundedRect(-L * 0.22, -w / 2, L * 1.0, w, w * 0.3).endFill();   // brass tube
+    g.lineStyle(0); g.beginFill(0xf6d27a, 0.9).drawRect(-L * 0.12, -w * 0.36, L * 0.86, w * 0.16).endFill(); // shine
+    g.lineStyle(6, 0x111111); g.beginFill(band).drawRect(L * 0.18, -w / 2, L * 0.24, w).endFill();       // team band
+    g.beginFill(0xf2c14e).drawRoundedRect(L * 0.66, -w * 0.66, L * 0.2, w * 1.32, 8).endFill();         // muzzle ring
+    g.beginFill(0x2a2a2a).drawEllipse(L * 0.86, 0, w * 0.18, w * 0.5).endFill();                         // opening
+    g.lineStyle(6, 0x111111); g.beginFill(0x7a4a22).drawRoundedRect(-L * 0.05, -w * 0.75, L * 0.12, w * 1.5, 6).endFill(); // strap
+    c.recoil = 0;
+    return c;
+  }
+  /** Where the solo cannon pivots on the bird (relative to the bird's feet). */
+  barrelPivot(p) { const dir = p.team === 'chicken' ? 1 : -1; const h = 120 * p.depth; return { x: -dir * h * 0.34, y: -h * 0.52 }; }
+
   mouth(p) {
     const dir = p.team === 'chicken' ? 1 : -1;
     const h = 120 * p.depth;
+    if (this.solo) {
+      const pv = this.barrelPivot(p); const a = (p.angle * Math.PI) / 180; const L = BARREL.len * 0.86 * (p.depth / 1.5);
+      return { x: p.x + pv.x + dir * Math.cos(a) * L, y: p.y + pv.y - Math.sin(a) * L };
+    }
     return { x: p.x + dir * h * 0.42, y: p.y - h * 0.86 };
   }
 
@@ -450,10 +484,20 @@ export class CannonArena {
       let name = 'idle'; let sy = 1 + Math.sin(t * 3 + p.x) * 0.02; let sx = 2 - sy; let rot = 0; let hop = 0;
       if (p.win === true) { name = 'win'; hop = -Math.abs(Math.sin(t * 7 + p.x)) * 18; } else if (p.win === false) name = 'sad';
       else if (p.fireT > 0) { name = 'fire'; const k = p.fireT / 0.35; sx = 1 + k * 0.15; sy = 1 - k * 0.12; rot = -dir * k * 0.12; } else if (p.aimPing > 0) name = 'aim';
-      const tex = this.tex[`c_${p.team}_${name}`]; if (v.body.texture !== tex) v.body.texture = tex;
-      const hgt = 120 * p.depth; const k = hgt / 260;
-      // chickens are drawn facing left so their rear cannon points right at the turkeys
-      v.body.scale.set(k * sx * -dir, k * sy); v.body.rotation = rot; v.body.y = hop;
+      const tex = this.tex[v.barrel ? `${p.team}_idle` : `c_${p.team}_${name}`]; if (v.body.texture !== tex) v.body.texture = tex;
+      const hgt = 120 * p.depth; const k = hgt / (v.barrel ? tex.height * 0.92 : 260);
+      if (v.barrel) {
+        // solo: plain bird facing the enemy + a cannon that follows the aim exactly
+        v.body.scale.set(k * sx * dir, k * sy); v.body.rotation = rot * 0.5; v.body.y = hop;
+        const pv = this.barrelPivot(p); const a = (p.angle * Math.PI) / 180;
+        const kick = p.fireT > 0 ? (p.fireT / 0.35) * 16 : 0;
+        v.barrel.position.set(pv.x - dir * Math.cos(a) * kick, pv.y + Math.sin(a) * kick + hop);
+        v.barrel.rotation = dir > 0 ? -a : a - Math.PI;
+        v.barrel.scale.set(p.depth / 1.5, (p.depth / 1.5) * (dir > 0 ? 1 : -1));
+      } else {
+        // chickens are drawn facing left so their rear cannon points right at the turkeys
+        v.body.scale.set(k * sx * -dir, k * sy); v.body.rotation = rot; v.body.y = hop;
+      }
       v.root.position.set(p.x, p.y);
       v.tag.position.set(0, -hgt - 4 + hop - (p.depth < 1 ? 26 : 0)); v.tag.scale.set(p.depth);
       v.aim.clear();

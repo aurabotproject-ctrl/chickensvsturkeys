@@ -5,12 +5,12 @@
 //   sa/info = { round }   sa/b/{id} = "k,t,x,y,a100" (only when it moves)   sa/e/{id} = egg launch   sa/sp/{id} = splat   sa/h = heights
 // =========================================================
 /* global Matter */
-import { sfx } from '../../core/sfx.js?v=20261013202405';
-import { img } from '../advance/draw.js?v=20261013202405';
+import { sfx } from '../../core/sfx.js?v=20261013204328';
+import { img } from '../advance/draw.js?v=20261013204328';
 import {
   U, PLATS, PLAT_W, MAX_ACTIONS, FALL_Y, SPAWN_GAP, SHAPES, SHAPE_KEYS, outline, randomShape, colourOf, other,
   LAUNCH, throwVelocity, BLAST, BLAST_R, EGG_STEPS, FILTER,
-} from './rules.js?v=20261013202405';
+} from './rules.js?v=20261013204328';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
