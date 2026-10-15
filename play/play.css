@@ -455,3 +455,12 @@ body.mode-flag .tabs, body.mode-flag #ko, body.mode-flag .egg-bar, body.mode-fla
 .cf-frozen { position: absolute; left: 10%; right: 10%; top: 38%; display: grid; gap: 4px; text-align: center; background: rgba(160,225,255,.92); color: var(--ink); border: 4px solid var(--ink); border-radius: 18px; padding: 10px 14px; box-shadow: var(--pop-shadow-sm); pointer-events: none; animation: pop-in 300ms var(--ease-pop) both; }
 .cf-frozen b { font-family: var(--font-burst); font-size: 2.2rem; letter-spacing: .05em; color: #0d5b8f; }
 .cf-frozen span { font-weight: 900; }
+
+/* ---------- Gates ---------- */
+body.mode-gates .tabs, body.mode-gates #ko, body.mode-gates .egg-bar, body.mode-gates .egg-count { display: none !important; }
+#view-gt { position: relative; gap: 6px; }
+.gt-phone { display: block; }
+.gt-task { background: #fff; color: var(--ink); border: 3px solid var(--ink); border-radius: 12px; padding: 5px 10px; font-weight: 900; font-size: 1rem; text-align: center; }
+.gt-task.go { background: var(--yolk); animation: pop-in 300ms var(--ease-pop) both; }
+.gt-task.done { background: #8ef08a; }
+.gt-task.stay { background: #cfe3ff; }

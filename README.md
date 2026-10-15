@@ -67,6 +67,14 @@ CHICKENS_VS_TURKEYS_BUILD_RECIPE.md / _IMAGE_PROMPTS.md
 ## Teacher Report (Phase 8)
 After any game: **Teacher HQ → Results → click a game**, or **View Results** on the winners screen. Print it or *Save as PDF*.
 
+## Gates
+Create Game → **Gates**. Each round: students answer questions for the time you choose (default 1 minute) — every right answer makes their runner faster — then play for **1, 1.5 or 2 minutes** (setting: *Play time per round*).
+- Each team plays on its **own copy** of the same field (same 5 gates, a new layout each round). Devices only show their own team; the big screen shows both fields side by side.
+- One of the 4 corner circles lights up with a number from 1 to (team size − 1). **Exactly** that many teammates must stand in it for **3 seconds** (too few or too many = the timer restarts).
+- Then one of the 5 gates opens — for that team only. Everyone who was **not** in the circle must run through it. When they're all through = **1 point**, the gate closes and another corner lights up with a new number.
+- Closed gates are fences — go round them. Code: `js/modes/gates/`. Art prompts: `GATES_IMAGE_PROMPTS.md` (it reuses the Capture the Flag field).
+- ⚠️ This adds `gt` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
+
 ## Capture the Flag
 Create Game → **Capture the Flag**. Each round: students answer questions for the time you choose (default 1 minute) — every right answer makes their runner faster — then **1 minute of capture the flag**.
 - Chickens' half on the left, Turkeys' half on the right. You can't be tagged on your own half. On the other half you can — except inside their round **flag area** (safe).

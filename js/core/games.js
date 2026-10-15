@@ -1,5 +1,5 @@
 // Creating games + join codes.
-import { db, ref, set, get, push, runTransaction, serverTimestamp } from './firebase.js?v=20261015154551';
+import { db, ref, set, get, push, runTransaction, serverTimestamp } from './firebase.js?v=20261015234222';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I/L
 export const randomCode = (n = 6) => Array.from({ length: n }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
@@ -8,6 +8,7 @@ export const cleanCode = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]
 export const DEFAULT_SETTINGS = {
   rounds: 3,
   roundSeconds: 60,
+  gatePlay: 60,      // Gates: seconds of play per round
   confidence: 'every', // every | third | off
   koMode: 'respawn',   // respawn | out
   events: 'auto',      // auto | manual | off

@@ -3,28 +3,29 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261015154551';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261015154551';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261015154551';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261015154551';
-import { sfx } from '../js/core/sfx.js?v=20261015154551';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261015154551';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261015154551';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261015154551';
-import { PaintView } from '../js/modes/paint/view.js?v=20261015154551';
-import { FlagView } from '../js/modes/flag/view.js?v=20261015154551';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261015154551';
-import { CrossView } from '../js/modes/cross/view.js?v=20261015154551';
-import { howtoHTML } from '../js/core/howto.js?v=20261015154551';
-import { StackView } from '../js/modes/stack/view.js?v=20261015154551';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261015154551';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261015154551';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261015154551';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261015154551';
-import { TowerView } from '../js/modes/towers/view.js?v=20261015154551';
-import * as FE from '../js/modes/farm/economy.js?v=20261015154551';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261015154551';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261015154551';
+} from '../js/core/firebase.js?v=20261015234222';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261015234222';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261015234222';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261015234222';
+import { sfx } from '../js/core/sfx.js?v=20261015234222';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261015234222';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261015234222';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261015234222';
+import { PaintView } from '../js/modes/paint/view.js?v=20261015234222';
+import { FlagView } from '../js/modes/flag/view.js?v=20261015234222';
+import { GatesView } from '../js/modes/gates/view.js?v=20261015234222';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261015234222';
+import { CrossView } from '../js/modes/cross/view.js?v=20261015234222';
+import { howtoHTML } from '../js/core/howto.js?v=20261015234222';
+import { StackView } from '../js/modes/stack/view.js?v=20261015234222';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261015234222';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261015234222';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261015234222';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261015234222';
+import { TowerView } from '../js/modes/towers/view.js?v=20261015234222';
+import * as FE from '../js/modes/farm/economy.js?v=20261015234222';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261015234222';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261015234222';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -42,9 +43,10 @@ const isEt = () => D.state.mode === 'eggtoss';
 const isCross = () => D.state.mode === 'cross';
 const isStack = () => D.state.mode === 'stack';
 const isFlag = () => D.state.mode === 'flag';
+const isGates = () => D.state.mode === 'gates';
 const hasPiece = () => isAdv() || isEt(); // games where you play as a chess piece
 const hasMap = () => isFarm() || isTowers() || isSiege() || isAdv() || isCross() || isStack();
-const UNIT = () => (isFlag() ? 'flags captured' : isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCross() ? 'crossings' : isStack() ? 'blocks + egg hits' : isCannon() ? 'targets hit' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
+const UNIT = () => (isGates() ? 'gate points' : isFlag() ? 'flags captured' : isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCross() ? 'crossings' : isStack() ? 'blocks + egg hits' : isCannon() ? 'targets hit' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
 /** Team totals (Stack Attack scores in metres). */
 const TSCORE = (n) => (isStack() ? `${(Math.round((n || 0) * 10) / 10).toFixed(1)} m` : SCORE(n));
 const SCORE = (n) => (isFarm() ? fmt(n) : isPaint() ? `${Math.round((n || 0) * 10) / 10}%` : Math.floor(n || 0));
@@ -162,6 +164,7 @@ function subscribe() {
   on('cr/p', (v) => { CR.p = v; CR.view?.setBirds(v); });
   on('adv/info', (v) => { ADV.info = v; advBuild(); });
   on('adv/z', (v) => { ADV.s = v || ''; advBuild(); });
+  on('gt/info', (v) => { GT.info = v; GT.view?.setInfo(v); if (v && isGates()) ensureGt(); });
   on('cf/info', (v) => { CF.info = v; CF.view?.setInfo(v); });
   on('cf/p', (v) => { CF.p = v || ''; CF.view?.setPos(CF.p); });
   on('cf/f', (v) => { CF.f = v || '0,0'; CF.view?.setFlags(CF.f); });
@@ -275,11 +278,12 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); $('#cn-stage').classList.remove('used'); ensureCannon(); cnSync(); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isFlag()) { showView('flag'); ensureCf(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross() || isStack()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); $('#cn-stage').classList.remove('used'); ensureCannon(); cnSync(); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isFlag()) { showView('flag'); ensureCf(); } else if (isGates()) { showView('gates'); ensureGt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross() || isStack()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
   document.body.classList.toggle('mode-paint', isPaint());
   document.body.classList.toggle('mode-flag', isFlag());
+  document.body.classList.toggle('mode-gates', isGates());
   document.body.classList.toggle('mode-eggtoss', isEt());
   if (isCross()) crHud();
   if (isStack()) saHud();
@@ -345,6 +349,7 @@ function onPstate() {
   if (isSiege()) drawSgHud();
   if (isPaint()) drawPtHud();
   if (isFlag()) drawCfHud();
+  if (isGates()) gtHud();
   if (isAdv()) advHud();
   if (isEt()) etHud();
   if (isCross()) crHud();
@@ -394,11 +399,12 @@ function showView(v) {
   $('#view-cannon').classList.toggle('hidden', v !== 'cannon');
   $('#view-pt').classList.toggle('hidden', v !== 'paint');
   $('#view-cf').classList.toggle('hidden', v !== 'flag');
+  $('#view-gt').classList.toggle('hidden', v !== 'gates');
   $('#view-et').classList.toggle('hidden', v !== 'et');
 }
 
 function setTab(t) {
-  if (isCannon() || isPaint() || isEt() || isFlag()) { if ((isPaint() || isEt() || isFlag()) && D.state.phase !== 'playing') showView('answer'); return; }
+  if (isCannon() || isPaint() || isEt() || isFlag() || isGates()) { if ((isPaint() || isEt() || isFlag() || isGates()) && D.state.phase !== 'playing') showView('answer'); return; }
   if (TW.quiz) { TW.quiz = false; document.body.classList.remove('tw-quiz'); }
   L.tab = t;
   $('#tab-answer').classList.toggle('on', t === 'answer');
@@ -576,6 +582,11 @@ boot();
 // ---------------- Egg Cannon controller ----------------
 function drawProgress() {
   const el = $('#qprog');
+  if (isGates() && D.state.phase === 'answer') {
+    el.classList.remove('hidden');
+    el.textContent = `⚡ Runner speed: ${D.ps.speed || 9} · ${D.ps.rc || 0} right this round — keep going!`;
+    return;
+  }
   if (isFlag() && D.state.phase === 'answer') {
     el.classList.remove('hidden');
     el.textContent = `⚡ Runner speed: ${D.ps.speed || 9} · ${D.ps.rc || 0} right this round — keep going!`;
@@ -1146,6 +1157,61 @@ function drawPtHud() {
   $('#pt-mine').textContent = `🏳️ ${ps.pct || 0}%`;
   $('#pt-lc').textContent = `${ps.lc ?? 0}%`; $('#pt-lt').textContent = `${ps.lt ?? 0}%`;
   $('#pt-out').classList.toggle('hidden', !(ps.out && D.state.phase === 'playing'));
+}
+
+// ---------------- Gates ----------------
+// Only this team's field: listen to gt/{myTeam}/* once we know the team.
+const GT = { view: null, info: null, team: '', unsubs: [], p: '', s: {}, e: [], lastSent: 0, pend: null, timer: null };
+function ensureGt() {
+  if (!isGates() || !uid || !D.me?.team) return;
+  if (GT.view && GT.team !== D.me.team) { GT.view.destroy(); GT.view = null; }
+  if (GT.team !== D.me.team) {
+    GT.unsubs.forEach((f) => f()); GT.team = D.me.team;
+    const T = GT.team;
+    GT.unsubs = [
+      onValue(G(`gt/${T}/p`), (s) => { GT.p = s.val() || ''; GT.view?.setPos(GT.p); gtHud(); }),
+      onValue(G(`gt/${T}/s`), (s) => { GT.s = s.val() || {}; GT.view?.setState(GT.s); gtHud(); }),
+      onValue(G(`gt/${T}/e`), (s) => { GT.e = s.val() || []; GT.view?.setEvents(GT.e); }),
+    ];
+    L.unsubs.push(...GT.unsubs);
+  }
+  if (!GT.view) {
+    GT.view = new GatesView($('#gt-scene'), { uid, team: D.me.team, onSteer: (a, m) => gtSteer(a, m), onEvent: gtEvent });
+    if (GT.info) GT.view.setInfo(GT.info);
+    GT.view.setPos(GT.p); GT.view.setState(GT.s); GT.view.setEvents(GT.e);
+  }
+  gtHud();
+}
+function gtSteer(a, m) {
+  GT.pend = { a, m };
+  if (GT.timer) return;
+  const go = () => { GT.timer = null; if (!GT.pend) return; update(G(`inputs/${uid}`), GT.pend).catch(() => {}); GT.pend = null; GT.lastSent = Date.now(); };
+  GT.timer = setTimeout(go, Math.max(0, 70 - (Date.now() - GT.lastSent)));
+}
+function gtEvent(e, mine) {
+  if (e.type === 'gate') { sfx.correct(); navigator.vibrate?.([60, 40, 60]); }
+  else if (e.type === 'open') { sfx.go?.(); navigator.vibrate?.(40); }
+  else if (e.type === 'pass' && mine) { sfx.correct(); navigator.vibrate?.(50); }
+}
+const CORNER_NAME = ['TOP-LEFT', 'TOP-RIGHT', 'BOTTOM-RIGHT', 'BOTTOM-LEFT'];
+function gtHud() {
+  if (!isGates()) return;
+  const ps = D.ps; const s = GT.s || {};
+  $('#gt-speed').textContent = `⚡ ${ps.speed || 9}`;
+  $('#gt-mine').textContent = `🚪 ${s.sc ?? 0}`;
+  $('#gt-sc').textContent = ps.tc ?? D.teams?.chicken ?? 0; $('#gt-st').textContent = ps.tt ?? D.teams?.turkey ?? 0;
+  const el = $('#gt-task'); if (!el) return;
+  let msg = 'Get ready…'; let cls = '';
+  if (D.state.phase === 'playing' && s.ph) {
+    const f = GT.view?.myFlag() || 0;
+    if (s.ph === 'circle') { msg = `🎯 Get exactly ${s.n} into the glowing ${CORNER_NAME[s.c] || ''} corner for 3 seconds — ${s.inN || 0} in now${(s.inN || 0) > s.n ? ' (too many!)' : ''}`; cls = (s.inN || 0) === s.n ? 'done' : ''; }
+    else if (f === 2) { msg = '🚪 YOU: run through the OPEN gate! (the glowing green one)'; cls = 'go'; }
+    else if (f === 3) { msg = `✅ You're through! Waiting for the others… ${s.done}/${s.need}`; cls = 'done'; }
+    else if (f === 1) { msg = `🙌 You held the corner! Now your teammates run through the gate… ${s.done}/${s.need}`; cls = 'stay'; }
+    else msg = `🚪 Through the open gate! ${s.done}/${s.need}`;
+  }
+  if (el.textContent !== msg) el.textContent = msg;
+  el.className = `gt-task ${cls}`;
 }
 
 // ---------------- Capture the Flag ----------------

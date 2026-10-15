@@ -61,6 +61,7 @@
         "cr": { ".read": "auth != null" },
         "sa": { ".read": "auth != null" },
         "cf": { ".read": "auth != null" },
+        "gt": { ".read": "auth != null" },
 
         "players": {
           ".read": "auth != null",

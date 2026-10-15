@@ -4,7 +4,7 @@
 // Each game has 3 steps with a little looping animation, plus "how to win".
 // Games without an entry simply skip the card.
 // =========================================================
-import { sprite } from './assets.js?v=20261015154551';
+import { sprite } from './assets.js?v=20261015234222';
 
 const S = (n) => sprite(n);
 
@@ -150,6 +150,15 @@ export const HOWTO = {
       { scene: 'tap', p: { img: 'cr_win_c', pop: '+1!' }, big: 'Reach the other side = +1', small: 'Splat or splash = back to the start' },
     ],
     win: 'Most crossings wins!',
+  },
+  gates: {
+    title: 'GATES',
+    steps: [
+      { scene: 'answer', p: { img: 'chicken_run', plus: '+1 ⚡' }, big: 'Answer = speed', small: 'Every right answer makes your runner faster' },
+      { scene: 'joystick', big: 'Exactly that many in the corner', small: 'A corner shows a number — get exactly that many teammates in it for 3 seconds' },
+      { scene: 'tap', p: { img: 'chicken_run', pop: 'GATE!' }, big: 'Everyone else: through the gate!', small: 'A gate opens — all the others run through it = 1 point for your team' },
+    ],
+    win: 'Most gates wins!',
   },
   flag: {
     title: 'CAPTURE THE FLAG',
