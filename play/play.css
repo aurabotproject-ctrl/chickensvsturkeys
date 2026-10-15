@@ -444,3 +444,14 @@ body.mode-stack .egg-bar, body.mode-stack .egg-count { display: none; }
 .sa-build button:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
 .sa-build button:disabled { opacity: .4; cursor: not-allowed; }
 .overlay.howto-ov { place-items: start center; overflow-y: auto; padding: 22px 12px; }
+
+/* ---------- Capture the Flag ---------- */
+body.mode-flag .tabs, body.mode-flag #ko, body.mode-flag .egg-bar, body.mode-flag .egg-count { display: none !important; }
+#view-cf { position: relative; gap: 6px; }
+.cf-phone { display: block; }
+.pt-tip.good { background: var(--yolk); }
+.pt-tip.bad { background: var(--turkey); color: #fff; }
+.pt-tip.ice { background: #bfefff; }
+.cf-frozen { position: absolute; left: 10%; right: 10%; top: 38%; display: grid; gap: 4px; text-align: center; background: rgba(160,225,255,.92); color: var(--ink); border: 4px solid var(--ink); border-radius: 18px; padding: 10px 14px; box-shadow: var(--pop-shadow-sm); pointer-events: none; animation: pop-in 300ms var(--ease-pop) both; }
+.cf-frozen b { font-family: var(--font-burst); font-size: 2.2rem; letter-spacing: .05em; color: #0d5b8f; }
+.cf-frozen span { font-weight: 900; }

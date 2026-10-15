@@ -67,6 +67,15 @@ CHICKENS_VS_TURKEYS_BUILD_RECIPE.md / _IMAGE_PROMPTS.md
 ## Teacher Report (Phase 8)
 After any game: **Teacher HQ → Results → click a game**, or **View Results** on the winners screen. Print it or *Save as PDF*.
 
+## Capture the Flag
+Create Game → **Capture the Flag**. Each round: students answer questions for the time you choose (default 1 minute) — every right answer makes their runner faster — then **1 minute of capture the flag**.
+- Chickens' half on the left, Turkeys' half on the right. You can't be tagged on your own half. On the other half you can — except inside their round **flag area** (safe).
+- A tag = an opponent overlapping you for a whole second → you're **frozen** until a teammate overlaps you for a whole second (then you're safe for 2 seconds to run).
+- Grab their flag in their flag area and bring it back over the halfway line = **1 point**; the flag goes home. Tagged while carrying it = the flag goes home and you're frozen.
+- Nobody can stand in their own flag area (no guarding inside the safe zone).
+- Students steer by putting a finger down and dragging (let go to stop). Code: `js/modes/flag/`. Art prompts: `CAPTURE_THE_FLAG_IMAGE_PROMPTS.md`.
+- ⚠️ This adds `cf` to `database.rules.json` — paste it into Firebase → Realtime Database → Rules → **Publish**.
+
 ## Egg Cannon
 Create Game → **Egg Cannon**. Each round: students answer 5 questions (each right answer loads 1 egg). Then **everyone plays their own cannon game on their own device** (iPads sideways — portrait shows a "turn sideways" card): just their bird and the other team's fort. Hold a finger on the screen (the power bar bounces), slide to aim, let go to fire. Every target knocked over = **1 point** for their team.
 - The big screen is a live **Targets Hit** leaderboard: ranked players, their targets for this round, eggs left, and the team totals (e.g. 3 players × 4 targets each = up to 12 per round).

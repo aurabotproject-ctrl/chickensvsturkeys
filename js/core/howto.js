@@ -4,7 +4,7 @@
 // Each game has 3 steps with a little looping animation, plus "how to win".
 // Games without an entry simply skip the card.
 // =========================================================
-import { sprite } from './assets.js?v=20261013204328';
+import { sprite } from './assets.js?v=20261015141427';
 
 const S = (n) => sprite(n);
 
@@ -44,7 +44,7 @@ const SCENES = {
   board: ({ piece = 'adv_c_k_w', enemy = 'adv_t_n_k', push = false } = {}) => `<div class="ht-scene ht-board ${push ? 'push' : ''}">
       <div class="ht-chk">${Array.from({ length: 15 }, (_, i) => `<i class="${i % 2 ? 'd' : ''}"></i>`).join('')}</div>
       <i class="ht-go g1"></i><i class="ht-go g2"></i>${IMG(piece, 'ht-piece')}${enemy ? IMG(enemy, 'ht-enemy') : ''}</div>`,
-  // paint.io: leave your land, draw a loop, it fills in
+  // territory grab: leave your land, draw a loop, it fills in
   loop: ({ runner = 'chicken_run' } = {}) => `<div class="ht-scene ht-loop">
       <svg viewBox="0 0 200 110" preserveAspectRatio="none"><rect class="home" x="8" y="30" width="54" height="50" rx="6"/>
         <path class="fill" d="M62 40 L150 22 L178 70 L120 96 L62 72 Z"/><path class="trail" d="M62 40 L150 22 L178 70 L120 96 L62 72"/></svg>
@@ -150,6 +150,15 @@ export const HOWTO = {
       { scene: 'tap', p: { img: 'cr_win_c', pop: '+1!' }, big: 'Reach the other side = +1', small: 'Splat or splash = back to the start' },
     ],
     win: 'Most crossings wins!',
+  },
+  flag: {
+    title: 'CAPTURE THE FLAG',
+    steps: [
+      { scene: 'answer', p: { img: 'chicken_run', plus: '+1 ⚡' }, big: 'Answer = speed', small: 'Every right answer makes your runner faster' },
+      { scene: 'joystick', big: 'Drag to run', small: 'Grab their flag and bring it back over the halfway line = 1 point' },
+      { scene: 'tap', p: { img: 'turkey_dizzy', pop: 'FROZEN!' }, big: 'Careful on their side!', small: 'Touched for 1 second = frozen until a teammate frees you. Their flag area is safe!' },
+    ],
+    win: 'Most flags captured wins!',
   },
   stack: {
     title: 'STACK ATTACK',

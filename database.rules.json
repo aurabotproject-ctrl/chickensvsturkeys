@@ -60,6 +60,7 @@
         "et": { ".read": "auth != null" },
         "cr": { ".read": "auth != null" },
         "sa": { ".read": "auth != null" },
+        "cf": { ".read": "auth != null" },
 
         "players": {
           ".read": "auth != null",

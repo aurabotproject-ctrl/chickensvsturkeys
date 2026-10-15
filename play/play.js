@@ -3,27 +3,28 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261013204328';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261013204328';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261013204328';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261013204328';
-import { sfx } from '../js/core/sfx.js?v=20261013204328';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261013204328';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261013204328';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261013204328';
-import { PaintView } from '../js/modes/paint/view.js?v=20261013204328';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261013204328';
-import { CrossView } from '../js/modes/cross/view.js?v=20261013204328';
-import { howtoHTML } from '../js/core/howto.js?v=20261013204328';
-import { StackView } from '../js/modes/stack/view.js?v=20261013204328';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261013204328';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261013204328';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261013204328';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261013204328';
-import { TowerView } from '../js/modes/towers/view.js?v=20261013204328';
-import * as FE from '../js/modes/farm/economy.js?v=20261013204328';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261013204328';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261013204328';
+} from '../js/core/firebase.js?v=20261015141427';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261015141427';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261015141427';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261015141427';
+import { sfx } from '../js/core/sfx.js?v=20261015141427';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261015141427';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261015141427';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261015141427';
+import { PaintView } from '../js/modes/paint/view.js?v=20261015141427';
+import { FlagView } from '../js/modes/flag/view.js?v=20261015141427';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261015141427';
+import { CrossView } from '../js/modes/cross/view.js?v=20261015141427';
+import { howtoHTML } from '../js/core/howto.js?v=20261015141427';
+import { StackView } from '../js/modes/stack/view.js?v=20261015141427';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261015141427';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261015141427';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261015141427';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261015141427';
+import { TowerView } from '../js/modes/towers/view.js?v=20261015141427';
+import * as FE from '../js/modes/farm/economy.js?v=20261015141427';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261015141427';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261015141427';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -40,9 +41,10 @@ const isAdv = () => D.state.mode === 'advance';
 const isEt = () => D.state.mode === 'eggtoss';
 const isCross = () => D.state.mode === 'cross';
 const isStack = () => D.state.mode === 'stack';
+const isFlag = () => D.state.mode === 'flag';
 const hasPiece = () => isAdv() || isEt(); // games where you play as a chess piece
 const hasMap = () => isFarm() || isTowers() || isSiege() || isAdv() || isCross() || isStack();
-const UNIT = () => (isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCross() ? 'crossings' : isStack() ? 'blocks + egg hits' : isCannon() ? 'targets hit' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
+const UNIT = () => (isFlag() ? 'flags captured' : isPaint() ? 'of the field' : isEt() ? 'targets hit' : isCross() ? 'crossings' : isStack() ? 'blocks + egg hits' : isCannon() ? 'targets hit' : isFarm() ? 'earned' : isTowers() || isSiege() ? 'battle points' : 'KO points');
 /** Team totals (Stack Attack scores in metres). */
 const TSCORE = (n) => (isStack() ? `${(Math.round((n || 0) * 10) / 10).toFixed(1)} m` : SCORE(n));
 const SCORE = (n) => (isFarm() ? fmt(n) : isPaint() ? `${Math.round((n || 0) * 10) / 10}%` : Math.floor(n || 0));
@@ -160,6 +162,10 @@ function subscribe() {
   on('cr/p', (v) => { CR.p = v; CR.view?.setBirds(v); });
   on('adv/info', (v) => { ADV.info = v; advBuild(); });
   on('adv/z', (v) => { ADV.s = v || ''; advBuild(); });
+  on('cf/info', (v) => { CF.info = v; CF.view?.setInfo(v); });
+  on('cf/p', (v) => { CF.p = v || ''; CF.view?.setPos(CF.p); });
+  on('cf/f', (v) => { CF.f = v || '0,0'; CF.view?.setFlags(CF.f); });
+  on('cf/e', (v) => { CF.e = v || []; CF.view?.setEvents(CF.e); });
   on('pt/info', (v) => { PT.info = v; PT.view?.setInfo(v); });
   on('pt/s/g', (v) => { PT.g = v; PT.view?.setGrid(v || ''); });
   on('pt/s/t', (v) => { PT.t = v; PT.view?.setTrail(v || ''); });
@@ -269,10 +275,11 @@ function onState() {
       ov.className = 'overlay'; ov.innerHTML = '<div class="box"><div class="count">GET READY!</div></div>';
       ov.querySelector('.count').style.fontSize = '3.6rem';
       setTab('answer');
-    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); $('#cn-stage').classList.remove('used'); ensureCannon(); cnSync(); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross() || isStack()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
+    } else if (phase === 'answer') { ov.className = 'overlay hidden'; showView('answer'); sfx.go(); } else if (phase === 'playing') { ov.className = 'overlay hidden'; sfx.go(); if (isCannon()) { showView('cannon'); $('#cn-stage').classList.remove('used'); ensureCannon(); cnSync(); startMeter(); } else if (isPaint()) { showView('paint'); ensurePt(); } else if (isFlag()) { showView('flag'); ensureCf(); } else if (isEt()) { showView('et'); ensureEt(); } else if (isAdv() || isCross() || isStack()) setTab('answer'); else if (hasMap()) setTab('fight'); } else if (phase === 'roundEnd') { setTimeout(showRoundEnd, 400); } else if (phase === 'final') { setTimeout(showFinal, 600); } else if (phase === 'lobby') { ov.className = 'overlay hidden'; L.answeredN = 0; L.fbShownN = 0; }
   }
   document.body.classList.toggle('mode-cannon', isCannon());
   document.body.classList.toggle('mode-paint', isPaint());
+  document.body.classList.toggle('mode-flag', isFlag());
   document.body.classList.toggle('mode-eggtoss', isEt());
   if (isCross()) crHud();
   if (isStack()) saHud();
@@ -337,6 +344,7 @@ function onPstate() {
   if (isTowers()) drawTwHud();
   if (isSiege()) drawSgHud();
   if (isPaint()) drawPtHud();
+  if (isFlag()) drawCfHud();
   if (isAdv()) advHud();
   if (isEt()) etHud();
   if (isCross()) crHud();
@@ -385,11 +393,12 @@ function showView(v) {
   $('#view-fight').classList.toggle('hidden', v !== 'fight');
   $('#view-cannon').classList.toggle('hidden', v !== 'cannon');
   $('#view-pt').classList.toggle('hidden', v !== 'paint');
+  $('#view-cf').classList.toggle('hidden', v !== 'flag');
   $('#view-et').classList.toggle('hidden', v !== 'et');
 }
 
 function setTab(t) {
-  if (isCannon() || isPaint() || isEt()) { if ((isPaint() || isEt()) && D.state.phase !== 'playing') showView('answer'); return; }
+  if (isCannon() || isPaint() || isEt() || isFlag()) { if ((isPaint() || isEt() || isFlag()) && D.state.phase !== 'playing') showView('answer'); return; }
   if (TW.quiz) { TW.quiz = false; document.body.classList.remove('tw-quiz'); }
   L.tab = t;
   $('#tab-answer').classList.toggle('on', t === 'answer');
@@ -567,6 +576,11 @@ boot();
 // ---------------- Egg Cannon controller ----------------
 function drawProgress() {
   const el = $('#qprog');
+  if (isFlag() && D.state.phase === 'answer') {
+    el.classList.remove('hidden');
+    el.textContent = `⚡ Runner speed: ${D.ps.speed || 9} · ${D.ps.rc || 0} right this round — keep going!`;
+    return;
+  }
   if (isPaint() && D.state.phase === 'answer') {
     el.classList.remove('hidden');
     el.textContent = `⚡ Your speed: ${D.ps.speed || 5} · ${D.ps.rc || 0} right this round — keep going!`;
@@ -1132,6 +1146,44 @@ function drawPtHud() {
   $('#pt-mine').textContent = `🏳️ ${ps.pct || 0}%`;
   $('#pt-lc').textContent = `${ps.lc ?? 0}%`; $('#pt-lt').textContent = `${ps.lt ?? 0}%`;
   $('#pt-out').classList.toggle('hidden', !(ps.out && D.state.phase === 'playing'));
+}
+
+// ---------------- Capture the Flag ----------------
+const CF = { view: null, info: null, p: '', f: '0,0', e: [], lastSent: 0, pend: null, timer: null };
+function ensureCf() {
+  if (!isFlag() || !uid) return;
+  if (!CF.view) {
+    CF.view = new FlagView($('#cf-scene'), { uid, onSteer: (a, m) => cfSteer(a, m), onEvent: cfEvent });
+    if (CF.info) CF.view.setInfo(CF.info);
+    CF.view.setPos(CF.p); CF.view.setFlags(CF.f); CF.view.setEvents(CF.e);
+  }
+  drawCfHud();
+}
+function cfSteer(a, m) {
+  CF.pend = { a, m };
+  if (CF.timer) return;
+  const go = () => { CF.timer = null; if (!CF.pend) return; update(G(`inputs/${uid}`), CF.pend).catch(() => {}); CF.pend = null; CF.lastSent = Date.now(); };
+  CF.timer = setTimeout(go, Math.max(0, 70 - (Date.now() - CF.lastSent)));
+}
+let cfTipT = null;
+function cfTip(msg, cls = '') {
+  const el = $('#cf-tip'); el.textContent = msg; el.className = `pt-tip ${cls}`;
+  clearTimeout(cfTipT); cfTipT = setTimeout(() => { el.className = 'pt-tip'; el.textContent = 'Put your finger down and drag to run · let go to stop · grab their flag and bring it back over the line!'; }, 3000);
+}
+function cfEvent(e, mine) {
+  const myTeam = D.me?.team;
+  if (e.type === 'cap') { if (e.team === myTeam) { sfx.correct(); navigator.vibrate?.([60, 40, 60]); cfTip(mine ? '🎉 YOU CAPTURED THE FLAG! +1 for your team!' : '🚩 Your team captured their flag! +1!', 'good'); } else cfTip('😱 They captured our flag! Defend!', 'bad'); }
+  else if (e.type === 'tag' && mine) { sfx.wrong(); navigator.vibrate?.([120, 60, 120]); }
+  else if (e.type === 'free' && mine) { sfx.correct(); navigator.vibrate?.(60); cfTip('🔥 FREED! You\'re safe for 2 seconds — RUN!', 'good'); }
+  else if (e.type === 'grab' && mine) { sfx.join(); navigator.vibrate?.(40); cfTip('🚩 You got the flag! Run it back over the halfway line!', 'good'); }
+}
+function drawCfHud() {
+  if (!isFlag()) return;
+  const ps = D.ps;
+  $('#cf-speed').textContent = `⚡ ${ps.speed || 9}`;
+  $('#cf-mine').textContent = `🚩 ${ps.caps || 0}`;
+  $('#cf-sc').textContent = ps.tc ?? D.teams?.chicken ?? 0; $('#cf-st').textContent = ps.tt ?? D.teams?.turkey ?? 0;
+  $('#cf-frozen').classList.toggle('hidden', !(ps.frozen && D.state.phase === 'playing'));
 }
 
 // ---------------- Advance ----------------

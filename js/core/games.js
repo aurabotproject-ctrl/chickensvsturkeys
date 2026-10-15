@@ -1,5 +1,5 @@
 // Creating games + join codes.
-import { db, ref, set, get, push, runTransaction, serverTimestamp } from './firebase.js?v=20261013204328';
+import { db, ref, set, get, push, runTransaction, serverTimestamp } from './firebase.js?v=20261015141427';
 
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // no 0/O, 1/I/L
 export const randomCode = (n = 6) => Array.from({ length: n }, () => ALPHABET[Math.floor(Math.random() * ALPHABET.length)]).join('');
