@@ -2,10 +2,10 @@
 // GATES — drawing (Canvas 2D), shared by the big screen and the devices.
 // Uses the gt_* art once it's been added (GT_ART); until then it's drawn in code.
 // =========================================================
-import { sprite, avatar } from '../../core/assets.js?v=20261015234222';
-import { FW, FH, PR, CR, GL, CORNERS } from './rules.js?v=20261015234222';
+import { sprite, avatar } from '../../core/assets.js?v=20261015235654';
+import { FW, FH, PR, CR, GL, CORNERS } from './rules.js?v=20261015235654';
 
-export const GT_ART = new Set([]); // 'gt_gate_closed', 'gt_gate_open', 'gt_pad'
+export const GT_ART = new Set(['gt_gate_closed', 'gt_gate_open', 'gt_pad']);
 const TEAM = { chicken: { main: '#1e6fe0', glow: 'rgba(30,111,224,', light: '#8ec0ff' }, turkey: { main: '#e0402a', glow: 'rgba(224,64,42,', light: '#ff9a85' } };
 const imgs = new Map();
 export function img(name) { if (!imgs.has(name)) { const im = new Image(); im.src = name.startsWith('av:') ? avatar(+name.slice(3)) : sprite(name); imgs.set(name, im); } return imgs.get(name); }
@@ -58,9 +58,13 @@ export function drawGates(ctx, F, box, opts = {}) {
     const open = st.ph === 'gate' && st.g === k;
     const x = ox + g.x * cell; const y = oy + g.y * cell; const L = GL * cell;
     ctx.save(); ctx.translate(x, y); if (g.o === 'v') ctx.rotate(Math.PI / 2); // drawn as a horizontal gate, turned for 'v'
-    if (open) { ctx.fillStyle = `rgba(80,255,120,${0.25 + 0.15 * Math.sin(t * 6)})`; rr(ctx, -L / 2 - cell * 2, -cell * 6, L + cell * 4, cell * 12, cell * 3); ctx.fill(); }
+    if (open) { // a bright pulsing glow so the open gate is easy to spot
+      const k = 0.5 + 0.5 * Math.sin(t * 6);
+      ctx.fillStyle = `rgba(90,255,120,${0.35 + 0.25 * k})`; ctx.beginPath(); ctx.ellipse(0, 0, L * 0.62, cell * (7 + k), 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = `rgba(255,255,255,${0.6 + 0.4 * k})`; ctx.lineWidth = Math.max(2, cell * 0.5); ctx.setLineDash([cell * 1.4, cell]); ctx.stroke(); ctx.setLineDash([]);
+    }
     const a = art(open ? 'gt_gate_open' : 'gt_gate_closed');
-    if (ready(a)) { const h = L * (a.naturalHeight / a.naturalWidth); ctx.drawImage(a, -L / 2 - cell * 1.2, -h / 2, L + cell * 2.4, h); }
+    if (ready(a)) { const w = L * 1.3; const h = w * (a.naturalHeight / a.naturalWidth); ctx.drawImage(a, -w / 2, -h / 2, w, h); } // a little chunkier than the bar so it reads well
     else {
       const post = (px) => { ctx.fillStyle = '#6b3f1f'; ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(px, 0, cell * 1.3, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); };
       ctx.lineCap = 'round';

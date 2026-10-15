@@ -14,7 +14,7 @@ export const FW = 160; export const FH = 90;
 export const PR = 2.6;                 // runner radius
 export const CR = 11;                  // corner circle radius
 export const HOLD = 3;                 // seconds the right number must stay in the circle
-export const GL = 16;                  // gate length
+export const GL = 18;                  // gate length
 export const NGATES = 5;
 export const CORNERS = [{ x: 15, y: 15 }, { x: FW - 15, y: 15 }, { x: FW - 15, y: FH - 15 }, { x: 15, y: FH - 15 }];
 export const BASE_SPEED = 9; export const SPEED_PER = 1.2; export const MAX_SPEED = 22;

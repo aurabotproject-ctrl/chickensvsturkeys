@@ -1,6 +1,6 @@
 # GATES — ChatGPT Image Prompts
 
-The game already works with art drawn in code, and it reuses the **Capture the Flag field** (`cf_field`), so only **4 new images** are needed.
+✔ **All 4 images received and wired in** (`mode_gates`, `gt_gate_closed`, `gt_gate_open`, `gt_pad`); the field is the Capture the Flag one (`cf_field`). The prompts are kept below in case you want to remake anything.
 
 | # | Save as | What it becomes | Replaces |
 |---|---|---|---|

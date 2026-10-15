@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261015234222';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261015234222';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261015234222';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261015234222';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261015234222';
-import { renderBanks } from './banks-ui.js?v=20261015234222';
+} from '../js/core/firebase.js?v=20261015235654';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261015235654';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261015235654';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261015235654';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261015235654';
+import { renderBanks } from './banks-ui.js?v=20261015235654';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -128,7 +128,7 @@ const MODES = [
   { id: 'cross', name: 'Cross the Road', img: 'mode_cross', desc: 'Why did the chicken cross the road? Every right answer = 4 hops. Dodge tractors, ride the logs and get across for a point — splat and it\'s back to the start!' },
   { id: 'stack', name: 'Stack Attack', img: 'mode_stack', desc: 'Build the tallest wobbly tower! Every right answer = drop a block on your tower OR lob an egg at theirs. Real physics — careful stacking wins!' },
   { id: 'flag', name: 'Capture the Flag', img: 'mode_flag', desc: 'Answer questions to power up your runner, then 1 minute of capture the flag! Grab their flag and bring it home — but on their side you can be tagged and frozen.' },
-  { id: 'gates', name: 'Gates', img: 'chicken_run', /* → 'mode_gates' once that art is added */ desc: 'Teamwork! Get exactly the right number of teammates into the glowing corner for 3 seconds, then everyone else runs through the gate that opens. Most gates wins!' },
+  { id: 'gates', name: 'Gates', img: 'mode_gates', desc: 'Teamwork! Get exactly the right number of teammates into the glowing corner for 3 seconds, then everyone else runs through the gate that opens. Most gates wins!' },
   { id: 'farm', name: 'Egg Farm', img: 'fm_coop_c4', desc: 'Grow the richest egg farm — every right answer boosts your farm.' },
 ];
 
