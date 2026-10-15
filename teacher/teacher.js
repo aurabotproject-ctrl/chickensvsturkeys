@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261015141427';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261015141427';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261015141427';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261015141427';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261015141427';
-import { renderBanks } from './banks-ui.js?v=20261015141427';
+} from '../js/core/firebase.js?v=20261015153235';
+import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261015153235';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261015153235';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261015153235';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261015153235';
+import { renderBanks } from './banks-ui.js?v=20261015153235';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -127,7 +127,7 @@ const MODES = [
   { id: 'eggtoss', name: 'Egg Toss', img: 'mode_eggtoss', desc: 'A fairground egg toss! One team flings eggs, the other dodges. Right answers = more eggs, or a smaller target. Teams swap every round.' },
   { id: 'cross', name: 'Cross the Road', img: 'mode_cross', desc: 'Why did the chicken cross the road? Every right answer = 4 hops. Dodge tractors, ride the logs and get across for a point — splat and it\'s back to the start!' },
   { id: 'stack', name: 'Stack Attack', img: 'mode_stack', desc: 'Build the tallest wobbly tower! Every right answer = drop a block on your tower OR lob an egg at theirs. Real physics — careful stacking wins!' },
-  { id: 'flag', name: 'Capture the Flag', img: 'chicken_run', /* → 'mode_flag' once that art is added */ desc: 'Answer questions to power up your runner, then 1 minute of capture the flag! Grab their flag and bring it home — but on their side you can be tagged and frozen.' },
+  { id: 'flag', name: 'Capture the Flag', img: 'mode_flag', desc: 'Answer questions to power up your runner, then 1 minute of capture the flag! Grab their flag and bring it home — but on their side you can be tagged and frozen.' },
   { id: 'farm', name: 'Egg Farm', img: 'fm_coop_c4', desc: 'Grow the richest egg farm — every right answer boosts your farm.' },
 ];
 

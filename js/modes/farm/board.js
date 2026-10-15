@@ -3,9 +3,9 @@
 // nobody can cheat from a phone) and draws the live race board
 // on the projector.
 // =========================================================
-import { sprite, avatar, AVATARS } from '../../core/assets.js?v=20261015141427';
-import { esc } from '../../core/ui.js?v=20261015141427';
-import * as E from './economy.js?v=20261015141427';
+import { sprite, avatar, AVATARS } from '../../core/assets.js?v=20261015153235';
+import { esc } from '../../core/ui.js?v=20261015153235';
+import * as E from './economy.js?v=20261015153235';
 
 const coopSprite = (team, lvl) => `fm_coop_${team === 'chicken' ? 'c' : 't'}${Math.max(1, lvl)}`;
 const article = (w) => (/^[AEIOU]/i.test(w) ? 'an' : 'a');

@@ -1,6 +1,6 @@
 # CAPTURE THE FLAG — ChatGPT Image Prompts
 
-The game already works with art drawn in code, so you can play it straight away. These images make it look like the other games. Each one is switched on as soon as it arrives.
+✔ **All 7 images received and wired in** (`mode_flag`, `cf_field`, `cf_flag_blue`, `cf_flag_red`, `cf_zone_blue`, `cf_zone_red`, `cf_ice`). The prompts are kept below in case you want to remake anything.
 
 | # | Save as | What it becomes | Replaces |
 |---|---|---|---|

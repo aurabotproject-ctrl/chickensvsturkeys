@@ -3,11 +3,11 @@
 // and the devices. Uses the cf_* art when it has been added (CF_ART);
 // until then everything is drawn in code.
 // =========================================================
-import { sprite, avatar } from '../../core/assets.js?v=20261015141427';
-import { FW, FH, MID, ZR, ZONE, PR } from './rules.js?v=20261015141427';
+import { sprite, avatar } from '../../core/assets.js?v=20261015153235';
+import { FW, FH, MID, ZR, ZONE, PR } from './rules.js?v=20261015153235';
 
 /** Art that has been added to assets/sprites (see CAPTURE_THE_FLAG_IMAGE_PROMPTS.md). */
-export const CF_ART = new Set([]); // e.g. 'cf_field', 'cf_flag_blue', 'cf_flag_red', 'cf_ice', 'cf_zone_blue', 'cf_zone_red'
+export const CF_ART = new Set(['cf_field', 'cf_flag_blue', 'cf_flag_red', 'cf_ice', 'cf_zone_blue', 'cf_zone_red']);
 const TEAM = { chicken: { main: '#1e6fe0', light: '#7fb2ff', dark: '#0d3f8f', flag: 'cf_flag_blue', zone: 'cf_zone_blue' }, turkey: { main: '#e0402a', light: '#ff9a85', dark: '#8f1d10', flag: 'cf_flag_red', zone: 'cf_zone_red' } };
 
 const imgs = new Map();
@@ -22,7 +22,7 @@ export function fitField(w, h, top = 0, bottom = 0, pad = 12) {
 }
 
 function flagShape(ctx, x, y, s, team, t, art) {
-  if (art && ready(art)) { const h = s * 2.4; const w = h * (art.naturalWidth / art.naturalHeight); ctx.drawImage(art, x - w * 0.25, y - h, w, h); return; } // pole 1/4 in from the left, base at the bottom
+  if (art && ready(art)) { const h = s * 2.6; const w = h * (art.naturalWidth / art.naturalHeight); ctx.drawImage(art, x - w * 0.106, y - h, w, h); return; } // the pole is ~11% in from the left, its spike at the bottom
   ctx.save(); ctx.translate(x, y);
   ctx.lineCap = 'round'; ctx.strokeStyle = '#111'; ctx.lineWidth = s * 0.28; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -s * 2.1); ctx.stroke();
   ctx.strokeStyle = '#d9d2c3'; ctx.lineWidth = s * 0.14; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -s * 2.1); ctx.stroke();
@@ -42,20 +42,27 @@ export function drawField(ctx, S, box, opts = {}) {
   // ---- field ----
   ctx.fillStyle = '#3f7a1f'; rr(ctx, ox - 12, oy - 12, fw + 24, fh + 24, 20); ctx.fill();
   const bg = art('cf_field');
-  if (bg && ready(bg)) ctx.drawImage(bg, ox, oy, fw, fh);
+  if (bg && ready(bg)) {
+    // the art has a fence round the edge: stretch it so the fence sits just OUTSIDE the playing area
+    const L = 0.042; const R = 0.04; const T = 0.066; const B = 0.072;
+    const iw = fw / (1 - L - R); const ih = fh / (1 - T - B);
+    ctx.save(); rr(ctx, ox - 12, oy - 12, fw + 24, fh + 24, 20); ctx.clip();
+    ctx.drawImage(bg, ox - iw * L, oy - ih * T, iw, ih); ctx.restore();
+  }
   else {
     ctx.fillStyle = '#8fd14f'; ctx.fillRect(ox, oy, fw, fh);
     ctx.fillStyle = 'rgba(255,255,255,.08)'; for (let x = 0; x < FW; x += 16) ctx.fillRect(ox + x * cell, oy, 8 * cell, fh); // mowing stripes
   }
-  ctx.fillStyle = 'rgba(30,111,224,.24)'; ctx.fillRect(ox, oy, fw / 2, fh);
-  ctx.fillStyle = 'rgba(224,64,42,.24)'; ctx.fillRect(ox + fw / 2, oy, fw / 2, fh);
+  const tint = bg && ready(bg) ? 0.16 : 0.24;
+  ctx.fillStyle = `rgba(30,111,224,${tint})`; ctx.fillRect(ox, oy, fw / 2, fh);
+  ctx.fillStyle = `rgba(224,64,42,${tint})`; ctx.fillRect(ox + fw / 2, oy, fw / 2, fh);
   // team names faintly painted on each half
   ctx.save(); ctx.globalAlpha = 0.22; ctx.font = `normal ${cell * 7}px Bangers, Impact, sans-serif`; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
   ctx.fillText('CHICKENS', ox + fw * 0.3, oy + fh * 0.16); ctx.fillText('TURKEYS', ox + fw * 0.7, oy + fh * 0.16); ctx.restore();
   // halfway line
   ctx.save(); ctx.strokeStyle = '#fff'; ctx.lineWidth = Math.max(3, cell * 0.8); ctx.setLineDash([cell * 3, cell * 2]);
   ctx.beginPath(); ctx.moveTo(ox + MID * cell, oy); ctx.lineTo(ox + MID * cell, oy + fh); ctx.stroke(); ctx.restore();
-  ctx.strokeStyle = '#2b5a12'; ctx.lineWidth = 6; ctx.strokeRect(ox - 3, oy - 3, fw + 6, fh + 6);
+  if (!(bg && ready(bg))) { ctx.strokeStyle = '#2b5a12'; ctx.lineWidth = 6; ctx.strokeRect(ox - 3, oy - 3, fw + 6, fh + 6); }
   // flag areas (safe for the OTHER team)
   for (const team of ['chicken', 'turkey']) {
     const z = ZONE[team]; const x = ox + z.x * cell; const y = oy + z.y * cell; const r = ZR * cell;
@@ -85,7 +92,7 @@ export function drawField(ctx, S, box, opts = {}) {
     // frozen = an ice block
     if (p.frozen) {
       const ice = art('cf_ice');
-      if (ice && ready(ice)) { ctx.globalAlpha = 0.8; ctx.drawImage(ice, x - sz * 0.75, y - sz * 0.75, sz * 1.5, sz * 1.5); ctx.globalAlpha = 1; }
+      if (ice && ready(ice)) ctx.drawImage(ice, x - sz * 0.78, y - sz * 0.8, sz * 1.56, sz * 1.56);
       else {
         ctx.fillStyle = 'rgba(160,225,255,.6)'; ctx.strokeStyle = '#e8fbff'; ctx.lineWidth = Math.max(2, sz * 0.07);
         rr(ctx, x - sz * 0.68, y - sz * 0.68, sz * 1.36, sz * 1.36, sz * 0.2); ctx.fill(); ctx.stroke();
