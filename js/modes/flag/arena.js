@@ -3,9 +3,9 @@
 // Rules: see rules.js. Devices steer with a finger (inputs/{uid} = { a: angle, m: 1|0 });
 // the host moves everyone and sends positions to cf/* (~6 times a second).
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261015153235';
-import { FW, FH, MID, PR, TAG_D, TAG_TIME, IMMUNE, ZR, ZONE, BATTLE_MS, speedFor, enemyOf, sideOf, inZone, packRunner } from './rules.js?v=20261015153235';
-import { drawField, fitField, eventWord } from './draw.js?v=20261015153235';
+import { sfx } from '../../core/sfx.js?v=20261015154551';
+import { FW, FH, MID, PR, TAG_D, TAG_TIME, IMMUNE, ZR, ZONE, BATTLE_MS, speedFor, enemyOf, sideOf, inZone, packRunner } from './rules.js?v=20261015154551';
+import { drawField, fitField, eventWord } from './draw.js?v=20261015154551';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -143,14 +143,17 @@ export class FlagArena {
     // tags + rescues: overlapping for a whole second
     for (const p of all) {
       if (p.frozen) {
-        const helper = all.find((q) => q.team === p.team && !q.frozen && q !== p && Math.hypot(q.x - p.x, q.y - p.y) < TAG_D);
-        p.freeT = helper ? p.freeT + dt : 0;
-        if (p.freeT >= TAG_TIME) { p.frozen = false; p.freeT = 0; p.immune = IMMUNE; helper.frees += 1; this.event('free', p); sfx.correct?.(); this.onChange(p); this.onChange(helper); }
+        // two or more teammates touching = twice as fast (½ second)
+        const helpers = all.filter((q) => q.team === p.team && !q.frozen && q !== p && Math.hypot(q.x - p.x, q.y - p.y) < TAG_D);
+        p.freeT = helpers.length ? p.freeT + dt * (helpers.length >= 2 ? 2 : 1) : 0;
+        if (p.freeT >= TAG_TIME) { p.frozen = false; p.freeT = 0; p.immune = IMMUNE; for (const h of helpers) { h.frees += 1; this.onChange(h); } this.event('free', p); sfx.correct?.(); this.onChange(p); }
         continue;
       }
       const vulnerable = sideOf(p.x) !== p.team && !inZone(p, enemyOf(p.team)) && p.immune <= 0;
-      const tagger = vulnerable ? all.find((q) => q.team !== p.team && !q.frozen && Math.hypot(q.x - p.x, q.y - p.y) < TAG_D) : null;
-      p.tagT = tagger ? p.tagT + dt : 0;
+      // two or more opponents touching = twice as fast (½ second)
+      const taggers = vulnerable ? all.filter((q) => q.team !== p.team && !q.frozen && Math.hypot(q.x - p.x, q.y - p.y) < TAG_D) : [];
+      const tagger = taggers[0];
+      p.tagT = taggers.length ? p.tagT + dt * (taggers.length >= 2 ? 2 : 1) : 0;
       if (p.tagT >= TAG_TIME) {
         p.tagT = 0; p.frozen = true; p.moving = false; tagger.tags += 1;
         this.dropFlag(p, true);

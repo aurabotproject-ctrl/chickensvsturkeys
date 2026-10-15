@@ -3,8 +3,9 @@
 //   • The field has two halves: Chickens (left) and Turkeys (right).
 //   • On your own half you can't be tagged. On the other half you can —
 //     except inside their FLAG AREA (the safe circle round their flag).
-//   • A tag = an opponent overlapping you for a whole second → you're FROZEN
-//     on the spot until a teammate overlaps you for a whole second.
+//   • A tag = an opponent overlapping you for a whole second (½ second if 2+ opponents
+//     overlap you) → you're FROZEN on the spot until a teammate overlaps you for a whole
+//     second (½ second if 2+ teammates do).
 //   • Run into their flag area to grab the flag; get it back over the
 //     halfway line = 1 point and the flag goes home. Tagged while carrying
 //     it = the flag goes home and you're frozen.

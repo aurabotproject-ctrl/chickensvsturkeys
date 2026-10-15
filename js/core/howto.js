@@ -4,7 +4,7 @@
 // Each game has 3 steps with a little looping animation, plus "how to win".
 // Games without an entry simply skip the card.
 // =========================================================
-import { sprite } from './assets.js?v=20261015153235';
+import { sprite } from './assets.js?v=20261015154551';
 
 const S = (n) => sprite(n);
 
@@ -156,7 +156,7 @@ export const HOWTO = {
     steps: [
       { scene: 'answer', p: { img: 'cf_flag_blue', plus: '+1 ⚡' }, big: 'Answer = speed', small: 'Every right answer makes your runner faster' },
       { scene: 'joystick', big: 'Drag to run', small: 'Grab their flag and bring it back over the halfway line = 1 point' },
-      { scene: 'tap', p: { img: 'turkey_dizzy', pop: 'FROZEN!' }, big: 'Careful on their side!', small: 'Touched for 1 second = frozen until a teammate frees you. Their flag area is safe!' },
+      { scene: 'tap', p: { img: 'turkey_dizzy', pop: 'FROZEN!' }, big: 'Careful on their side!', small: 'Touched for 1 second (½ s by two) = frozen until a teammate frees you. Their flag area is safe!' },
     ],
     win: 'Most flags captured wins!',
   },
