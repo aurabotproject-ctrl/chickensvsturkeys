@@ -3,8 +3,8 @@
 // and the devices. Uses the cf_* art when it has been added (CF_ART);
 // until then everything is drawn in code.
 // =========================================================
-import { sprite, avatar } from '../../core/assets.js?v=20261015235654';
-import { FW, FH, MID, ZR, ZONE, PR } from './rules.js?v=20261015235654';
+import { sprite, avatar } from '../../core/assets.js?v=20261019134601';
+import { FW, FH, MID, ZR, ZONE, PR } from './rules.js?v=20261019134601';
 
 /** Art that has been added to assets/sprites (see CAPTURE_THE_FLAG_IMAGE_PROMPTS.md). */
 export const CF_ART = new Set(['cf_field', 'cf_flag_blue', 'cf_flag_red', 'cf_ice', 'cf_zone_blue', 'cf_zone_red']);
@@ -74,7 +74,13 @@ export function drawField(ctx, S, box, opts = {}) {
     }
     ctx.font = `normal ${Math.max(10, cell * 2.2)}px Bangers, Impact, sans-serif`; ctx.textAlign = 'center'; ctx.lineWidth = Math.max(3, cell * 0.5); ctx.strokeStyle = '#111';
     ctx.strokeText('SAFE', x, y + r * 0.82); ctx.fillStyle = '#fff'; ctx.fillText('SAFE', x, y + r * 0.82);
-    if (S.flags?.[team] == null) flagShape(ctx, x, y + cell * 1.4, cell * 2.6, team, t, art(TEAM[team].flag));
+    const locked = S.locks?.[team === 'chicken' ? 'turkey' : 'chicken']; // the other team just scored here: they must all go home first
+    if (S.flags?.[team] == null) { if (locked) ctx.globalAlpha = 0.45; flagShape(ctx, x, y + cell * 1.4, cell * 2.6, team, t, art(TEAM[team].flag)); ctx.globalAlpha = 1; }
+    if (locked) {
+      ctx.font = `${cell * 4.2}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText('🔒', x, y - r * 0.15);
+      ctx.font = `normal ${Math.max(9, cell * 1.9)}px Bangers, Impact, sans-serif`; ctx.lineWidth = Math.max(3, cell * 0.45); ctx.strokeStyle = '#111';
+      ctx.strokeText('ALL BACK FIRST!', x, y - r - cell * 0.8); ctx.fillStyle = '#ffc72c'; ctx.fillText('ALL BACK FIRST!', x, y - r - cell * 0.8);
+    }
   }
   // ---- runners ----
   const sz = PR * 2 * cell * 1.05;
@@ -130,6 +136,6 @@ export function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); 
 
 /** Floating word for an event: { type: 'tag'|'free'|'cap'|'grab'|'drop', x, y, team } */
 export function eventWord(e) {
-  const W = { tag: ['FROZEN!', '#9fe6ff'], free: ['FREED!', '#3ddc5a'], cap: ['FLAG CAPTURED!', '#ffc72c'], grab: ['GOT THE FLAG!', '#fff'], drop: ['FLAG HOME!', '#fff'] }[e.type] || ['!', '#fff'];
+  const W = { tag: ['FROZEN!', '#9fe6ff'], free: ['FREED!', '#3ddc5a'], cap: ['FLAG CAPTURED!', '#ffc72c'], grab: ['GOT THE FLAG!', '#fff'], drop: ['FLAG HOME!', '#fff'], unlock: ['FLAG READY!', '#7dff6a'] }[e.type] || ['!', '#fff'];
   return { text: W[0], color: W[1], x: Math.max(14, Math.min(FW - 14, e.x)), y: Math.max(8, e.y - 5), size: e.type === 'cap' ? 6.5 : 4.2, t0: performance.now() };
 }

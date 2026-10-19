@@ -3,29 +3,29 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261015235654';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261015235654';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261015235654';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261015235654';
-import { sfx } from '../js/core/sfx.js?v=20261015235654';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261015235654';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261015235654';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261015235654';
-import { PaintView } from '../js/modes/paint/view.js?v=20261015235654';
-import { FlagView } from '../js/modes/flag/view.js?v=20261015235654';
-import { GatesView } from '../js/modes/gates/view.js?v=20261015235654';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261015235654';
-import { CrossView } from '../js/modes/cross/view.js?v=20261015235654';
-import { howtoHTML } from '../js/core/howto.js?v=20261015235654';
-import { StackView } from '../js/modes/stack/view.js?v=20261015235654';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261015235654';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261015235654';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261015235654';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261015235654';
-import { TowerView } from '../js/modes/towers/view.js?v=20261015235654';
-import * as FE from '../js/modes/farm/economy.js?v=20261015235654';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261015235654';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261015235654';
+} from '../js/core/firebase.js?v=20261019134601';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261019134601';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261019134601';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261019134601';
+import { sfx } from '../js/core/sfx.js?v=20261019134601';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261019134601';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261019134601';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261019134601';
+import { PaintView } from '../js/modes/paint/view.js?v=20261019134601';
+import { FlagView } from '../js/modes/flag/view.js?v=20261019134601';
+import { GatesView } from '../js/modes/gates/view.js?v=20261019134601';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261019134601';
+import { CrossView } from '../js/modes/cross/view.js?v=20261019134601';
+import { howtoHTML } from '../js/core/howto.js?v=20261019134601';
+import { StackView } from '../js/modes/stack/view.js?v=20261019134601';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261019134601';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261019134601';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261019134601';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261019134601';
+import { TowerView } from '../js/modes/towers/view.js?v=20261019134601';
+import * as FE from '../js/modes/farm/economy.js?v=20261019134601';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261019134601';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261019134601';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -167,7 +167,7 @@ function subscribe() {
   on('gt/info', (v) => { GT.info = v; GT.view?.setInfo(v); if (v && isGates()) ensureGt(); });
   on('cf/info', (v) => { CF.info = v; CF.view?.setInfo(v); });
   on('cf/p', (v) => { CF.p = v || ''; CF.view?.setPos(CF.p); });
-  on('cf/f', (v) => { CF.f = v || '0,0'; CF.view?.setFlags(CF.f); });
+  on('cf/f', (v) => { CF.f = v || '0,0'; CF.view?.setFlags(CF.f); drawCfHud(); });
   on('cf/e', (v) => { CF.e = v || []; CF.view?.setEvents(CF.e); });
   on('pt/info', (v) => { PT.info = v; PT.view?.setInfo(v); });
   on('pt/s/g', (v) => { PT.g = v; PT.view?.setGrid(v || ''); });
@@ -1250,6 +1250,12 @@ function drawCfHud() {
   $('#cf-mine').textContent = `🚩 ${ps.caps || 0}`;
   $('#cf-sc').textContent = ps.tc ?? D.teams?.chicken ?? 0; $('#cf-st').textContent = ps.tt ?? D.teams?.turkey ?? 0;
   $('#cf-frozen').classList.toggle('hidden', !(ps.frozen && D.state.phase === 'playing'));
+  // after your team scores: everyone back to your side before you can grab again
+  const [, , lc, lt] = String(CF.f || '0,0').split(',').map(Number);
+  const locked = D.me?.team === 'chicken' ? lc : lt;
+  const tip = $('#cf-tip');
+  if (locked && D.state.phase === 'playing') { tip.textContent = '🔒 Everyone back to YOUR side before you can take their flag again!'; tip.className = 'pt-tip ice'; CF.lockTip = true; }
+  else if (CF.lockTip) { CF.lockTip = false; tip.className = 'pt-tip'; tip.textContent = 'Put your finger down and drag to run · let go to stop · grab their flag and bring it back over the line!'; }
 }
 
 // ---------------- Advance ----------------

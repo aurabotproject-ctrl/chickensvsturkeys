@@ -3,12 +3,14 @@
 //   • The field has two halves: Chickens (left) and Turkeys (right).
 //   • On your own half you can't be tagged. On the other half you can —
 //     except inside their FLAG AREA (the safe circle round their flag).
-//   • A tag = an opponent overlapping you for a whole second (½ second if 2+ opponents
-//     overlap you) → you're FROZEN on the spot until a teammate overlaps you for a whole
-//     second (½ second if 2+ teammates do).
+//   • A tag = an opponent overlapping you for ½ a second (¼ second if 2+ opponents
+//     overlap you) → you're FROZEN on the spot until a teammate overlaps you for ½ a
+//     second (¼ second if 2+ teammates do).
 //   • Run into their flag area to grab the flag; get it back over the
 //     halfway line = 1 point and the flag goes home. Tagged while carrying
 //     it = the flag goes home and you're frozen.
+//   • After a capture, the scoring team must ALL get back to their own half (frozen
+//     players don't count) before they can take the flag again — no camping in the circle.
 //   • You can't stand in your OWN flag area (no guarding inside the safe zone).
 //   • Speed for the 1-minute play comes from right answers in the question round.
 // =========================================================
@@ -16,7 +18,7 @@
 export const FW = 160; export const FH = 90; export const MID = FW / 2;
 export const PR = 2.6;                 // runner radius (field units)
 export const TAG_D = PR * 1.75;        // centres this close = overlapping
-export const TAG_TIME = 1;             // seconds of overlap for a tag (or a rescue)
+export const TAG_TIME = 0.5;           // seconds of overlap for a tag (or a rescue) — ¼ s with 2+ players
 export const IMMUNE = 2;               // seconds of safety after being freed
 export const ZR = 10;                  // flag-area radius
 export const ZONE = { chicken: { x: 13, y: FH / 2 }, turkey: { x: FW - 13, y: FH / 2 } };

@@ -3,9 +3,9 @@
 // Rules: see rules.js. Devices steer with a finger (inputs/{uid} = { a: angle, m: 1|0 });
 // the host moves everyone and sends positions to cf/* (~6 times a second).
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261015235654';
-import { FW, FH, MID, PR, TAG_D, TAG_TIME, IMMUNE, ZR, ZONE, BATTLE_MS, speedFor, enemyOf, sideOf, inZone, packRunner } from './rules.js?v=20261015235654';
-import { drawField, fitField, eventWord } from './draw.js?v=20261015235654';
+import { sfx } from '../../core/sfx.js?v=20261019134601';
+import { FW, FH, MID, PR, TAG_D, TAG_TIME, IMMUNE, ZR, ZONE, BATTLE_MS, speedFor, enemyOf, sideOf, inZone, packRunner } from './rules.js?v=20261019134601';
+import { drawField, fitField, eventWord } from './draw.js?v=20261019134601';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
@@ -17,6 +17,7 @@ export class FlagArena {
     this.onSync = onSync || (() => {});
     this.players = new Map(); this.byIdx = [];
     this.flags = { chicken: null, turkey: null }; // who is carrying each team's flag (player object)
+    this.locked = { chicken: false, turkey: false }; // true = that team just scored and must all go home before grabbing again
     this.totals = { chicken: 0, turkey: 0 }; this.roundCaps = { chicken: 0, turkey: 0 };
     this.running = false; this.paused = false; this.round = 0; this.fx = []; this.events = []; this.evSeq = 0;
     this.t = 0; this.sent = {};
@@ -68,7 +69,7 @@ export class FlagArena {
   startRound() {
     this.round += 1;
     this.running = false; this.fx = []; this.roundCaps = { chicken: 0, turkey: 0 };
-    this.flags = { chicken: null, turkey: null };
+    this.flags = { chicken: null, turkey: null }; this.locked = { chicken: false, turkey: false };
     for (const p of this.players.values()) { p.rc = 0; p.frozen = false; p.carry = false; p.tagT = 0; p.freeT = 0; p.immune = 0; p.moving = false; }
     this.lineUp();
     this.sendInfo(); this.pushSync(true);
@@ -132,13 +133,20 @@ export class FlagArena {
       if (d < ZR + PR * 0.6) { const k = (ZR + PR * 0.6) / (d || 1); p.x = z.x + (p.x - z.x) * k; p.y = z.y + (p.y - z.y) * k; if (!d) p.x = z.x + (p.team === 'chicken' ? 1 : -1) * (ZR + PR); }
       const enemy = enemyOf(p.team);
       // grab their flag
-      if (!p.carry && !this.flags[enemy] && inZone(p, enemy)) { this.flags[enemy] = p; p.carry = true; this.event('grab', p); sfx.join?.(); }
+      if (!p.carry && !this.flags[enemy] && !this.locked[p.team] && inZone(p, enemy)) { this.flags[enemy] = p; p.carry = true; this.event('grab', p); sfx.join?.(); }
       // bring it home = 1 point
       if (p.carry && sideOf(p.x) === p.team) {
         p.carry = false; this.flags[enemy] = null;
         p.caps += 1; p.score = p.caps; this.totals[p.team] += 1; this.roundCaps[p.team] += 1;
         this.event('cap', p); sfx.correct?.(); this.onChange(p);
+        this.locked[p.team] = true; // everyone back to your own half before the next grab
       }
+    }
+    // a team that just scored can grab again once every (unfrozen) player is back on their own half
+    for (const team of ['chicken', 'turkey']) {
+      if (!this.locked[team]) continue;
+      const out = all.filter((q) => q.team === team && !q.frozen && sideOf(q.x) !== team);
+      if (!out.length) { this.locked[team] = false; this.event('unlock', { x: ZONE[enemyOf(team)].x, y: ZONE[enemyOf(team)].y, team }); }
     }
     // tags + rescues: overlapping for a whole second
     for (const p of all) {
@@ -185,7 +193,7 @@ export class FlagArena {
     const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
     let tx; let ty;
     const frozenMate = all.filter((q) => q.team === p.team && q.frozen).sort((a, b) => dist(a, p) - dist(b, p))[0];
-    if (p.carry) { tx = p.team === 'chicken' ? MID - 12 : MID + 12; ty = p.y; }
+    if (p.carry || (this.locked[p.team] && sideOf(p.x) !== p.team)) { tx = p.team === 'chicken' ? MID - 12 : MID + 12; ty = p.y; }
     else if (p.role === 'def') {
       const intruder = all.filter((q) => q.team === enemy && !q.frozen && sideOf(q.x) === p.team && !inZone(q, p.team)).sort((a, b) => dist(a, p) - dist(b, p))[0];
       if (intruder) { tx = intruder.x; ty = intruder.y; } else { tx = p.team === 'chicken' ? MID - 22 : MID + 22; ty = FH / 2 + Math.sin(this.t * 0.7 + p.i) * 22; }
@@ -223,7 +231,7 @@ export class FlagArena {
     const up = {};
     const pos = [...this.players.values()].map(packRunner).join('');
     if (force || pos !== this.sent.p) { this.sent.p = pos; up['cf/p'] = pos; }
-    const fl = `${this.flags.chicken?.i || 0},${this.flags.turkey?.i || 0}`;
+    const fl = `${this.flags.chicken?.i || 0},${this.flags.turkey?.i || 0},${this.locked.chicken ? 1 : 0},${this.locked.turkey ? 1 : 0}`;
     if (force || fl !== this.sent.f) { this.sent.f = fl; up['cf/f'] = fl; }
     if (force || this.dirtyEv) { this.dirtyEv = false; up['cf/e'] = this.events; }
     if (Object.keys(up).length) this.onSync(up);
@@ -235,7 +243,7 @@ export class FlagArena {
     const dpr = this.dpr; const W = this.canvas.width / dpr; const H = this.canvas.height / dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
     const runners = [...this.players.values()].map((p) => ({ i: p.i, team: p.team, name: first(p.name), av: p.av, bot: p.bot, x: p.x, y: p.y, frozen: p.frozen, carry: p.carry, immune: p.immune > 0, prog: Math.min(1, (p.frozen ? p.freeT : p.tagT) / TAG_TIME) }));
-    const S = { runners, flags: { chicken: this.flags.chicken?.i ?? null, turkey: this.flags.turkey?.i ?? null }, t: this.t, fx: this.fx };
+    const S = { runners, flags: { chicken: this.flags.chicken?.i ?? null, turkey: this.flags.turkey?.i ?? null }, locks: { ...this.locked }, t: this.t, fx: this.fx };
     drawField(ctx, S, this.box);
     this.fx = S.fx;
   }

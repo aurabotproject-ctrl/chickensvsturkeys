@@ -78,7 +78,8 @@ Create Game → **Gates**. Each round: students answer questions for the time yo
 ## Capture the Flag
 Create Game → **Capture the Flag**. Each round: students answer questions for the time you choose (default 1 minute) — every right answer makes their runner faster — then **1 minute of capture the flag**.
 - Chickens' half on the left, Turkeys' half on the right. You can't be tagged on your own half. On the other half you can — except inside their round **flag area** (safe).
-- A tag = an opponent overlapping you for a whole second → you're **frozen** until a teammate overlaps you for a whole second (then you're safe for 2 seconds to run). If **2 or more** players overlap you at once, it only takes **½ a second** (for tags and for rescues).
+- A tag = an opponent overlapping you for **½ a second** → you're **frozen** until a teammate overlaps you for ½ a second (then you're safe for 2 seconds to run). If **2 or more** players overlap you at once, it only takes **¼ of a second** (for tags and for rescues).
+- After a team captures a flag, **all** of its (unfrozen) players must get back to their own half before they can take the flag again — the flag area shows 🔒 ALL BACK FIRST! until then.
 - Grab their flag in their flag area and bring it back over the halfway line = **1 point**; the flag goes home. Tagged while carrying it = the flag goes home and you're frozen.
 - Nobody can stand in their own flag area (no guarding inside the safe zone).
 - Students steer by putting a finger down and dragging (let go to stop). Code: `js/modes/flag/`. Art prompts: `CAPTURE_THE_FLAG_IMAGE_PROMPTS.md`.

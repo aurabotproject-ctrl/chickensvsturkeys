@@ -3,8 +3,8 @@
 // YOU highlighted. Put a finger down anywhere and drag the way you want
 // to run (like a joystick); let go to stop. Arrow keys / WASD work too.
 // =========================================================
-import { FW, FH, unpackRunners } from './rules.js?v=20261015235654';
-import { drawField, fitField, eventWord } from './draw.js?v=20261015235654';
+import { FW, FH, unpackRunners } from './rules.js?v=20261019134601';
+import { drawField, fitField, eventWord } from './draw.js?v=20261019134601';
 
 export class FlagView {
   constructor(el, { uid, onSteer, onEvent } = {}) {
@@ -36,7 +36,7 @@ export class FlagView {
       else { Object.assign(r, { frozen: q.frozen, carry: q.carry, immune: q.immune, prog: q.prog }); r.tx = q.x; r.ty = q.y; }
     }
   }
-  setFlags(str) { const [c, t] = String(str || '0,0').split(',').map(Number); this.flags = { chicken: c || null, turkey: t || null }; }
+  setFlags(str) { const [c, t, lc, lt] = String(str || '0,0').split(',').map(Number); this.flags = { chicken: c || null, turkey: t || null }; this.locks = { chicken: !!lc, turkey: !!lt }; }
   setEvents(list) {
     for (const e of list || []) {
       if (e.k <= this.lastEv) continue;
@@ -85,7 +85,7 @@ export class FlagView {
       const inf = this.info.get(r.i); if (!inf) continue;
       runners.push({ ...r, team: inf.team, name: inf.name, av: inf.av, bot: inf.bot });
     }
-    const S = { runners, flags: this.flags, t: this.t, fx: this.fx };
+    const S = { runners, flags: this.flags, locks: this.locks, t: this.t, fx: this.fx };
     drawField(ctx, S, this.box, { me: this.me });
     this.fx = S.fx;
     // joystick ring

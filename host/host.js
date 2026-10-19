@@ -6,32 +6,32 @@
 import {
   isConfigured, db, ref, get, set, update, remove, onValue, onChildAdded, onChildChanged,
   currentUser, isTeacher, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261015235654';
-import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261015235654';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261015235654';
-import { playUrl } from '../js/core/games.js?v=20261015235654';
-import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261015235654';
-import { loadBankByKey } from '../js/quiz/banks.js?v=20261015235654';
-import { QuizEngine } from '../js/quiz/engine.js?v=20261015235654';
-import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261015235654';
-import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261015235654';
-import { CannonBoard } from '../js/modes/cannon/board.js?v=20261015235654';
-import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261015235654';
-import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261015235654';
-import { TowerArena } from '../js/modes/towers/arena.js?v=20261015235654';
-import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261015235654';
-import { CrossArena } from '../js/modes/cross/arena.js?v=20261015235654';
-import { hasHowto, howtoHTML } from '../js/core/howto.js?v=20261015235654';
-import { StackArena } from '../js/modes/stack/arena.js?v=20261015235654';
-import { PaintArena } from '../js/modes/paint/arena.js?v=20261015235654';
-import { FlagArena, BATTLE_MS as FLAG_MS } from '../js/modes/flag/arena.js?v=20261015235654';
-import { GatesArena } from '../js/modes/gates/arena.js?v=20261015235654';
-import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261015235654';
-import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261015235654';
-import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261015235654';
-import { SiegeArena } from '../js/modes/siege/arena.js?v=20261015235654';
-import { defenderFor } from '../js/modes/siege/rules.js?v=20261015235654';
-import { EVENTS, randomEvent } from '../js/events/events.js?v=20261015235654';
+} from '../js/core/firebase.js?v=20261019134601';
+import { $, $$, esc, html, raw, toast, modal, confirmBox, promptBox, params, rand, shuffle, sleep, showLoading } from '../js/core/ui.js?v=20261019134601';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261019134601';
+import { playUrl } from '../js/core/games.js?v=20261019134601';
+import { sfx, setMuted, isMuted } from '../js/core/sfx.js?v=20261019134601';
+import { loadBankByKey } from '../js/quiz/banks.js?v=20261019134601';
+import { QuizEngine } from '../js/quiz/engine.js?v=20261019134601';
+import { DodgeArena } from '../js/modes/dodge/arena.js?v=20261019134601';
+import { makeBot, botTick } from '../js/modes/dodge/bots.js?v=20261019134601';
+import { CannonBoard } from '../js/modes/cannon/board.js?v=20261019134601';
+import { cannonBotTick, botLoadEggs } from '../js/modes/cannon/bots.js?v=20261019134601';
+import { FarmBoard, fmt } from '../js/modes/farm/board.js?v=20261019134601';
+import { TowerArena } from '../js/modes/towers/arena.js?v=20261019134601';
+import { AdvanceArena } from '../js/modes/advance/arena.js?v=20261019134601';
+import { CrossArena } from '../js/modes/cross/arena.js?v=20261019134601';
+import { hasHowto, howtoHTML } from '../js/core/howto.js?v=20261019134601';
+import { StackArena } from '../js/modes/stack/arena.js?v=20261019134601';
+import { PaintArena } from '../js/modes/paint/arena.js?v=20261019134601';
+import { FlagArena, BATTLE_MS as FLAG_MS } from '../js/modes/flag/arena.js?v=20261019134601';
+import { GatesArena } from '../js/modes/gates/arena.js?v=20261019134601';
+import { EggTossArena } from '../js/modes/eggtoss/arena.js?v=20261019134601';
+import { FLING_MS, attackerFor } from '../js/modes/eggtoss/rules.js?v=20261019134601';
+import { BATTLE_MS as PAINT_MS } from '../js/modes/paint/common.js?v=20261019134601';
+import { SiegeArena } from '../js/modes/siege/arena.js?v=20261019134601';
+import { defenderFor } from '../js/modes/siege/rules.js?v=20261019134601';
+import { EVENTS, randomEvent } from '../js/events/events.js?v=20261019134601';
 
 const gameId = params.get('g');
 const G = (p = '') => ref(db, `games/${gameId}${p ? '/' + p : ''}`);
