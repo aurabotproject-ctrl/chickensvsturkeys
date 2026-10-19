@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
-  isConfigured, db, ref, onValue, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261019134601';
-import { $, $$, html, raw, esc, toast, modal } from '../js/core/ui.js?v=20261019134601';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261019134601';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261019134601';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261019134601';
-import { renderBanks } from './banks-ui.js?v=20261019134601';
+  isConfigured, db, ref, onValue, get, remove, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
+} from '../js/core/firebase.js?v=20261019165404';
+import { $, $$, html, raw, esc, toast, modal, confirmBox } from '../js/core/ui.js?v=20261019165404';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261019165404';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261019165404';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261019165404';
+import { renderBanks } from './banks-ui.js?v=20261019165404';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -199,16 +199,64 @@ function resultRow(r) {
     <img class="icon" src="${subjectIcon(r.bankSubject)}" alt="">
     <div class="grow"><div class="title">${r.bankTitle || 'Game'}</div>
     <div class="sub">${d ? d.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' }) : ''} · ${Object.keys(r.players || {}).length} players · ${winner}</div></div>
-    <span class="badge yolk">${r.accuracy ?? '–'}%</span></div>`;
+    <span class="badge yolk">${r.accuracy ?? '–'}%</span>
+    <button class="del-btn" data-del="${r.id}" title="Delete this game's results" aria-label="Delete this game's results">🗑</button></div>`;
 }
 function wireResultRows(root) {
   $$('[data-result]', root).forEach((row) => { row.onclick = () => { location.href = `report.html?r=${encodeURIComponent(row.dataset.result)}`; }; });
+  $$('[data-del]', root).forEach((b) => {
+    b.onclick = async (e) => {
+      e.stopPropagation();
+      const r = ctx.results.find((x) => x.id === b.dataset.del); if (!r) return;
+      const when = r.finishedAt ? new Date(r.finishedAt).toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : '';
+      if (!(await confirmBox(`Delete the results for "${r.bankTitle || 'Game'}"${when ? ` (${when})` : ''}? This can't be undone.`, 'Delete'))) return;
+      try { await deleteResults([r]); toast('Game deleted', 'ok'); } catch (err) { console.error(err); toast(explainError(err), 'bad', 6000); }
+    };
+  });
+}
+
+/**
+ * Delete saved results, plus the finished game's leftover live data (/games/{id} and its join code)
+ * once no other saved result still belongs to that game. Games still open in a lobby or being played are left alone.
+ */
+async function deleteResults(list) {
+  const uid = ctx.user.uid; const ids = new Set(list.map((r) => r.id));
+  for (const r of list) await remove(ref(db, `results/${uid}/${r.id}`));
+  const gameIds = [...new Set(list.map((r) => r.gameId || r.id.replace(/-\d+$/, '')).filter(Boolean))];
+  for (const g of gameIds) {
+    if (ctx.results.some((x) => !ids.has(x.id) && (x.gameId || x.id.replace(/-\d+$/, '')) === g)) continue; // another saved play of the same game
+    try {
+      const meta = (await get(ref(db, `games/${g}/meta`))).val();
+      if (!meta || meta.hostUid !== uid || meta.status !== 'ended') continue;
+      if (meta.code) { const c = (await get(ref(db, `codes/${meta.code}`))).val(); if (c && c.g === g) await remove(ref(db, `codes/${meta.code}`)); }
+      await remove(ref(db, `games/${g}`));
+    } catch (err) { console.warn('left the old game data in place', g, err); }
+  }
+}
+
+/** Results page: delete several old games at once. */
+async function tidyUp() {
+  const DAY = 86400000; const now = Date.now();
+  const count = (days) => ctx.results.filter((r) => (r.finishedAt || 0) < now - days * DAY).length;
+  const opts = [[30, 'Older than 1 month'], [90, 'Older than 3 months'], [0, 'ALL games']];
+  const pick = await modal({
+    title: '🧹 Tidy up results',
+    body: `<p class="modal-msg">Delete saved games in one go. Deleted games (and their reports) can't be brought back.</p>`,
+    buttons: [{ label: 'Cancel', value: null, cls: 'grey' }, ...opts.map(([d, l]) => ({ label: `${l} (${d ? count(d) : ctx.results.length})`, value: d, cls: d ? 'purple' : 'red' }))],
+  });
+  if (pick === null || pick === undefined) return;
+  const list = pick ? ctx.results.filter((r) => (r.finishedAt || 0) < now - pick * DAY) : [...ctx.results];
+  if (!list.length) { toast('Nothing to delete', 'warn'); return; }
+  if (!(await confirmBox(`Delete ${list.length} game${list.length === 1 ? '' : 's'}? This can't be undone.`, 'Delete'))) return;
+  try { await deleteResults(list); toast(`Deleted ${list.length} game${list.length === 1 ? '' : 's'}`, 'ok'); } catch (err) { console.error(err); toast(explainError(err), 'bad', 6000); }
 }
 
 function renderResults(main) {
   main.innerHTML = html`<h1 class="page-title">Results</h1>
-    <p style="color:#cfe0ff">Every finished game is saved here. Click one to open its printable <b>Master Teacher Diagnostic</b> — strand mastery, student accuracy, blind spots and question analysis.</p>
+    <p style="color:#cfe0ff">Every finished game is saved here. Click one to open its printable <b>Master Teacher Diagnostic</b> — strand mastery, student accuracy, blind spots and question analysis. Tap 🗑 to delete a game you don't need any more.</p>
+    ${raw(ctx.results.length ? '<div class="row" style="justify-content:flex-end;margin-bottom:10px"><button class="btn sm grey" id="tidy">🧹 Tidy up…</button></div>' : '')}
     <div class="list" id="rlist"></div>`;
+  $('#tidy')?.addEventListener('click', tidyUp);
   const list = $('#rlist');
   list.innerHTML = ctx.results.length ? ctx.results.map(resultRow).join('') : '<div class="panel light"><p class="empty">No finished games yet.</p></div>';
   wireResultRows(list);

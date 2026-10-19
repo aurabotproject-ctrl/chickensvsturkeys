@@ -101,3 +101,8 @@ body:not(:has(.shell)) #chase { background: none; }
 /* sidebar logo → title screen */
 .logo-link { display: block; border-radius: 16px; outline-offset: 4px; }
 .logo-link:hover .logo { filter: drop-shadow(3px 3px 0 var(--ink)) brightness(1.08); }
+
+/* delete button on saved games */
+.del-btn { all: unset; cursor: pointer; flex: none; width: 40px; height: 40px; display: grid; place-items: center; font-size: 1.25rem; border-radius: 12px; border: 3px solid var(--ink); background: #fff; box-shadow: 2px 2px 0 var(--ink); transition: transform var(--t-fast) var(--ease-pop), background var(--t-fast); }
+.del-btn:hover { background: var(--turkey); transform: scale(1.08) rotate(-6deg); }
+.del-btn:focus-visible { outline: 3px solid var(--yolk); }
