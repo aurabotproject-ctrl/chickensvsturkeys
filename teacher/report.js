@@ -1,8 +1,8 @@
 // Master Teacher Print Diagnostic page: teacher/report.html?r=<resultId>
-import { isConfigured, db, ref, get, currentUser, isTeacher } from '../js/core/firebase.js?v=20261022152810';
-import { $, $$, esc, params, sleep } from '../js/core/ui.js?v=20261022152810';
-import { sprite } from '../js/core/assets.js?v=20261022152810';
-import { analyze, CATS, level, LEVEL_TEXT, SYM, toCSV } from '../js/report/analyze.js?v=20261022152810';
+import { isConfigured, db, ref, get, currentUser, isTeacher } from '../js/core/firebase.js?v=20261022215221';
+import { $, $$, esc, params, sleep } from '../js/core/ui.js?v=20261022215221';
+import { sprite } from '../js/core/assets.js?v=20261022215221';
+import { analyze, CATS, level, LEVEL_TEXT, SYM, toCSV } from '../js/report/analyze.js?v=20261022215221';
 
 const root = $('#report');
 let result; let A;

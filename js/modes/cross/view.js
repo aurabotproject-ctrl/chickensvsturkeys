@@ -5,8 +5,8 @@
 // the host. Controls: tap = hop forward, swipe = hop that way,
 // or the arrow buttons / arrow keys.
 // =========================================================
-import { W, L, makeField, tryHop, stepBird, startCol } from './rules.js?v=20261022152810';
-import { drawField } from './draw.js?v=20261022152810';
+import { W, L, makeField, tryHop, stepBird, startCol } from './rules.js?v=20261022215221';
+import { drawField } from './draw.js?v=20261022215221';
 
 export class CrossView {
   constructor(el, { uid, now, onOp, onEvent } = {}) {
@@ -39,14 +39,14 @@ export class CrossView {
     this.info = info;
     if (newRound) { this.field = makeField(info.seed); this.me = null; this.sent = []; this.fx = []; this.cam = {}; this.others.clear(); }
   }
-  /** cr/p = { i: "row,x100,deaths,crossings" } — each bird only changes when it hops, splats or crosses. */
+  /** cr/p = { i: "row,x100,deaths,crossings,lastDeathWasRiver" } — each bird only changes when it hops, splats or crosses. */
   setBirds(obj) {
     if (!this.info) return;
     const rows = this.info.players || [];
     const now = performance.now();
     for (const [key, val] of Object.entries(obj || {})) {
       const part = `${key},${val}`;
-      const [i, r, x100, deaths, crosses] = part.split(',').map(Number);
+      const [i, r, x100, deaths, crosses, wet] = part.split(',').map(Number);
       const row = rows[i]; if (!row) continue;
       const [uid, team, name] = row;
       if (uid === this.uid) { if (!this.me) this.me = { uid, team, name, r, x: x100 / 100, face: 1 }; continue; }
@@ -54,7 +54,8 @@ export class CrossView {
       if (!b) { b = { uid, team, name, r, x: x100 / 100, face: 1, deaths, crosses, last: part }; this.others.set(uid, b); }
       if (b.last === part) continue; // unchanged since last time — keep drifting along on the log
       b.last = part;
-      if (deaths > b.deaths) this.fx.push({ kind: this.field?.lanes[b.r]?.type === 'river' ? 'river' : 'road', r: b.r, x: b.x, team, t0: now });
+      // the host says HOW they got out (the last row we saw them on can be out of date)
+      if (deaths > b.deaths) this.fx.push({ kind: wet === 1 || (wet === undefined && this.field?.lanes[b.r]?.type === 'river') ? 'river' : 'road', r: b.r, x: b.x, team, t0: now });
       if (crosses > b.crosses) this.fx.push({ kind: 'cross', r: L - 1, x: b.x, team, t0: now });
       const nx = x100 / 100; if (nx !== b.x) b.face = nx > b.x ? 1 : -1;
       Object.assign(b, { team, name, r, x: nx, deaths, crosses });
@@ -67,6 +68,7 @@ export class CrossView {
   // ---------- moving ----------
   hop(dir) {
     const me = this.me; if (!me || !this.field || !this.active || this.info?.paused) return 'off';
+    if (performance.now() < (this.crossLock || 0)) return 'off'; // celebrating at the top — about to go back to the start
     if (this.hopsLeft() <= 0) { this.onEvent('nohops'); return 'nohops'; }
     const res = tryHop(this.field, me, dir, this.time());
     if (!res) { this.onEvent('blocked'); return 'blocked'; }
@@ -90,12 +92,13 @@ export class CrossView {
     const me = this.me; const nx = startCol();
     this.fx.push({ kind: 'cross', r: L - 1, x: me.x, team: me.team, t0: performance.now() });
     this.send({ op: 'cross', nx });
+    this.crossLock = performance.now() + 500;
     setTimeout(() => { if (this.me === me) { me.r = 0; me.x = nx; me.dr = null; this.cam.y = null; } }, 450);
     this.onEvent('cross');
   }
   send(cmd, isHop = false) {
     this.seq += 1; if (isHop) this.sent.push(this.seq);
-    this.q = [...(this.q || []), { s: this.seq, ...cmd }].slice(-12);
+    this.q = [...(this.q || []), { s: this.seq, ...cmd }].slice(-40); // long enough that a fast burst of hops can't push one out before the host reads it
     this.onOp(this.q);
   }
   step(dt) {

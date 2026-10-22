@@ -6,9 +6,9 @@
 //   cr/info = { round, seed, t0, players: [[uid, team, name]] }
 //   cr/s    = "i,r,x100,deaths,crossings;…"
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261022152810';
-import { W, L, HOPS_PER, MAX_HOPS, makeField, tryHop, stepBird, startCol, danger, dangerAhead } from './rules.js?v=20261022152810';
-import { drawField } from './draw.js?v=20261022152810';
+import { sfx } from '../../core/sfx.js?v=20261022215221';
+import { W, L, HOPS_PER, MAX_HOPS, makeField, tryHop, stepBird, startCol, danger, dangerAhead } from './rules.js?v=20261022215221';
+import { drawField } from './draw.js?v=20261022215221';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 /** Remember where a bird was at its last event (what the phones are told). */
@@ -114,20 +114,21 @@ export class CrossArena {
   apply(p, c) {
     if (!this.running || this._paused) return;
     if (c.op === 'hop') {
-      if (p.hops <= 0) return;
+      // The phone is in charge of its own bird. If a hop ever went missing on the way here, the next one
+      // can be 2–3 rows on — follow it anyway, or the host would lose track and refuse the crossing later.
       const r = Math.round(+c.r); const x = +c.x;
-      if (!Number.isFinite(x) || r < 0 || r > L - 1 || Math.abs(r - p.r) > 1) return;
-      p.hops -= 1; if (x !== p.x) p.face = x > p.x ? 1 : -1; p.r = r; p.x = x; mark(p);
+      if (!Number.isFinite(x) || r < 0 || r > L - 1 || Math.abs(r - p.r) > 3) return;
+      p.hops = Math.max(0, p.hops - Math.max(1, Math.abs(r - p.r))); if (x !== p.x) p.face = x > p.x ? 1 : -1; p.r = r; p.x = x; mark(p);
     } else if (c.op === 'splat') {
       this.die(p, c.why === 'river' ? 'river' : 'road', +c.nx);
     } else if (c.op === 'cross') {
-      if (p.r < L - 2) return; // must actually be at the top
+      if (p.r < L - 4) return; // must be (about) at the top
       this.cross(p, +c.nx);
     }
   }
   die(p, why, nx) {
     this.fx.push({ kind: why, r: p.r, x: p.x, team: p.team, t0: performance.now() });
-    p.deaths += 1; p.r = 0; p.x = Number.isFinite(nx) ? Math.max(0, Math.min(W - 1, Math.round(nx))) : startCol(); mark(p);
+    p.deaths += 1; p.lastWhy = why; p.r = 0; p.x = Number.isFinite(nx) ? Math.max(0, Math.min(W - 1, Math.round(nx))) : startCol(); mark(p);
     sfx.splat?.();
     this.onChange(p);
   }
@@ -188,7 +189,7 @@ export class CrossArena {
 
   // ---------- phone sync ----------
   /**
-   * Lean syncing: cr/info (field + who's who), and cr/p/{i} = one bird ("row,x100,deaths,crossings"),
+   * Lean syncing: cr/info (field + who's who), and cr/p/{i} = one bird ("row,x100,deaths,crossings,lastDeathWasRiver"),
    * re-sent only when THAT bird hops, splats or crosses (phones drift log-riders themselves).
    */
   pushSync(force = false) {
@@ -203,7 +204,7 @@ export class CrossArena {
       if (reorder) { S.p = new Map(); this.onSync({ 'cr/p': null, 'cr/s': null }); } // birds are numbered by the info list — re-send them all
     }
     list.forEach((p, i) => {
-      const v = `${p.sr ?? p.r},${Math.round((p.sx ?? p.x) * 100)},${p.deaths},${p.crosses}`;
+      const v = `${p.sr ?? p.r},${Math.round((p.sx ?? p.x) * 100)},${p.deaths},${p.crosses},${p.lastWhy === 'river' ? 1 : 0}`;
       if (S.p.get(i) !== v) { S.p.set(i, v); up[`cr/p/${i}`] = v; }
     });
     if (Object.keys(up).length) this.onSync(up);

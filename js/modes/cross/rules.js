@@ -136,7 +136,9 @@ export function tryHop(field, b, dir, t) {
   if (lane.type === 'river') {
     if (x < -0.45 || x > W - 0.55) return null;
   } else {
+    const fromLog = field.lanes[b.r]?.type === 'river';
     x = Math.round(x);
+    if (fromLog) x = Math.max(0, Math.min(W - 1, x)); // hopping off a log right at the edge still lands on the bank
     if (x < 0 || x > W - 1) return null;
     if (blocked(lane, x)) return null;
   }
