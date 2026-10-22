@@ -3,29 +3,29 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261019165404';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261019165404';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261019165404';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261019165404';
-import { sfx } from '../js/core/sfx.js?v=20261019165404';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261019165404';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261019165404';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261019165404';
-import { PaintView } from '../js/modes/paint/view.js?v=20261019165404';
-import { FlagView } from '../js/modes/flag/view.js?v=20261019165404';
-import { GatesView } from '../js/modes/gates/view.js?v=20261019165404';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261019165404';
-import { CrossView } from '../js/modes/cross/view.js?v=20261019165404';
-import { howtoHTML } from '../js/core/howto.js?v=20261019165404';
-import { StackView } from '../js/modes/stack/view.js?v=20261019165404';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261019165404';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261019165404';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261019165404';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261019165404';
-import { TowerView } from '../js/modes/towers/view.js?v=20261019165404';
-import * as FE from '../js/modes/farm/economy.js?v=20261019165404';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261019165404';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261019165404';
+} from '../js/core/firebase.js?v=20261022140004';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261022140004';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261022140004';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261022140004';
+import { sfx } from '../js/core/sfx.js?v=20261022140004';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261022140004';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261022140004';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261022140004';
+import { PaintView } from '../js/modes/paint/view.js?v=20261022140004';
+import { FlagView } from '../js/modes/flag/view.js?v=20261022140004';
+import { GatesView } from '../js/modes/gates/view.js?v=20261022140004';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261022140004';
+import { CrossView } from '../js/modes/cross/view.js?v=20261022140004';
+import { howtoHTML } from '../js/core/howto.js?v=20261022140004';
+import { StackView } from '../js/modes/stack/view.js?v=20261022140004';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261022140004';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261022140004';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261022140004';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261022140004';
+import { TowerView } from '../js/modes/towers/view.js?v=20261022140004';
+import * as FE from '../js/modes/farm/economy.js?v=20261022140004';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261022140004';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261022140004';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -422,7 +422,8 @@ function setTab(t) {
   if (isAdv() && t === 'fight') advResize();
   if (isSiege() && t === 'fight') { ensureSg(); SG.view?.layout(); }
   if (isTowers() && t === 'fight') ensureTw();
-  if (isFarm() && t === 'fight') { ensureScene(); drawFarm(); if (FM.offscreen && FM.scene?.tex) { FM.scene.stampede(FM.offscreen); FM.offscreen = 0; } }
+  if (isFarm() && t === 'fight') { if ($('#view-farm').dataset.on !== '1') FM.shownAt = Date.now(); ensureScene(); drawFarm(); if (FM.offscreen && FM.scene?.tex) { FM.scene.stampede(FM.offscreen); FM.offscreen = 0; } }
+  $('#view-farm').dataset.on = isFarm() && t === 'fight' ? '1' : '';
   if (t === 'fight') $('#tab-fight').classList.remove('nudge');
   sfx.click();
 }
@@ -769,6 +770,9 @@ function startMeter() {
 // action counters start from the clock so they keep going up even if the page is reloaded mid-game
 const SEQ0 = Date.now();
 const FM = { scene: null, hatchReq: 0, hatchLocal: 0, holding: false, buySeq: SEQ0, rsSeq: SEQ0, balloonSeq: SEQ0, foxSeq: SEQ0, adjCash: 0, shopHtml: '', rsHtml: '', lastHatched: 0, lastChicks: 0, sendT: null };
+/** A tap that started on the quiz (e.g. answer D, bottom-right) can land on the farm just as it appears — ignore taps for a moment. */
+FM.shownAt = 0;
+const fmJustShown = () => Date.now() - FM.shownAt < 800;
 
 function ensureScene() {
   if (!isFarm() || !D.me?.team) return;
@@ -781,7 +785,7 @@ function ensureScene() {
       FM.scene.floatText(kind === 'gold' ? '+1 🥇' : `+${fmt(Math.max(30, (D.ps.lay ? Math.min(D.ps.lay, D.ps.ship) * D.ps.value : 1) * 20))}`, x, y);
       sendFarm({ balloonSeq: FM.balloonSeq, balloon: kind });
     },
-    onTap: (hit) => { if (D.state.phase === 'playing') openAct(hit.kind, hit.kind === 'coop' ? hit.slot : null); },
+    onTap: (hit) => { if (D.state.phase === 'playing' && !fmJustShown()) openAct(hit.kind, hit.kind === 'coop' ? hit.slot : null); },
     onFox: (ate) => {
       if (ate) { FM.foxSeq += 1; sfx.wrong(); navigator.vibrate?.([100, 60, 100]); sendFarm({ foxSeq: FM.foxSeq, foxAte: true }); } else { sfx.correct(); }
     },
@@ -905,7 +909,7 @@ hatchBtn.addEventListener('contextmenu', (e) => e.preventDefault());
 setInterval(() => { if (isFarm() && D.state.phase === 'playing') drawFarm(); }, 250);
 $('#fm-crate').addEventListener('click', () => { sfx.click(); setTab('answer'); });
 $('#fm-shop').addEventListener('click', (e) => {
-  const b = e.target.closest('[data-buy], [data-open]'); if (!b || b.disabled || D.state.phase !== 'playing') return;
+  const b = e.target.closest('[data-buy], [data-open]'); if (!b || b.disabled || D.state.phase !== 'playing' || fmJustShown()) return;
   if (b.dataset.open) { openAct(b.dataset.open, null); return; }
   const k = b.dataset.buy;
   if (k === 'research') { $('#fm-research').classList.remove('hidden'); FM.rsHtml = ''; drawResearch(); sfx.click(); return; }
@@ -924,7 +928,10 @@ $('#fm-rs-list').addEventListener('click', (e) => {
   FM.rsSeq += 1; sfx.correct();
   sendFarm({ rs: b.dataset.rs });
 });
-$('#fm-rs-close').addEventListener('click', () => $('#fm-research').classList.add('hidden'));
+$('#fm-rs-close').addEventListener('click', () => { $('#fm-research').classList.add('hidden'); sfx.click(); });
+// tap the dark area around a sheet to close it
+$('#fm-research').addEventListener('click', (e) => { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+$('#fm-act').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeAct(); });
 
 // ---------------- Coop Wars ----------------
 const TW = { view: null, seq: 0, q: [], static: null, own: null, lv: null, p: '' };

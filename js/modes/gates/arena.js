@@ -7,9 +7,9 @@
 //   gt/{team}/s             { ph, c, n, inN, h, g, need, done, sc }
 //   gt/{team}/e             last few events
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261019165404';
-import { FW, FH, PR, HOLD, CORNERS, speedFor, inCircle, makeGates, crosses, packRunner } from './rules.js?v=20261019165404';
-import { drawGates, fitField, eventWord } from './draw.js?v=20261019165404';
+import { sfx } from '../../core/sfx.js?v=20261022140004';
+import { FW, FH, PR, HOLD, CORNERS, speedFor, inCircle, makeGates, crosses, packRunner } from './rules.js?v=20261022140004';
+import { drawGates, fitField, eventWord } from './draw.js?v=20261022140004';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];

@@ -2,8 +2,8 @@
 // GATES — the student's screen: only THEIR team's field (their own task and
 // their own open gate). Finger down anywhere + drag = run; let go = stop.
 // =========================================================
-import { FW, FH, unpackRunners } from './rules.js?v=20261019165404';
-import { drawGates, fitField, eventWord } from './draw.js?v=20261019165404';
+import { FW, FH, unpackRunners } from './rules.js?v=20261022140004';
+import { drawGates, fitField, eventWord } from './draw.js?v=20261022140004';
 
 export class GatesView {
   constructor(el, { uid, team, onSteer, onEvent } = {}) {

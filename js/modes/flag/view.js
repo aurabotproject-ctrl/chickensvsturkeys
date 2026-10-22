@@ -3,8 +3,8 @@
 // YOU highlighted. Put a finger down anywhere and drag the way you want
 // to run (like a joystick); let go to stop. Arrow keys / WASD work too.
 // =========================================================
-import { FW, FH, unpackRunners } from './rules.js?v=20261019165404';
-import { drawField, fitField, eventWord } from './draw.js?v=20261019165404';
+import { FW, FH, unpackRunners } from './rules.js?v=20261022140004';
+import { drawField, fitField, eventWord } from './draw.js?v=20261022140004';
 
 export class FlagView {
   constructor(el, { uid, onSteer, onEvent } = {}) {
