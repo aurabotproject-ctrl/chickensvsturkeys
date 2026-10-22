@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, get, remove, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261022151629';
-import { $, $$, html, raw, esc, toast, modal, confirmBox } from '../js/core/ui.js?v=20261022151629';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261022151629';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261022151629';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261022151629';
-import { renderBanks } from './banks-ui.js?v=20261022151629';
+} from '../js/core/firebase.js?v=20261022152810';
+import { $, $$, html, raw, esc, toast, modal, confirmBox } from '../js/core/ui.js?v=20261022152810';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261022152810';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261022152810';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261022152810';
+import { renderBanks } from './banks-ui.js?v=20261022152810';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -256,15 +256,23 @@ function renderCreate(main) {
 function resultRow(r) {
   const d = r.finishedAt ? new Date(r.finishedAt) : null;
   const winner = r.winner === 'tie' ? 'Tie' : r.winner === 'chicken' ? raw(`${teamIco('chicken')} Chickens won`) : r.winner === 'turkey' ? raw(`${teamIco('turkey')} Turkeys won`) : '';
-  return html`<div class="list-row card" data-result="${r.id}" style="cursor:pointer">
-    <img class="icon" src="${subjectIcon(r.bankSubject)}" alt="">
+  const picking = ctx.view === 'results' && ctx.selMode;
+  const on = picking && ctx.sel?.has(r.id);
+  return html`<div class="list-row card ${picking ? 'picking' : ''} ${on ? 'picked' : ''}" data-result="${r.id}" style="cursor:pointer" ${raw(picking ? `role="checkbox" aria-checked="${on}" tabindex="0"` : '')}>
+    ${raw(picking ? `<span class="pick-box" aria-hidden="true">${on ? '✓' : ''}</span>` : '')}<img class="icon" src="${subjectIcon(r.bankSubject)}" alt="">
     <div class="grow"><div class="title">${r.bankTitle || 'Game'}</div>
     <div class="sub">${d ? d.toLocaleDateString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('en-NZ', { hour: 'numeric', minute: '2-digit' }) : ''} · ${Object.keys(r.players || {}).length} players · ${winner}</div></div>
     <span class="badge yolk">${r.accuracy ?? '–'}%</span>
-    <button class="del-btn" data-del="${r.id}" title="Delete this game's results" aria-label="Delete this game's results">🗑</button></div>`;
+    ${raw(picking ? '' : `<button class="del-btn" data-del="${esc(r.id)}" title="Delete this game's results" aria-label="Delete this game's results">🗑</button>`)}</div>`;
 }
 function wireResultRows(root) {
-  $$('[data-result]', root).forEach((row) => { row.onclick = () => { location.href = `report.html?r=${encodeURIComponent(row.dataset.result)}`; }; });
+  $$('[data-result]', root).forEach((row) => {
+    row.onclick = (e) => {
+      if (ctx.view === 'results' && ctx.selMode) { togglePick(row.dataset.result, e.shiftKey); return; }
+      location.href = `report.html?r=${encodeURIComponent(row.dataset.result)}`;
+    };
+    row.onkeydown = (e) => { if (ctx.selMode && (e.key === ' ' || e.key === 'Enter')) { e.preventDefault(); togglePick(row.dataset.result, e.shiftKey); } };
+  });
   $$('[data-del]', root).forEach((b) => {
     b.onclick = async (e) => {
       e.stopPropagation();
@@ -282,7 +290,7 @@ function wireResultRows(root) {
  */
 async function deleteResults(list) {
   const uid = ctx.user.uid; const ids = new Set(list.map((r) => r.id));
-  for (const r of list) await remove(ref(db, `results/${uid}/${r.id}`));
+  await Promise.all(list.map((r) => remove(ref(db, `results/${uid}/${r.id}`))));
   const gameIds = [...new Set(list.map((r) => r.gameId || r.id.replace(/-\d+$/, '')).filter(Boolean))];
   for (const g of gameIds) {
     if (ctx.results.some((x) => !ids.has(x.id) && (x.gameId || x.id.replace(/-\d+$/, '')) === g)) continue; // another saved play of the same game
@@ -313,14 +321,64 @@ async function tidyUp() {
 }
 
 function renderResults(main) {
+  const n = ctx.results.length;
+  if (!ctx.sel) ctx.sel = new Set();
+  for (const id of [...ctx.sel]) if (!ctx.results.some((r) => r.id === id)) ctx.sel.delete(id); // already deleted
+  if (!n) ctx.selMode = false;
+  const tools = !n ? '' : ctx.selMode
+    ? '<div class="row res-tools"><span class="res-hint">Tap games to tick them · <b>Shift</b>-click to tick a whole run</span><button class="btn sm grey" id="sel-done">Done</button></div>'
+    : '<div class="row res-tools"><button class="btn sm blue" id="sel-start">☑ Select…</button><button class="btn sm grey" id="tidy">🧹 Tidy up…</button></div>';
   main.innerHTML = html`<h1 class="page-title">Results</h1>
-    <p style="color:#cfe0ff">Every finished game is saved here. Click one to open its printable <b>Master Teacher Diagnostic</b> — strand mastery, student accuracy, blind spots and question analysis. Tap 🗑 to delete a game you don't need any more.</p>
-    ${raw(ctx.results.length ? '<div class="row" style="justify-content:flex-end;margin-bottom:10px"><button class="btn sm grey" id="tidy">🧹 Tidy up…</button></div>' : '')}
-    <div class="list" id="rlist"></div>`;
+    <p style="color:#cfe0ff">Every finished game is saved here. Click one to open its printable <b>Master Teacher Diagnostic</b> — strand mastery, student accuracy, blind spots and question analysis. Tap 🗑 to delete one game, or <b>☑ Select</b> to delete lots at once.</p>
+    ${raw(tools)}
+    <div class="list ${ctx.selMode ? 'selecting' : ''}" id="rlist"></div>
+    ${raw(ctx.selMode ? '<div class="sel-bar" id="sel-bar"></div>' : '')}`;
   $('#tidy')?.addEventListener('click', tidyUp);
+  $('#sel-start')?.addEventListener('click', () => { ctx.selMode = true; ctx.sel.clear(); ctx.lastPick = null; render(); });
+  $('#sel-done')?.addEventListener('click', () => { ctx.selMode = false; ctx.sel.clear(); render(); });
   const list = $('#rlist');
-  list.innerHTML = ctx.results.length ? ctx.results.map(resultRow).join('') : '<div class="panel light"><p class="empty">No finished games yet.</p></div>';
+  list.innerHTML = n ? ctx.results.map(resultRow).join('') : '<div class="panel light"><p class="empty">No finished games yet.</p></div>';
   wireResultRows(list);
+  drawSelBar();
+}
+
+/** Select mode: tick / untick a game (shift = everything between it and the last one ticked). */
+function togglePick(id, range) {
+  const ids = ctx.results.map((r) => r.id);
+  const turnOn = !ctx.sel.has(id);
+  if (range && ctx.lastPick && ids.includes(ctx.lastPick)) {
+    const [a, b] = [ids.indexOf(ctx.lastPick), ids.indexOf(id)].sort((x, y) => x - y);
+    ids.slice(a, b + 1).forEach((x) => (turnOn ? ctx.sel.add(x) : ctx.sel.delete(x)));
+  } else if (turnOn) ctx.sel.add(id); else ctx.sel.delete(id);
+  ctx.lastPick = id;
+  $$('#rlist [data-result]').forEach((row) => {
+    const on = ctx.sel.has(row.dataset.result);
+    row.classList.toggle('picked', on); row.setAttribute('aria-checked', on);
+    $('.pick-box', row).textContent = on ? '✓' : '';
+  });
+  drawSelBar();
+}
+
+function drawSelBar() {
+  const bar = $('#sel-bar'); if (!bar) return;
+  const k = ctx.sel.size; const all = k === ctx.results.length;
+  bar.innerHTML = html`<span class="sel-count"><b>${k}</b> selected</span>
+    <button class="btn sm grey" id="sel-all">${all ? 'Clear all' : `Select all (${ctx.results.length})`}</button>
+    <button class="btn sm red" id="sel-del" ${k ? '' : 'disabled'}>🗑 Delete ${k || ''} game${k === 1 ? '' : 's'}</button>`;
+  $('#sel-all').onclick = () => {
+    if (all) ctx.sel.clear(); else ctx.results.forEach((r) => ctx.sel.add(r.id));
+    ctx.lastPick = null; render();
+  };
+  $('#sel-del').onclick = async () => {
+    const list = ctx.results.filter((r) => ctx.sel.has(r.id)); if (!list.length) return;
+    if (!(await confirmBox(`Delete ${list.length} game${list.length === 1 ? '' : 's'} and ${list.length === 1 ? 'its report' : 'their reports'}? This can't be undone.`, 'Delete'))) return;
+    const btn = $('#sel-del'); if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+    try {
+      await deleteResults(list);
+      ctx.sel.clear(); ctx.selMode = false; render();
+      toast(`Deleted ${list.length} game${list.length === 1 ? '' : 's'}`, 'ok');
+    } catch (err) { console.error(err); toast(explainError(err), 'bad', 6000); render(); }
+  };
 }
 
 function showResult(r) {
