@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, get, remove, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261022140004';
-import { $, $$, html, raw, esc, toast, modal, confirmBox } from '../js/core/ui.js?v=20261022140004';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261022140004';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261022140004';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261022140004';
-import { renderBanks } from './banks-ui.js?v=20261022140004';
+} from '../js/core/firebase.js?v=20261022151629';
+import { $, $$, html, raw, esc, toast, modal, confirmBox } from '../js/core/ui.js?v=20261022151629';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261022151629';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261022151629';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261022151629';
+import { renderBanks } from './banks-ui.js?v=20261022151629';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -62,6 +62,7 @@ const NAV = [
   ['create', uiIcon('ui_create', '🎮'), 'Create Game'],
   ['banks', uiIcon('ui_banks', '📚'), 'Question Banks'],
   ['results', uiIcon('ui_results', '📊'), 'Results'],
+  ['videos', uiIcon('ui_videos', '🎬'), 'Story Videos'],
 ];
 
 function shell() {
@@ -87,7 +88,7 @@ export function go(view, data) {
 function render() {
   if (!ctx.user) return;
   const main = shell();
-  ({ dashboard: renderDashboard, create: renderCreate, banks: renderBanks, edit: renderBanks, results: renderResults }[ctx.view] || renderDashboard)(main, ctx);
+  ({ dashboard: renderDashboard, create: renderCreate, banks: renderBanks, edit: renderBanks, results: renderResults, videos: renderVideos }[ctx.view] || renderDashboard)(main, ctx);
 }
 
 // ---------------- Dashboard ----------------
@@ -105,8 +106,13 @@ function renderDashboard(main) {
       <section class="panel"><h3 style="color:var(--yolk)">How students join</h3>
         <p>Students go to <b class="mono">${new URL('../play/', location.href).href}</b> on any device, or scan the QR code on your game screen, then type the 6-letter code.</p>
         <p class="hint">Tip: open the game screen on the projector, and keep this tab for yourself.</p></section>
+      <section class="panel light vid-dash"><h3>Story videos</h3>
+        <p class="hint">A short lead-in for the big screen before you play.</p>
+        <div class="vid-mini">${raw(VIDEOS.map((v) => `<button class="vid-thumb tone-${v.tone}" data-vid="${v.id}" title="Play ${esc(v.title)}"><img src="${v.poster}" alt=""><span class="vid-play" aria-hidden="true">▶</span><b>${esc(v.title)}</b></button>`).join(''))}</div>
+        <button class="btn grey" data-go="videos">See all videos</button></section>
     </div>`;
   $$('[data-go]', main).forEach((b) => { b.onclick = () => go(b.dataset.go); });
+  $$('[data-vid]', main).forEach((b) => { b.onclick = () => playVideos([b.dataset.vid]); });
   const recent = $('#recent');
   recent.innerHTML = ctx.results.length ? ctx.results.slice(0, 4).map(resultRow).join('') : '<p class="empty">No games yet — create one!</p>';
   wireResultRows(recent);
@@ -114,6 +120,61 @@ function renderDashboard(main) {
   mb.innerHTML = ctx.mine.length
     ? ctx.mine.slice(0, 4).map((b) => html`<div class="list-row"><img class="icon" src="${subjectIcon(b.subject)}" alt=""><div class="grow"><div class="title">${b.title}</div><div class="sub">${b.questions.length} questions · ${b.subject}</div></div></div>`).join('')
     : '<p class="empty">No banks yet. Try <b>Build with Claude</b> on the Question Banks page, or use a premade bank.</p>';
+}
+
+// ---------------- Story videos ----------------
+const VID = '../assets/videos/';
+const VIDEOS = [
+  { id: 'golden-egg', title: 'The Golden Egg', len: '45 s', tone: 'gold', tag: 'The whole game', desc: 'A golden egg falls from the sky and two teams want it. The trailer for Chickens vs Turkeys, and a great lead-in to any game.' },
+  { id: 'team-chickens', title: 'Team Chickens', len: '40 s', tone: 'blue', tag: 'Origin story', desc: 'How Captain Cluck and the Blue Flock became the cleverest team on the farm. Small. Smart. Unstoppable.' },
+  { id: 'team-turkeys', title: 'Team Turkeys', len: '40 s', tone: 'red', tag: 'Origin story', desc: 'How General Gobble and the Red Rumble became the strongest team on the farm. Big. Bold. Unstoppable.' },
+].map((v) => ({ ...v, src: `${VID}${v.id}.mp4`, poster: `${VID}${v.id}.webp` }));
+
+function renderVideos(main) {
+  main.innerHTML = html`<h1 class="page-title">Story Videos</h1>
+    <p class="vid-intro">Play one on the big screen before a game to get the class fired up, then let them pick a side. Each one finishes with the game's web address.</p>
+    <div class="vid-tools"><button class="btn yellow" id="vid-all">▶ Play all three <small>(about 2 min)</small></button></div>
+    <div class="vid-grid">${raw(VIDEOS.map((v) => `<article class="panel light vid-card tone-${v.tone}">
+      <button class="vid-poster" data-vid="${v.id}" aria-label="Play ${esc(v.title)}"><img src="${v.poster}" alt="" loading="lazy"><span class="vid-play" aria-hidden="true">▶</span><span class="vid-len">${v.len}</span></button>
+      <div class="vid-body"><span class="vid-tag">${esc(v.tag)}</span><h3>${esc(v.title)}</h3><p>${esc(v.desc)}</p>
+      <button class="btn ${v.tone === 'gold' ? 'yellow' : v.tone}" data-vid="${v.id}">▶ Play full screen</button></div></article>`).join(''))}</div>
+    <p class="hint vid-foot">Tip: turn the projector sound up — the videos have music and sound effects. Press <b>Esc</b> or ✕ to stop.</p>`;
+  $$('[data-vid]', main).forEach((b) => { b.onclick = () => playVideos([b.dataset.vid]); });
+  $('#vid-all').onclick = () => playVideos(VIDEOS.map((v) => v.id));
+}
+
+/** Full-screen "theatre" player for one video or a playlist. */
+function playVideos(ids) {
+  const list = ids.map((id) => VIDEOS.find((v) => v.id === id)).filter(Boolean);
+  if (!list.length) return;
+  document.querySelector('.vid-theatre')?.remove();
+  const th = document.createElement('div');
+  th.className = 'vid-theatre';
+  th.innerHTML = `<div class="vid-stage"><video playsinline controls preload="auto"></video></div>
+    <div class="vid-bar"><span class="vid-now"></span><span class="vid-btns"><button class="btn grey vid-next hidden">Next ▶</button><button class="btn red vid-close" aria-label="Close">✕ Close</button></span></div>`;
+  document.body.append(th);
+  const video = $('video', th); let i = 0;
+  const load = () => {
+    const v = list[i];
+    video.poster = v.poster; video.src = v.src;
+    $('.vid-now', th).innerHTML = `<b>${esc(v.title)}</b>${list.length > 1 ? ` <small>${i + 1} of ${list.length}</small>` : ''}`;
+    $('.vid-next', th).classList.toggle('hidden', i >= list.length - 1);
+    video.play().catch(() => {});
+  };
+  const close = () => {
+    video.pause(); video.removeAttribute('src'); video.load();
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    document.removeEventListener('keydown', onKey); th.remove();
+  };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  video.addEventListener('ended', () => { if (i < list.length - 1) { i += 1; load(); } });
+  $('.vid-next', th).onclick = () => { i += 1; load(); };
+  $('.vid-close', th).onclick = close;
+  th.addEventListener('click', (e) => { if (e.target === th) close(); });
+  document.addEventListener('keydown', onKey);
+  // Leaving browser full screen (Esc) keeps the theatre open; the ✕ closes it.
+  th.requestFullscreen?.().catch(() => {});
+  load();
 }
 
 // ---------------- Create game ----------------

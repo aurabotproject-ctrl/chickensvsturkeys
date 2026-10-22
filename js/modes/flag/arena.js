@@ -3,9 +3,9 @@
 // Rules: see rules.js. Devices steer with a finger (inputs/{uid} = { a: angle, m: 1|0 });
 // the host moves everyone and sends positions to cf/* (~6 times a second).
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261022140004';
-import { FW, FH, MID, PR, TAG_D, TAG_TIME, IMMUNE, ZR, ZONE, BATTLE_MS, speedFor, enemyOf, sideOf, inZone, packRunner } from './rules.js?v=20261022140004';
-import { drawField, fitField, eventWord } from './draw.js?v=20261022140004';
+import { sfx } from '../../core/sfx.js?v=20261022151629';
+import { FW, FH, MID, PR, TAG_D, TAG_TIME, IMMUNE, ZR, ZONE, BATTLE_MS, speedFor, enemyOf, sideOf, inZone, packRunner } from './rules.js?v=20261022151629';
+import { drawField, fitField, eventWord } from './draw.js?v=20261022151629';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 const first = (name) => String(name || '').split(' ')[0].slice(0, 10);
