@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Chickens vs Turkeys — drawn in code</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
 <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Nunito:wght@800;900&display=swap" rel="stylesheet">
 <style>
   :root { --ink: #111; --chicken: #2f7de1; --turkey: #e0402a; --yolk: #ffc72c; }
@@ -27,6 +29,18 @@
   button:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
   button.to-turkey { background: var(--turkey); } button.to-chicken { background: var(--chicken); }
   p { margin: 0; opacity: .8; font-weight: 800; text-align: center; }
+  /* live code editor */
+  .editor { width: min(900px, 100%); margin-top: 10px; border: 5px solid var(--ink); border-radius: 22px; box-shadow: 8px 8px 0 var(--ink); overflow: hidden; background: #282a36; }
+  .ed-head { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #06122e; border-bottom: 4px solid var(--ink); flex-wrap: wrap; }
+  #code-title { font-family: 'Bangers', Impact, sans-serif; font-size: 1.6rem; letter-spacing: .05em; text-shadow: 2px 2px 0 var(--ink); margin-right: auto; }
+  #code-title.chicken { color: #6fb2ff; } #code-title.turkey { color: #ff8a6b; }
+  .ed-head button { font-size: 1.1rem; padding: .2em .8em; border-width: 3px; box-shadow: 0 4px 0 var(--ink); background: #5b6477; }
+  .ed-head .tip { font-size: .85rem; opacity: .85; font-weight: 800; flex-basis: 100%; }
+  .ed-head code { background: #ffffff1f; padding: 0 .3em; border-radius: 5px; }
+  #code { width: 100%; height: 460px; border: 0; padding: 12px; font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; background: #282a36; color: #f8f8f2; resize: vertical; }
+  .CodeMirror { height: 460px; font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; }
+  #status { padding: 8px 14px; font-weight: 900; border-top: 4px solid var(--ink); font-size: .95rem; }
+  #status.ok { background: #1f7a32; } #status.bad { background: #b3261e; }
 </style>
 </head>
 <body>
@@ -34,6 +48,124 @@
   <div class="stage"><canvas id="c" width="1200" height="1200"></canvas></div>
   <button id="swap" class="to-turkey">Turn into a Turkey!</button>
   <p>Every line, colour and feather here is drawn with JavaScript on a canvas — no images.</p>
+  <div class="editor">
+    <div class="ed-head">
+      <span id="code-title" class="chicken">🐔 Chicken code</span>
+      <button id="reset" type="button">↺ Reset this bird</button>
+      <span class="tip">Edit the code — the bird changes as you type. Try changing <code>blue: '#2f7de1'</code> to <code>'#00c853'</code>, or the beak's <code>62</code> to <code>120</code>.</span>
+    </div>
+    <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
+    <div id="status" class="ok">✓ Running the original code</div>
+  </div>
+<script type="text/plain" id="src-chicken">
+// =====================================================================
+//   THE CHICKEN — edit me! Colours are in C at the top. Positions are
+//   x (0 = left, 600 = right) and y (0 = top, 600 = bottom).
+// =====================================================================
+function drawChicken(t, blink) {
+  const C = { white: '#fbf8f0', shade: '#dcd5c6', red: '#e53b2a', redDark: '#b02a1c', blue: '#2f7de1', blueDark: '#174f9e' };
+
+  // tail feathers fanning out behind
+  for (const [a, len] of [[-2.5, 92], [-2.85, 100], [-3.2, 88], [-3.5, 70]]) {
+    const wob = Math.sin(t * 2 + a) * 0.04;
+    shape(ell(185 + Math.cos(a + wob) * 40, 300 + Math.sin(a + wob) * 40, len * 0.62, 26, a + wob), C.white);
+  }
+  legs(t);
+
+  // comb (behind the head)
+  blob([circ(330, 140, 26), circ(366, 126, 31), circ(402, 142, 24), ell(366, 160, 50, 22)], C.red);
+  shadeInside(() => { circ(366, 126, 31)(); }, () => { ctx.fillStyle = C.redDark; ctx.beginPath(); ctx.arc(352, 140, 28, 0, Math.PI * 2); ctx.fill(); });
+
+  // body + head as one fluffy blob
+  const body = ell(292, 335, 122, 104); const head = circ(362, 218, 78); const neck = ell(335, 270, 62, 60);
+  blob([body, head, neck], C.white);
+  // cel shading along the bottom/back
+  shadeInside(body, () => { ctx.fillStyle = C.shade; ctx.beginPath(); ctx.ellipse(270, 410, 150, 70, -0.15, 0, Math.PI * 2); ctx.fill(); });
+  // chest fluff scallops
+  for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(368 + i * 6, 305 + i * 22, 16, -0.6, 1.4); ctx.lineWidth = 4; ctx.strokeStyle = C.shade; ctx.stroke(); }
+
+  headband(362, 218, 78, C.blue, C.blueDark, t);
+  eye(390, 222, blink);
+  beak(424, 236);
+  // wattle under the beak
+  shape(() => { ctx.moveTo(424, 262); ctx.bezierCurveTo(446, 268, 446, 300, 428, 304); ctx.bezierCurveTo(410, 300, 410, 272, 424, 262); }, C.red);
+  // rosy cheek
+  shape(ell(360, 250, 14, 9), 'rgba(255,120,110,.45)', 0);
+
+  // wing with a blue wristband, flapping a little
+  ctx.save(); ctx.translate(300, 330); ctx.rotate(Math.sin(t * 3) * 0.06);
+  shape(() => { ctx.moveTo(-60, -30); ctx.bezierCurveTo(-10, -60, 60, -30, 64, 20); ctx.bezierCurveTo(40, 40, 0, 48, -30, 30); ctx.bezierCurveTo(-60, 10, -70, -14, -60, -30); }, C.white);
+  for (const [x, y] of [[-30, 14], [0, 24], [30, 22]]) { ctx.beginPath(); ctx.arc(x, y, 16, 0.2, 2.8); ctx.lineWidth = 4; ctx.strokeStyle = C.shade; ctx.stroke(); }
+  wristband(44, 8, -0.9, C.blue);
+  ctx.restore();
+}
+</script>
+<script type="text/plain" id="src-turkey">
+// =====================================================================
+//   THE TURKEY — edit me! Colours are in T at the top, tail colours in RINGS.
+//   x (0 = left, 600 = right) and y (0 = top, 600 = bottom).
+// =====================================================================
+function drawTurkey(t, blink) {
+  const T = { brown: '#8a5328', brownDark: '#5f3618', cream: '#f3d39a', red: '#d8402b', head: '#e5543c', headDark: '#b8361f', band: '#d62828', bandDark: '#8e1414' };
+  const RINGS = [
+    { len: 205, color: '#d8402b', tip: '#9c2416' },
+    { len: 178, color: '#f08a24', tip: '#c45f0e' },
+    { len: 150, color: '#f5c242', tip: '#d39a12' },
+    { len: 122, color: '#2a9d8f', tip: '#1b6b61' },
+  ];
+  // the giant fanned tail, swaying slowly
+  const cx = 268; const cy = 318; const sway = Math.sin(t * 1.6) * 0.03;
+  RINGS.forEach((ring, k) => {
+    const n = 11 - k; const from = -Math.PI * 1.04; const to = -Math.PI * -0.02;
+    for (let i = 0; i < n; i++) {
+      const a = from + ((to - from) * (i + 0.5 + (k % 2) * 0.5)) / (n + (k % 2)) + sway;
+      ctx.save(); ctx.translate(cx, cy); ctx.rotate(a);
+      shape(() => ctx.ellipse(ring.len * 0.55, 0, ring.len * 0.5, 30 - k * 2, 0, 0, Math.PI * 2), ring.color);
+      // darker band near the tip of each feather
+      shadeInside(() => ctx.ellipse(ring.len * 0.55, 0, ring.len * 0.5, 30 - k * 2, 0, 0, Math.PI * 2),
+        () => { ctx.fillStyle = ring.tip; ctx.fillRect(ring.len * 0.88, -40, 60, 80); });
+      ctx.restore();
+    }
+  });
+  legs(t);
+
+  // body + neck + head as one blob
+  const body = ell(292, 340, 126, 108); const neck = ell(352, 262, 50, 64, 0.3); const head = circ(372, 206, 62);
+  blob([body, neck], T.brown);
+  shadeInside(body, () => { ctx.fillStyle = T.brownDark; ctx.beginPath(); ctx.ellipse(250, 420, 160, 70, -0.1, 0, Math.PI * 2); ctx.fill(); });
+  // cream chest bib with feather scallops (the turkey's proud chest)
+  shadeInside(body, () => {
+    shape(ell(392, 330, 62, 92, -0.2), T.cream, 5);
+    shadeInside(ell(392, 330, 62, 92, -0.2), () => {
+      for (let row = 0; row < 6; row++) for (let i = 0; i < 4; i++) {
+        ctx.beginPath(); ctx.arc(345 + i * 26 + (row % 2) * 13, 262 + row * 26, 14, 0.25, Math.PI - 0.25);
+        ctx.lineWidth = 3.5; ctx.strokeStyle = '#c99a55'; ctx.stroke();
+      }
+    });
+  });
+  // head (red-orange like the art)
+  shape(head, T.head);
+  shadeInside(head, () => { ctx.fillStyle = T.headDark; ctx.beginPath(); ctx.arc(340, 240, 52, 0, Math.PI * 2); ctx.fill(); });
+
+  headband(372, 206, 62, T.band, T.bandDark, t);
+  eye(398, 212, blink, 0.38);
+  beak(430, 226);
+  // the snood draping over the beak + a big wattle under the chin
+  const sw = Math.sin(t * 4) * 3;
+  shape(() => { ctx.moveTo(430, 206); ctx.bezierCurveTo(446, 206, 452 + sw, 236, 444 + sw, 258); ctx.bezierCurveTo(436 + sw, 262, 430, 238, 426, 214); ctx.closePath(); }, T.red, 5);
+  shape(() => { ctx.moveTo(420, 250); ctx.bezierCurveTo(456, 262, 452, 318, 426, 322); ctx.bezierCurveTo(398, 318, 396, 272, 420, 250); }, T.red);
+  shape(ell(410, 290, 8, 14), 'rgba(255,255,255,.18)', 0);
+
+  // wing with a red wristband
+  ctx.save(); ctx.translate(290, 336); ctx.rotate(Math.sin(t * 3) * 0.06);
+  shape(() => { ctx.moveTo(-66, -34); ctx.bezierCurveTo(-10, -66, 66, -32, 70, 22); ctx.bezierCurveTo(44, 44, 0, 52, -34, 32); ctx.bezierCurveTo(-66, 12, -76, -16, -66, -34); }, T.brownDark);
+  for (const [x, y] of [[-34, 14], [-2, 26], [32, 24]]) { ctx.beginPath(); ctx.arc(x, y, 17, 0.2, 2.8); ctx.lineWidth = 4; ctx.strokeStyle = T.brown; ctx.stroke(); }
+  wristband(48, 8, -0.9, T.band);
+  ctx.restore();
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
 
 <script>
 // =====================================================================
@@ -116,7 +248,7 @@ function beak(x, y) {
 /** Headband across the forehead with its knot and two tails blowing behind. */
 function headband(cx, cy, r, color, dark, t) {
   const top = -r * 0.7; const h = r * 0.38; const tilt = -0.1;
-  const bandRect = () => { ctx.translate(cx, cy); ctx.rotate(tilt); ctx.rect(-r - 12, top, r * 2 + 24, h); ctx.setTransform(2, 0, 0, 2, 0, 0); };
+  const bandRect = () => { const m = ctx.getTransform(); ctx.translate(cx, cy); ctx.rotate(tilt); ctx.rect(-r - 12, top, r * 2 + 24, h); ctx.setTransform(m); };
   // tails flapping in the wind (behind the head, so draw first)
   const kx = cx - r * 0.86; const ky = cy + top * 0.72 + 6;
   for (const [len, lift, ph] of [[100, -26, 0], [84, 16, 1.7]]) {
@@ -150,109 +282,6 @@ function wristband(x, y, rot, color) {
 }
 
 // =====================================================================
-//                              THE CHICKEN
-// =====================================================================
-function drawChicken(t, blink) {
-  const C = { white: '#fbf8f0', shade: '#dcd5c6', red: '#e53b2a', redDark: '#b02a1c', blue: '#2f7de1', blueDark: '#174f9e' };
-
-  // tail feathers fanning out behind
-  for (const [a, len] of [[-2.5, 92], [-2.85, 100], [-3.2, 88], [-3.5, 70]]) {
-    const wob = Math.sin(t * 2 + a) * 0.04;
-    shape(ell(185 + Math.cos(a + wob) * 40, 300 + Math.sin(a + wob) * 40, len * 0.62, 26, a + wob), C.white);
-  }
-  legs(t);
-
-  // comb (behind the head)
-  blob([circ(330, 140, 26), circ(366, 126, 31), circ(402, 142, 24), ell(366, 160, 50, 22)], C.red);
-  shadeInside(() => { circ(366, 126, 31)(); }, () => { ctx.fillStyle = C.redDark; ctx.beginPath(); ctx.arc(352, 140, 28, 0, Math.PI * 2); ctx.fill(); });
-
-  // body + head as one fluffy blob
-  const body = ell(292, 335, 122, 104); const head = circ(362, 218, 78); const neck = ell(335, 270, 62, 60);
-  blob([body, head, neck], C.white);
-  // cel shading along the bottom/back
-  shadeInside(body, () => { ctx.fillStyle = C.shade; ctx.beginPath(); ctx.ellipse(270, 410, 150, 70, -0.15, 0, Math.PI * 2); ctx.fill(); });
-  // chest fluff scallops
-  for (let i = 0; i < 4; i++) { ctx.beginPath(); ctx.arc(368 + i * 6, 305 + i * 22, 16, -0.6, 1.4); ctx.lineWidth = 4; ctx.strokeStyle = C.shade; ctx.stroke(); }
-
-  headband(362, 218, 78, C.blue, C.blueDark, t);
-  eye(390, 222, blink);
-  beak(424, 236);
-  // wattle under the beak
-  shape(() => { ctx.moveTo(424, 262); ctx.bezierCurveTo(446, 268, 446, 300, 428, 304); ctx.bezierCurveTo(410, 300, 410, 272, 424, 262); }, C.red);
-  // rosy cheek
-  shape(ell(360, 250, 14, 9), 'rgba(255,120,110,.45)', 0);
-
-  // wing with a blue wristband, flapping a little
-  ctx.save(); ctx.translate(300, 330); ctx.rotate(Math.sin(t * 3) * 0.06);
-  shape(() => { ctx.moveTo(-60, -30); ctx.bezierCurveTo(-10, -60, 60, -30, 64, 20); ctx.bezierCurveTo(40, 40, 0, 48, -30, 30); ctx.bezierCurveTo(-60, 10, -70, -14, -60, -30); }, C.white);
-  for (const [x, y] of [[-30, 14], [0, 24], [30, 22]]) { ctx.beginPath(); ctx.arc(x, y, 16, 0.2, 2.8); ctx.lineWidth = 4; ctx.strokeStyle = C.shade; ctx.stroke(); }
-  wristband(44, 8, -0.9, C.blue);
-  ctx.restore();
-}
-
-// =====================================================================
-//                              THE TURKEY
-// =====================================================================
-function drawTurkey(t, blink) {
-  const T = { brown: '#8a5328', brownDark: '#5f3618', cream: '#f3d39a', red: '#d8402b', head: '#e5543c', headDark: '#b8361f', band: '#d62828', bandDark: '#8e1414' };
-  const RINGS = [
-    { len: 205, color: '#d8402b', tip: '#9c2416' },
-    { len: 178, color: '#f08a24', tip: '#c45f0e' },
-    { len: 150, color: '#f5c242', tip: '#d39a12' },
-    { len: 122, color: '#2a9d8f', tip: '#1b6b61' },
-  ];
-  // the giant fanned tail, swaying slowly
-  const cx = 268; const cy = 318; const sway = Math.sin(t * 1.6) * 0.03;
-  RINGS.forEach((ring, k) => {
-    const n = 11 - k; const from = -Math.PI * 1.04; const to = -Math.PI * -0.02;
-    for (let i = 0; i < n; i++) {
-      const a = from + ((to - from) * (i + 0.5 + (k % 2) * 0.5)) / (n + (k % 2)) + sway;
-      ctx.save(); ctx.translate(cx, cy); ctx.rotate(a);
-      shape(() => ctx.ellipse(ring.len * 0.55, 0, ring.len * 0.5, 30 - k * 2, 0, 0, Math.PI * 2), ring.color);
-      // darker band near the tip of each feather
-      shadeInside(() => ctx.ellipse(ring.len * 0.55, 0, ring.len * 0.5, 30 - k * 2, 0, 0, Math.PI * 2),
-        () => { ctx.fillStyle = ring.tip; ctx.fillRect(ring.len * 0.88, -40, 60, 80); });
-      ctx.restore();
-    }
-  });
-  legs(t);
-
-  // body + neck + head as one blob
-  const body = ell(292, 340, 126, 108); const neck = ell(352, 262, 50, 64, 0.3); const head = circ(372, 206, 62);
-  blob([body, neck], T.brown);
-  shadeInside(body, () => { ctx.fillStyle = T.brownDark; ctx.beginPath(); ctx.ellipse(250, 420, 160, 70, -0.1, 0, Math.PI * 2); ctx.fill(); });
-  // cream chest bib with feather scallops (the turkey's proud chest)
-  shadeInside(body, () => {
-    shape(ell(392, 330, 62, 92, -0.2), T.cream, 5);
-    shadeInside(ell(392, 330, 62, 92, -0.2), () => {
-      for (let row = 0; row < 6; row++) for (let i = 0; i < 4; i++) {
-        ctx.beginPath(); ctx.arc(345 + i * 26 + (row % 2) * 13, 262 + row * 26, 14, 0.25, Math.PI - 0.25);
-        ctx.lineWidth = 3.5; ctx.strokeStyle = '#c99a55'; ctx.stroke();
-      }
-    });
-  });
-  // head (red-orange like the art)
-  shape(head, T.head);
-  shadeInside(head, () => { ctx.fillStyle = T.headDark; ctx.beginPath(); ctx.arc(340, 240, 52, 0, Math.PI * 2); ctx.fill(); });
-
-  headband(372, 206, 62, T.band, T.bandDark, t);
-  eye(398, 212, blink, 0.38);
-  beak(430, 226);
-  // the snood draping over the beak + a big wattle under the chin
-  const sw = Math.sin(t * 4) * 3;
-  shape(() => { ctx.moveTo(430, 206); ctx.bezierCurveTo(446, 206, 452 + sw, 236, 444 + sw, 258); ctx.bezierCurveTo(436 + sw, 262, 430, 238, 426, 214); ctx.closePath(); }, T.red, 5);
-  shape(() => { ctx.moveTo(420, 250); ctx.bezierCurveTo(456, 262, 452, 318, 426, 322); ctx.bezierCurveTo(398, 318, 396, 272, 420, 250); }, T.red);
-  shape(ell(410, 290, 8, 14), 'rgba(255,255,255,.18)', 0);
-
-  // wing with a red wristband
-  ctx.save(); ctx.translate(290, 336); ctx.rotate(Math.sin(t * 3) * 0.06);
-  shape(() => { ctx.moveTo(-66, -34); ctx.bezierCurveTo(-10, -66, 66, -32, 70, 22); ctx.bezierCurveTo(44, 44, 0, 52, -34, 32); ctx.bezierCurveTo(-66, 12, -76, -16, -66, -34); }, T.brownDark);
-  for (const [x, y] of [[-34, 14], [-2, 26], [32, 24]]) { ctx.beginPath(); ctx.arc(x, y, 17, 0.2, 2.8); ctx.lineWidth = 4; ctx.strokeStyle = T.brown; ctx.stroke(); }
-  wristband(48, 8, -0.9, T.band);
-  ctx.restore();
-}
-
-// =====================================================================
 //                        animation + the swap button
 // =====================================================================
 let who = 'chicken';
@@ -273,6 +302,7 @@ function background(t) {
 
 function frame(ms) {
   const t = ms / 1000;
+  ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.globalAlpha = 1;
   background(t);
 
   // blinking every few seconds
@@ -292,7 +322,7 @@ function frame(ms) {
   const bob = Math.sin(t * 2.4) * 4;
   ctx.save();
   ctx.translate(300, 500); ctx.scale(sx, sy * (1 + Math.sin(t * 2.4) * 0.012)); ctx.translate(-300, -500 + bob * (morph ? 0 : 1));
-  if (who === 'chicken') drawChicken(t, bk); else drawTurkey(t, bk);
+  drawBird(who, t, bk);
   ctx.restore();
 
   drawPuffs(t);
@@ -330,6 +360,80 @@ function drawPuffs() {
   }
 }
 
+
+// =====================================================================
+//              the LIVE CODE editor: type → the bird redraws
+// =====================================================================
+const ORIGINAL = { chicken: document.getElementById('src-chicken').textContent.trim(), turkey: document.getElementById('src-turkey').textContent.trim() };
+const code = { ...ORIGINAL };          // what's in the editor for each bird
+const good = {};                       // the last version of each bird that worked
+const status = document.getElementById('status');
+const FN = { chicken: 'drawChicken', turkey: 'drawTurkey' };
+
+/** Turn the text into a drawing function (or explain what's wrong with it). */
+function compile(bird, text) {
+  try {
+    const fn = new Function(`${text}\nreturn typeof ${FN[bird]} === 'function' ? ${FN[bird]} : null;`)();
+    if (!fn) return { error: `Keep the line "function ${FN[bird]}(t, blink) {" — that's how the page finds the drawing.` };
+    return { fn };
+  } catch (e) { return { error: friendly(e) }; }
+}
+function friendly(e) {
+  const m = String(e.stack || '').match(/<anonymous>:(\d+):\d+/);
+  const lineNo = m ? +m[1] - 2 : null; // new Function adds 2 lines of its own at the top
+  return `${lineNo ? `Line ${lineNo}: ` : ''}${e.name === 'SyntaxError' ? 'typo — ' : ''}${e.message}`;
+}
+function setStatus(ok, msg) { status.className = ok ? 'ok' : 'bad'; status.textContent = ok ? '✓ ' + msg : '⚠ ' + msg + '  (still showing the last version that worked)'; }
+
+let pendingCheck = null; // a new version is "on trial" until it draws one frame without crashing
+function tryCode(bird) {
+  const r = compile(bird, code[bird]);
+  if (r.error) { setStatus(false, r.error); return; }
+  pendingCheck = { bird, fn: r.fn };
+}
+/** Draw the bird — with a safety net, so a mistake never breaks the page. */
+function drawBird(bird, t, bk) {
+  const trial = pendingCheck && pendingCheck.bird === bird ? pendingCheck.fn : null;
+  const fn = trial || good[bird];
+  if (!fn) return;
+  ctx.save();
+  try {
+    fn(t, bk);
+    if (trial) { good[bird] = trial; pendingCheck = null; setStatus(true, code[bird] === ORIGINAL[bird] ? 'Running the original code' : 'Running your code!'); }
+  } catch (e) {
+    for (let i = 0; i < 40; i++) ctx.restore(); // tidy up anything the broken code left half-done
+    ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.globalAlpha = 1;
+    if (trial) { pendingCheck = null; setStatus(false, friendly(e)); }
+    return;
+  }
+  ctx.restore();
+}
+for (const b of ['chicken', 'turkey']) { good[b] = compile(b, ORIGINAL[b]).fn; }
+
+// the editor: CodeMirror (colours + line numbers) if it loaded, otherwise a plain text box
+const box = document.getElementById('code');
+let editor = null;
+if (window.CodeMirror) {
+  editor = CodeMirror.fromTextArea(box, { mode: 'javascript', theme: 'dracula', lineNumbers: true, tabSize: 2, indentUnit: 2, lineWrapping: true });
+  editor.on('change', () => onEdit(editor.getValue()));
+} else box.addEventListener('input', () => onEdit(box.value));
+const getText = () => (editor ? editor.getValue() : box.value);
+const setText = (s) => { if (editor) { editor.setValue(s); editor.clearHistory(); } else box.value = s; };
+let editT = 0;
+function onEdit(text) {
+  const bird = editingBird; code[bird] = text;
+  clearTimeout(editT); editT = setTimeout(() => tryCode(bird), 250);
+}
+let editingBird = 'chicken';
+function showCode(bird) {
+  editingBird = bird; clearTimeout(editT); setText(code[bird]);
+  document.getElementById('code-title').textContent = bird === 'chicken' ? '🐔 Chicken code' : '🦃 Turkey code';
+  document.getElementById('code-title').className = bird;
+  tryCode(bird);
+}
+document.getElementById('reset').addEventListener('click', () => { code[editingBird] = ORIGINAL[editingBird]; setText(ORIGINAL[editingBird]); tryCode(editingBird); });
+showCode('chicken');
+
 const btn = document.getElementById('swap'); const title = document.getElementById('title');
 btn.addEventListener('click', () => {
   if (morph) return;
@@ -339,6 +443,7 @@ btn.addEventListener('click', () => {
     title.textContent = to === 'turkey' ? 'Team Turkeys' : 'Team Chickens'; title.className = to;
     btn.textContent = to === 'turkey' ? 'Turn into a Chicken!' : 'Turn into a Turkey!';
     btn.className = to === 'turkey' ? 'to-chicken' : 'to-turkey';
+    showCode(to);
   }, 350);
 });
 
