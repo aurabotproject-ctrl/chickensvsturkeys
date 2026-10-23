@@ -1017,10 +1017,10 @@ function nzStep(dt) {
   if (!NZ.dead) {
     const r = NZ.hop ? (now - NZ.hop.t0 > 0.08 ? NZ.hop.to : NZ.hop.from) : NZ.row;
     if (r >= 1 && r <= 4) {
-      const hit = NZ.cars.find((c) => c.lane === r && c.x < 300 + 15 && c.x + c.len > 300 - 15);
+      const hit = NZ.cars.find((c) => c.lane === r && c.x < 300 + 7 && c.x + c.len > 300 - 7);
       if (hit) {
         NZ.dead = now; NZ.deadRow = r; NZ.hop = null;
-        nzBurst(300, NZ_ROW_Y[r] - 20, who === 'turkey' ? ['#d8402b', '#f08a24', '#f5c242', '#2a9d8f', '#8a5328'] : ['#fbf8f0', '#2f7de1', '#e53b2a', '#fbf8f0']);
+        nzBurst(300, NZ_ROW_Y[r] - 12, who === 'turkey' ? ['#d8402b', '#f08a24', '#f5c242', '#2a9d8f', '#8a5328'] : ['#fbf8f0', '#2f7de1', '#e53b2a', '#fbf8f0']);
         nzBanner('💥 SPLAT! Back to the start of this level');
       }
     }
@@ -1065,14 +1065,15 @@ function drawAucklandGame(t, dt) {
 
   // the bird (hopping, or squashed flat)
   let y = NZ_ROW_Y[NZ.row]; let lift = 0;
-  if (NZ.hop) { const k = Math.min(1, (now - NZ.hop.t0) / 0.16); y = NZ_ROW_Y[NZ.hop.from] + (NZ_ROW_Y[NZ.hop.to] - NZ_ROW_Y[NZ.hop.from]) * k; lift = Math.sin(k * Math.PI) * 18; }
+  if (NZ.hop) { const k = Math.min(1, (now - NZ.hop.t0) / 0.16); y = NZ_ROW_Y[NZ.hop.from] + (NZ_ROW_Y[NZ.hop.to] - NZ_ROW_Y[NZ.hop.from]) * k; lift = Math.sin(k * Math.PI) * 8; }
   if (NZ.dead) y = NZ_ROW_Y[NZ.deadRow];
-  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(300, y, 20, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(300, y, 8, 3, 0, 0, Math.PI * 2); ctx.fill();
   ctx.save(); ctx.translate(300, y - lift);
   if (NZ.dead) ctx.scale(1.5, 0.25); else ctx.scale(NZ.dir > 0 ? 1 : -1, 1);
-  ctx.drawImage(nzBirdPic(who, t), -300 * 0.5 * 0.4, -495 * 0.5 * 0.4, 300 * 0.4, 300 * 0.4); // ~70 units tall
+  const BS = 0.4 / 3; // bird size (a third of the first version)
+  ctx.drawImage(nzBirdPic(who, t), -300 * 0.5 * BS, -495 * 0.5 * BS, 300 * BS, 300 * BS); // ~27 units tall
   ctx.restore();
-  if (NZ.dead) { ctx.font = '40px Bangers, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.strokeText('SPLAT!', 300, y - 40); ctx.fillStyle = '#ffd23f'; ctx.fillText('SPLAT!', 300, y - 40); }
+  if (NZ.dead) { ctx.font = '40px Bangers, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.strokeText('SPLAT!', 300, y - 24); ctx.fillStyle = '#ffd23f'; ctx.fillText('SPLAT!', 300, y - 24); }
 
   // confetti / feathers
   for (const f of NZ.fx) { const a = now - f.t0; ctx.save(); ctx.globalAlpha = Math.max(0, 1 - a / 1.2); ctx.translate(f.x + f.vx * a, f.y + f.vy * a + 220 * a * a); ctx.rotate(f.r + a * 6); ctx.fillStyle = f.c; ctx.fillRect(-6, -3, 12, 6); ctx.restore(); }
