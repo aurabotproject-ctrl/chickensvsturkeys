@@ -6,9 +6,9 @@
 //   cr/info = { round, seed, t0, players: [[uid, team, name]] }
 //   cr/s    = "i,r,x100,deaths,crossings;…"
 // =========================================================
-import { sfx } from '../../core/sfx.js?v=20261024092730';
-import { W, L, HOPS_PER, MAX_HOPS, makeField, tryHop, stepBird, startCol, danger, dangerAhead } from './rules.js?v=20261024092730';
-import { drawField } from './draw.js?v=20261024092730';
+import { sfx } from '../../core/sfx.js?v=20261024093445';
+import { W, L, HOPS_PER, MAX_HOPS, makeField, tryHop, stepBird, startCol, danger, dangerAhead } from './rules.js?v=20261024093445';
+import { drawField } from './draw.js?v=20261024093445';
 
 const rnd = (a, b) => a + Math.random() * (b - a);
 /** Remember where a bird was at its last event (what the phones are told). */

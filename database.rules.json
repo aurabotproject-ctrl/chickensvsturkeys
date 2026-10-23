@@ -77,6 +77,10 @@
             "team": {
               ".write": "auth != null && auth.uid === $uid && !data.exists() && !root.child('games/' + $g + '/kicked/' + $uid).exists()",
               ".validate": "newData.val() === 'chicken' || newData.val() === 'turkey'"
+            },
+            "real": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.isString() && newData.val().length <= 120"
             }
           }
         },

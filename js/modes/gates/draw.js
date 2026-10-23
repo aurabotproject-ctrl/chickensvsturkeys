@@ -2,8 +2,8 @@
 // GATES — drawing (Canvas 2D), shared by the big screen and the devices.
 // Uses the gt_* art once it's been added (GT_ART); until then it's drawn in code.
 // =========================================================
-import { sprite, avatar } from '../../core/assets.js?v=20261024092730';
-import { FW, FH, PR, CR, GL, CORNERS } from './rules.js?v=20261024092730';
+import { sprite, avatar } from '../../core/assets.js?v=20261024093445';
+import { FW, FH, PR, CR, GL, CORNERS } from './rules.js?v=20261024093445';
 
 export const GT_ART = new Set(['gt_gate_closed', 'gt_gate_open', 'gt_pad']);
 const TEAM = { chicken: { main: '#1e6fe0', glow: 'rgba(30,111,224,', light: '#8ec0ff' }, turkey: { main: '#e0402a', glow: 'rgba(224,64,42,', light: '#ff9a85' } };

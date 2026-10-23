@@ -1,12 +1,12 @@
 // Teacher HQ: sign-in, dashboard, question banks, create game, results.
 import {
   isConfigured, db, ref, onValue, get, remove, watchUser, signInTeacher, signOutUser, isTeacher, explainError,
-} from '../js/core/firebase.js?v=20261024092730';
-import { $, $$, html, raw, esc, toast, modal, confirmBox } from '../js/core/ui.js?v=20261024092730';
-import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261024092730';
-import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261024092730';
-import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261024092730';
-import { renderBanks } from './banks-ui.js?v=20261024092730';
+} from '../js/core/firebase.js?v=20261024093445';
+import { $, $$, html, raw, esc, toast, modal, confirmBox } from '../js/core/ui.js?v=20261024093445';
+import { sprite, subjectIcon, teamIco, uiIcon } from '../js/core/assets.js?v=20261024093445';
+import { createGame, DEFAULT_SETTINGS } from '../js/core/games.js?v=20261024093445';
+import { loadStrands, loadCurricula, listPremade, watchMyBanks, loadBankByKey } from '../js/quiz/banks.js?v=20261024093445';
+import { renderBanks } from './banks-ui.js?v=20261024093445';
 
 const app = $('#app');
 export const ctx = { user: null, strands: {}, premade: [], mine: [], results: [], view: 'dashboard', go };
@@ -387,7 +387,7 @@ function showResult(r) {
     .sort((a, b) => (b.score || 0) - (a.score || 0));
   const rows = players.map((p) => {
     const acc = p.answered ? Math.round((p.correct / p.answered) * 100) : 0;
-    return html`<tr><td>${p.name}</td><td>${raw(teamIco(p.team))}</td><td>${p.score || 0}</td><td>${p.correct || 0}/${p.answered || 0}</td><td>${acc}%</td><td>${p.blindSpots || 0}</td></tr>`;
+    return html`<tr><td>${p.real || p.name}${raw(p.real ? `<br><small class="hint">plays as ${esc(p.name)}</small>` : '')}</td><td>${raw(teamIco(p.team))}</td><td>${p.score || 0}</td><td>${p.correct || 0}/${p.answered || 0}</td><td>${acc}%</td><td>${p.blindSpots || 0}</td></tr>`;
   }).join('');
   modal({
     title: r.bankTitle || 'Game result', wide: true,

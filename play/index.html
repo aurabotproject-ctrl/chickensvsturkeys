@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin>
   <link rel="preconnect" href="https://chickens-vs-turkeys-default-rtdb.asia-southeast1.firebasedatabase.app" crossorigin>
-  <script type="module" src="early.js?v=20261024092730"></script>
-  <link rel="stylesheet" href="../css/tokens.css?v=20261024092730">
-  <link rel="stylesheet" href="../css/ui.css?v=20261024092730">
-  <link rel="stylesheet" href="play.css?v=20261024092730">
+  <script type="module" src="early.js?v=20261024093445"></script>
+  <link rel="stylesheet" href="../css/tokens.css?v=20261024093445">
+  <link rel="stylesheet" href="../css/ui.css?v=20261024093445">
+  <link rel="stylesheet" href="play.css?v=20261024093445">
 </head>
 <body>
   <!-- JOIN -->
@@ -20,7 +20,19 @@
     <img class="join-logo anim-pop" src="../assets/sprites/logo_sm.webp" width="380" height="258" decoding="async" alt="Chickens vs Turkeys">
     <form id="join-form" class="panel light join-form" autocomplete="off">
       <label class="field"><span>Game code</span><input class="input code-input" id="code" maxlength="6" inputmode="text" autocapitalize="characters" placeholder="ABC123" required></label>
-      <label class="field"><span>Your name</span><input class="input" id="name" maxlength="14" placeholder="First name" required></label>
+      <div class="field"><label for="name">Player name <small class="fhint">shows on the big screen</small></label>
+        <div class="name-row"><input class="input" id="name" maxlength="16" placeholder="Make up a cool name" required autocapitalize="words" spellcheck="false">
+          <button type="button" class="emoji-btn" id="emoji-btn" aria-label="Add emojis" aria-expanded="false" aria-controls="emoji-pop">😀<b>+</b></button></div>
+        <div class="emoji-pop hidden" id="emoji-pop" role="dialog" aria-label="Pick emojis">
+          <div class="emoji-tabs" id="emoji-tabs"></div>
+          <div class="emoji-grid" id="emoji-grid"></div>
+          <div class="emoji-foot"><span id="emoji-left"></span><button type="button" class="btn sm grey" id="emoji-back" aria-label="Delete last">⌫</button><button type="button" class="btn sm" id="emoji-done">Done</button></div>
+        </div>
+      </div>
+      <div class="field real-field"><label for="real-0">Your real name <small class="fhint">only your teacher sees this</small></label>
+        <div class="real-list" id="real-list"></div>
+        <button type="button" class="add-real" id="add-real">＋ Sharing this device? Add another name</button>
+      </div>
       <button class="btn big" type="submit" id="join-btn">JOIN!</button>
       <p class="error-text" id="join-err"></p>
     </form>
@@ -200,6 +212,6 @@
   </section>
 
   <div id="overlay" class="overlay hidden"></div>
-  <script type="module" src="play.js?v=20261024092730"></script>
+  <script type="module" src="play.js?v=20261024093445"></script>
 </body>
 </html>

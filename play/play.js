@@ -2,30 +2,30 @@
 // STUDENT PHONE: join → team + avatar → answer & fight → results
 // =========================================================
 import {
-  isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261024092730';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261024092730';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261024092730';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261024092730';
-import { sfx } from '../js/core/sfx.js?v=20261024092730';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261024092730';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261024092730';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261024092730';
-import { PaintView } from '../js/modes/paint/view.js?v=20261024092730';
-import { FlagView } from '../js/modes/flag/view.js?v=20261024092730';
-import { GatesView } from '../js/modes/gates/view.js?v=20261024092730';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261024092730';
-import { CrossView } from '../js/modes/cross/view.js?v=20261024092730';
-import { howtoHTML } from '../js/core/howto.js?v=20261024092730';
-import { StackView } from '../js/modes/stack/view.js?v=20261024092730';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261024092730';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261024092730';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261024092730';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261024092730';
-import { TowerView } from '../js/modes/towers/view.js?v=20261024092730';
-import * as FE from '../js/modes/farm/economy.js?v=20261024092730';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261024092730';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261024092730';
+  isConfigured, db, ref, get, set, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
+} from '../js/core/firebase.js?v=20261024093445';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261024093445';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261024093445';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261024093445';
+import { sfx } from '../js/core/sfx.js?v=20261024093445';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261024093445';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261024093445';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261024093445';
+import { PaintView } from '../js/modes/paint/view.js?v=20261024093445';
+import { FlagView } from '../js/modes/flag/view.js?v=20261024093445';
+import { GatesView } from '../js/modes/gates/view.js?v=20261024093445';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261024093445';
+import { CrossView } from '../js/modes/cross/view.js?v=20261024093445';
+import { howtoHTML } from '../js/core/howto.js?v=20261024093445';
+import { StackView } from '../js/modes/stack/view.js?v=20261024093445';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261024093445';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261024093445';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261024093445';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261024093445';
+import { TowerView } from '../js/modes/towers/view.js?v=20261024093445';
+import * as FE from '../js/modes/farm/economy.js?v=20261024093445';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261024093445';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261024093445';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -79,11 +79,78 @@ function lookupEarly(code) {
   return codeLookups.get(code);
 }
 
+// ---------------- player name: emoji picker + real names ----------------
+const NAME_MAX = 16; // the database allows 16 (emojis count as 2)
+const EMOJI = {
+  '😀': ['😀', '😎', '🤩', '🥳', '😜', '🤪', '😇', '🤠', '🥸', '🤓', '😺', '👻', '👽', '🤖', '🎃', '😂', '🥰', '😤', '🙃', '🫡', '🤗', '😴', '🤯', '🥶'],
+  '🐶': ['🐔', '🦃', '🐣', '🐥', '🐶', '🐱', '🦊', '🐼', '🐨', '🦁', '🐯', '🐸', '🐵', '🦄', '🐲', '🦖', '🦕', '🐙', '🦈', '🐬', '🐳', '🦋', '🐝', '🐢', '🦉', '🐧', '🦜', '🐰', '🐹', '🐻', '🦒', '🦓', '🦩', '🐊', '🦀', '🐞'],
+  '🍕': ['🍕', '🍔', '🌮', '🍟', '🌭', '🍩', '🍪', '🧁', '🍰', '🍦', '🍭', '🍫', '🍿', '🍉', '🍓', '🍌', '🍎', '🥝', '🥑', '🌽', '🥨', '🍜', '🍣', '🧃'],
+  '⚽': ['⚽', '🏀', '🏈', '🏉', '⚾', '🎾', '🏐', '🏓', '🛹', '🏄', '🎮', '🕹️', '🎨', '🎸', '🥁', '🎤', '🚀', '🛸', '🏎️', '🚁', '🏆', '🎯', '🧩', '🪀'],
+  '⭐': ['⭐', '🌟', '⚡', '🔥', '🌈', '💎', '👑', '🎉', '💥', '✨', '❄️', '☀️', '🌙', '🌊', '🍀', '🌸', '🌻', '💫', '❤️', '💙', '💚', '💛', '💜', '🧡', '🇳🇿'],
+};
+/** Cut a name to the limit without splitting an emoji in half. */
+function clampName(s) {
+  const parts = typeof Intl !== 'undefined' && Intl.Segmenter ? [...new Intl.Segmenter().segment(s)].map((x) => x.segment) : Array.from(s);
+  let out = ''; for (const p of parts) { if (out.length + p.length > NAME_MAX) break; out += p; }
+  return out;
+}
+/** Real names: letters only (Māori macrons and other accents are fine) — no emojis or numbers. */
+const cleanReal = (s) => s.replace(/[^\p{L}\p{M} '’.-]/gu, '').replace(/\s+/g, ' ').replace(/^\s+/, '').slice(0, 28);
+const realNames = () => [...document.querySelectorAll('#real-list input')].map((i) => cleanReal(i.value).trim()).filter(Boolean).join(', ').slice(0, 120);
+
+function setupNameTools(savedReal) {
+  const input = $('#name'); const pop = $('#emoji-pop'); const btn = $('#emoji-btn');
+  let caret = null; // where to put the next emoji (remembered so the keyboard doesn't have to open)
+  const remember = () => { caret = input.selectionStart; };
+  ['keyup', 'click', 'input', 'select'].forEach((ev) => input.addEventListener(ev, remember));
+  const left = () => { const n = NAME_MAX - input.value.length; const el = $('#emoji-left'); el.textContent = n > 0 ? `${n} space${n === 1 ? '' : 's'} left` : 'Name is full!'; el.classList.toggle('full', n <= 1); };
+  let tab = '😀';
+  const drawTabs = () => {
+    $('#emoji-tabs').innerHTML = Object.keys(EMOJI).map((k) => `<button type="button" data-tab="${k}" class="${k === tab ? 'on' : ''}" aria-label="Emoji group">${k}</button>`).join('');
+    $('#emoji-grid').innerHTML = EMOJI[tab].map((e) => `<button type="button" data-e="${e}" aria-label="Add ${e}">${e}</button>`).join('');
+  };
+  const open = (on) => { pop.classList.toggle('hidden', !on); btn.setAttribute('aria-expanded', on); if (on) { drawTabs(); left(); } };
+  btn.onclick = () => { sfx.click?.(); open(pop.classList.contains('hidden')); };
+  $('#emoji-done').onclick = () => open(false);
+  $('#emoji-tabs').onclick = (e) => { const b = e.target.closest('[data-tab]'); if (!b) return; tab = b.dataset.tab; drawTabs(); };
+  $('#emoji-grid').onclick = (e) => {
+    const b = e.target.closest('[data-e]'); if (!b) return;
+    const em = b.dataset.e; const v = input.value;
+    if (v.length + em.length > NAME_MAX) { pop.classList.remove('nudge-x'); void pop.offsetWidth; pop.classList.add('nudge-x'); left(); return; }
+    const at = caret == null || caret > v.length ? v.length : caret;
+    input.value = v.slice(0, at) + em + v.slice(at); caret = at + em.length;
+    sfx.click?.(); left();
+  };
+  $('#emoji-back').onclick = () => {
+    const v = input.value; const at = caret == null || caret > v.length ? v.length : caret; if (!at) return;
+    const before = typeof Intl !== 'undefined' && Intl.Segmenter ? [...new Intl.Segmenter().segment(v.slice(0, at))].map((x) => x.segment) : Array.from(v.slice(0, at));
+    const cut = before.pop() || ''; input.value = before.join('') + v.slice(at); caret = at - cut.length; left();
+  };
+  input.addEventListener('input', () => { if (!pop.classList.contains('hidden')) left(); });
+
+  // real names (1 to 4 — for students sharing a device)
+  const list = $('#real-list');
+  const addRow = (val = '', focus = false) => {
+    const i = list.children.length; if (i >= 4) return;
+    const row = document.createElement('div'); row.className = 'real-row';
+    row.innerHTML = `<input class="input" id="real-${i}" maxlength="28" placeholder="${i ? 'Next person’s first & last name' : 'First & last name'}" autocapitalize="words" autocomplete="off" spellcheck="false">${i ? '<button type="button" class="rm" aria-label="Remove this name">✕</button>' : ''}`;
+    const inp = row.querySelector('input'); inp.value = val;
+    inp.addEventListener('input', () => { $('#join-err').textContent = ''; const c = cleanReal(inp.value); if (c !== inp.value) { const pos = inp.selectionStart - (inp.value.length - c.length); inp.value = c; try { inp.setSelectionRange(pos, pos); } catch { /* ignore */ } } });
+    row.querySelector('.rm')?.addEventListener('click', () => { row.remove(); renumber(); });
+    list.append(row); renumber(); if (focus) inp.focus();
+  };
+  const renumber = () => { [...list.children].forEach((r, i) => { r.querySelector('input').id = `real-${i}`; }); $('#add-real').classList.toggle('hidden', list.children.length >= 4); };
+  $('#add-real').onclick = () => addRow('', true);
+  const prev = (savedReal || '').split(/,\s*/).filter(Boolean);
+  if (prev.length) prev.slice(0, 4).forEach((n) => addRow(n)); else addRow();
+}
+
 async function boot() {
   if (!isConfigured) { $('#join-err').textContent = 'Game server not set up yet.'; return; }
   const saved = (() => { try { return JSON.parse(sessionStorage.getItem(SAVE_KEY) || 'null'); } catch { return null; } })();
   $('#code').value = cleanCode(params.get('code') || saved?.code || '');
   $('#name').value = saved?.name || '';
+  setupNameTools(saved?.real);
   if (params.get('code') && !saved) $('#name').focus();
   $('#code').addEventListener('input', (e) => { e.target.value = cleanCode(e.target.value); lookupEarly(e.target.value); });
   lookupEarly($('#code').value);
@@ -98,10 +165,12 @@ async function join(saved) {
   const btn = $('#join-btn'); const err = $('#join-err');
   err.textContent = '';
   const code = saved?.code || cleanCode($('#code').value);
-  const name = (saved?.name || $('#name').value).trim().replace(/\s+/g, ' ').slice(0, 14);
+  const name = clampName((saved?.name || $('#name').value).trim().replace(/\s+/g, ' '));
+  const real = saved ? (saved.real || '') : realNames();
   if (code.length !== 6) { err.textContent = 'Codes have 6 letters/numbers.'; return; }
-  if (!name) { err.textContent = 'Type your name.'; return; }
-  if (BAD.test(name)) { err.textContent = 'Please use your real first name.'; return; }
+  if (!name) { err.textContent = 'Make up a player name.'; return; }
+  if (BAD.test(name)) { err.textContent = 'Please pick a kinder player name.'; return; }
+  if (!saved && !real) { err.textContent = 'Type your real name too (only your teacher sees it).'; $('#real-0')?.focus(); return; }
   btn.disabled = true; btn.textContent = 'Joining…';
   // on slow school Wi-Fi, let them know it's still working
   const slowT = setTimeout(() => { err.textContent = 'Still connecting… slow Wi-Fi, hang tight!'; }, 6000);
@@ -114,8 +183,10 @@ async function join(saved) {
     const upd = { [`players/${uid}/name`]: existing.val()?.name || name, [`players/${uid}/online`]: true };
     if (!existing.exists()) upd[`players/${uid}/joinedAt`] = Date.now();
     await update(ref(db, `games/${gameId}`), upd);
+    // real names go in on their own, so joining still works if the database rules haven't been updated yet
+    if (real && existing.val()?.real !== real) set(G(`players/${uid}/real`), real).catch((e) => console.warn('real names not saved (publish the latest database rules)', e));
     onDisconnect(G(`players/${uid}/online`)).set(false);
-    try { sessionStorage.setItem(SAVE_KEY, JSON.stringify({ g: gameId, code, name })); } catch { /* ignore */ }
+    try { sessionStorage.setItem(SAVE_KEY, JSON.stringify({ g: gameId, code, name, real })); } catch { /* ignore */ }
     clearTimeout(slowT); err.textContent = '';
     sfx.join();
     subscribe();
@@ -246,7 +317,7 @@ async function startTokyo() {
   tokyo?.destroy(); tokyo = null;
   const cv = $('#tokyo'); if (!cv) return;
   try {
-    const { mountTokyo } = await import('../js/scenes/tokyo.js?v=20261024092730');
+    const { mountTokyo } = await import('../js/scenes/tokyo.js?v=20261024093445');
     if (!cv.isConnected) return;
     tokyo = mountTokyo(cv, { onStatus: ({ msg, label, can }) => { const b = $('#tk-walk'); const m = $('#tk-msg'); if (!b || !m) return; b.textContent = label; b.disabled = !can; m.textContent = msg; } });
     $('#tk-walk').onclick = () => { tokyo?.press(); sfx.click(); };

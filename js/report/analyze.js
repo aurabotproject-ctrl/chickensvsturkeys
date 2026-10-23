@@ -39,7 +39,7 @@ export function analyze(result) {
 
   const students = players.map((p) => {
     const list = vals(answersBy[p.uid]);
-    const s = { uid: p.uid, name: p.name || '?', team: p.team, score: p.score || 0, a: 0, c: 0, ms: 0, cats: emptyCats(), strands: Object.fromEntries(strands.map((x) => [x, { a: 0, c: 0 }])), blindQs: [], qTally: new Map() };
+    const s = { uid: p.uid, name: p.real || p.name || '?', nick: p.real ? p.name : '', team: p.team, score: p.score || 0, a: 0, c: 0, ms: 0, cats: emptyCats(), strands: Object.fromEntries(strands.map((x) => [x, { a: 0, c: 0 }])), blindQs: [], qTally: new Map() };
     for (const ans of list) {
       const q = qById.get(ans.qid); if (!q) continue;
       const st = q.strand || 'General';
@@ -113,11 +113,11 @@ export function analyze(result) {
 export function toCSV(result, A) {
   const cell = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
   const qById = new Map(A.qRows.map((q) => [q.id, q]));
-  const rows = [['student', 'team', 'question', 'strand', 'difficulty', 'chosen', 'correct_answer', 'correct', 'confidence', 'category', 'seconds', 'round']];
+  const rows = [['student', 'player_name', 'team', 'question', 'strand', 'difficulty', 'chosen', 'correct_answer', 'correct', 'confidence', 'category', 'seconds', 'round']];
   for (const s of A.students) {
     for (const a of vals(result.answers?.[s.uid])) {
       const q = qById.get(a.qid); if (!q) continue;
-      rows.push([s.name, s.team, q.q, q.strand, q.difficulty, q.options[a.choice] ?? '(no answer)', q.options[q.correct], a.correct ? 'yes' : 'no', a.conf || '', classify(a.conf, a.correct), ((a.ms || 0) / 1000).toFixed(1), a.round]);
+      rows.push([s.name, s.nick || s.name, s.team, q.q, q.strand, q.difficulty, q.options[a.choice] ?? '(no answer)', q.options[q.correct], a.correct ? 'yes' : 'no', a.conf || '', classify(a.conf, a.correct), ((a.ms || 0) / 1000).toFixed(1), a.round]);
     }
   }
   return rows.map((r) => r.map(cell).join(',')).join('\n');

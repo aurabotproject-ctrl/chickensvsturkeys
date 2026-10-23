@@ -95,3 +95,6 @@ h2.st { font-family: var(--font-comic); letter-spacing: .05em; font-size: 1.4rem
   .mx thead { display: table-header-group; }
 }
 @media (max-width: 760px) { .two { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(2, 1fr); } .bar-row { grid-template-columns: 110px 1fr 54px; } }
+
+/* the player name they chose, under their real name(s) */
+.nick { display: block; font-weight: 600; font-size: .78em; opacity: .7; }

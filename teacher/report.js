@@ -1,8 +1,8 @@
 // Master Teacher Print Diagnostic page: teacher/report.html?r=<resultId>
-import { isConfigured, db, ref, get, currentUser, isTeacher } from '../js/core/firebase.js?v=20261024092730';
-import { $, $$, esc, params, sleep } from '../js/core/ui.js?v=20261024092730';
-import { sprite } from '../js/core/assets.js?v=20261024092730';
-import { analyze, CATS, level, LEVEL_TEXT, SYM, toCSV } from '../js/report/analyze.js?v=20261024092730';
+import { isConfigured, db, ref, get, currentUser, isTeacher } from '../js/core/firebase.js?v=20261024093445';
+import { $, $$, esc, params, sleep } from '../js/core/ui.js?v=20261024093445';
+import { sprite } from '../js/core/assets.js?v=20261024093445';
+import { analyze, CATS, level, LEVEL_TEXT, SYM, toCSV } from '../js/report/analyze.js?v=20261024093445';
 
 const root = $('#report');
 let result; let A;
@@ -25,7 +25,9 @@ async function boot() {
 
 function msg(h) { root.innerHTML = `<div class="empty-msg"><p>${h}</p></div>`; }
 
-const nm = (s) => (opts.initials ? s.split(/\s+/).map((w) => w[0]?.toUpperCase() + '.').join('') : s);
+const nm = (s) => (opts.initials ? s.split(/,\s*/).map((n) => n.split(/\s+/).map((w) => w[0]?.toUpperCase() + '.').join('')).join(', ') : s);
+/** The nickname they played as (only when it's different from their real name). */
+const nick = (s) => (s.nick && !opts.initials ? ` <small class="nick">plays as ${esc(s.nick)}</small>` : '');
 const fmtDate = (t) => (t ? new Date(t).toLocaleString('en-NZ', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '');
 const MODE = { dodge: 'Dodge Egg', cannon: 'Egg Cannon', farm: 'Egg Farm', towers: 'Coop Wars', siege: 'Coop Siege', paint: 'Land Grab', flag: 'Capture the Flag', gates: 'Gates', advance: 'Advance', eggtoss: 'Egg Toss', cross: 'Cross the Road', stack: 'Stack Attack' };
 
@@ -85,7 +87,7 @@ function overview() {
 
 function matrix() {
   const st = A.strands; const list = sortedStudents();
-  const row = (s) => `<tr><td class="name"><span class="team-dot ${s.team}"></span>${esc(nm(s.name))}</td>
+  const row = (s) => `<tr><td class="name"><span class="team-dot ${s.team}"></span>${esc(nm(s.name))}${nick(s)}</td>
     ${st.map((x) => { const p = s.strandPct[x]; const l = level(p); return `<td class="${l || ''}">${p == null ? '·' : `${SYM[l]} ${p}%`}</td>`; }).join('')}
     <td><b>${s.acc ?? '–'}%</b></td><td>${s.c}/${s.a}</td>
     <td>${s.avgConf ? ['', '🎲', '🤔', '🔥'][Math.round(s.avgConf)] + ' ' + s.avgConf.toFixed(1) : '–'}</td>
@@ -136,7 +138,7 @@ function practise(s, qById) {
 
 function slips() {
   const qById = new Map(A.qRows.map((q) => [q.id, q]));
-  const slip = (s) => `<div class="slip"><h3>${esc(nm(s.name))}</h3>
+  const slip = (s) => `<div class="slip"><h3>${esc(nm(s.name))}${nick(s)}</h3>
     <div>Accuracy <b>${s.acc ?? '–'}%</b> (${s.c}/${s.a}) · 💥 ${s.score} points</div>
     <div class="mini">${A.strands.map((x) => { const p = s.strandPct[x]; return p == null ? '' : `<span>${esc(x)}</span><span>${SYM[level(p)]} ${p}%</span>`; }).join('')}</div>
     ${practise(s, qById)}
