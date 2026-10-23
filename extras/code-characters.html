@@ -1212,7 +1212,7 @@ const EG_PLACES = [
   { id: 'oasis', name: '🌴 The Oasis', fact: 'An oasis is a spot in the desert with water and palm trees.', x0: 330, x1: 600, y0: 408, y1: 508 },
   { id: 'nile', name: '⛵ The Nile', fact: 'The Nile is one of the longest rivers in the world!', x0: 0, x1: 600, y0: 512, y1: 530 },
 ];
-const EG = { x: 130, y: 505, face: 1, moving: false, keys: new Set(), target: null, camels: [], spawn: [0.5, 2], visited: new Set(), crossings: 0, side: 'bottom', banner: null, hopT: 0 };
+const EG = { x: 290, y: 470, face: 1, moving: false, keys: new Set(), target: null, camels: [], spawn: [0.5, 2], visited: new Set(), crossings: 0, side: 'bottom', banner: null, hopT: 0 };
 const EG_SPEED = 95;
 const egFoot = (x, y) => [x - 8, y - 6, x + 8, y + 4];            // the bird's footprint
 const egCamelBox = (c) => { const L = EG_LANES[c.lane]; return [c.x - 34, L.y - 13, c.x + 34, L.y + 9]; }; // a camel's footprint

@@ -515,3 +515,12 @@ body.mode-gates .tabs, body.mode-gates #ko, body.mode-gates .egg-bar, body.mode-
 .scene-tabs button { all: unset; cursor: pointer; font-family: var(--font-comic); letter-spacing: .04em; font-size: 1.05rem; padding: .15em .7em; border: 3px solid var(--ink); border-radius: 999px; background: #2a3558; color: #cfe0ff; }
 .scene-tabs button.on { background: var(--yolk); color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
 #tokyo { touch-action: manipulation; }
+
+/* Egypt: hold-to-walk arrows under the scene */
+.tokyo-bar .dpad { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(2, 40px); gap: 4px; flex: none; }
+.tokyo-bar .dpad.hidden, .tokyo-bar .btn.hidden { display: none; }
+.tokyo-bar .dpad button { all: unset; cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; background: #c1440e; color: #fff; border: 3px solid var(--ink); border-radius: 12px; box-shadow: 0 4px 0 var(--ink); touch-action: none; -webkit-user-select: none; user-select: none; }
+.tokyo-bar .dpad [data-d="u"] { grid-column: 2; grid-row: 1; } .tokyo-bar .dpad [data-d="l"] { grid-column: 1; grid-row: 2; }
+.tokyo-bar .dpad [data-d="d"] { grid-column: 2; grid-row: 2; } .tokyo-bar .dpad [data-d="r"] { grid-column: 3; grid-row: 2; }
+.tokyo-bar .dpad button.on { transform: translateY(3px); box-shadow: 0 1px 0 var(--ink); }
+.scene-tabs { flex-wrap: wrap; }

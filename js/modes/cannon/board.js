@@ -6,10 +6,10 @@
 // is everyone's targets added together.
 // (Same interface the host uses for the other game boards.)
 // =========================================================
-import { sprite, avatar, AVATARS } from '../../core/assets.js?v=20261024102606';
-import { sfx } from '../../core/sfx.js?v=20261024102606';
-import { FORTS, PIECES } from './forts.js?v=20261024102606';
-import { esc } from '../../core/ui.js?v=20261024102606';
+import { sprite, avatar, AVATARS } from '../../core/assets.js?v=20261024103837';
+import { sfx } from '../../core/sfx.js?v=20261024103837';
+import { FORTS, PIECES } from './forts.js?v=20261024103837';
+import { esc } from '../../core/ui.js?v=20261024103837';
 
 /** How many targets are in each fort (every target = 1 point). */
 export const targetsIn = (fortIndex) => FORTS[fortIndex % FORTS.length].pieces.filter(([type]) => PIECES[type].target).length;

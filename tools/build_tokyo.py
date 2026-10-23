@@ -107,3 +107,50 @@ return {{
 """
 (root / 'js/scenes/auckland.js').write_text(out2)
 print('wrote js/scenes/auckland.js', len(out2))
+
+# ---------------- Egypt Crossing (free-walk with camels) ----------------
+eg = main[main.index('// =====================================================================\n//    EGYPT CROSSING'):main.index('// ---- switching between the birds and the city ----')]
+eg = eg.replace('egReport();', 'report();')
+out3 = f"""// AUTO-BUILT by tools/build_tokyo.py from extras/code-characters.html — edit that page, then re-run the script.
+// Egypt Crossing: walk your chicken/turkey around the pyramids, souk, oasis and Nile; camels stop if you stand in front of them.
+// mountEgypt(canvas, {{ team, onStatus }}) → {{ key(dir, down), tap(clientX, clientY), destroy() }}
+
+export function mountEgypt(canvas, {{ team = 'chicken', onStatus = () => {{}} }} = {{}}) {{
+let ctx = canvas.getContext('2d');
+const who = team === 'turkey' ? 'turkey' : 'chicken';
+{helpers}
+{block('src-chicken')}
+
+{block('src-turkey')}
+
+{block('src-eg')}
+
+const good = {{ chicken: drawChicken, turkey: drawTurkey, eg: drawEgypt }};
+function drawBird(kind, t, bk) {{ good[kind](t, bk); }}
+
+{eg}
+function report() {{
+  onStatus({{ msg: `Hold the arrows or tap where to go. Places: ${{EG.visited.size}}/${{EG_PLACES.length}} · Crossings: ${{EG.crossings}} · Camels stop if you stand in front of them!` }});
+}}
+
+let raf = 0; let lastT = 0; let dead = false;
+function frame(ms) {{
+  if (dead) return;
+  if (!canvas.isConnected) {{ dead = true; return; }}
+  const t = ms / 1000; const dt = lastT ? t - lastT : 0; lastT = t;
+  const k = canvas.width / 600; ctx.setTransform(k, 0, 0, k, 0, 0); ctx.globalAlpha = 1;
+  ctx.clearRect(0, 0, 600, 600);
+  if (canvas.offsetParent !== null) drawEgyptGame(t, dt);
+  raf = requestAnimationFrame(frame);
+}}
+raf = requestAnimationFrame(frame);
+report();
+return {{
+  key(dir, down) {{ if (down) EG.keys.add(dir); else EG.keys.delete(dir); }},
+  tap(clientX, clientY) {{ const r = canvas.getBoundingClientRect(); EG.target = [((clientX - r.left) / r.width) * 600, ((clientY - r.top) / r.height) * 600]; }},
+  destroy() {{ dead = true; cancelAnimationFrame(raf); }},
+}};
+}}
+"""
+(root / 'js/scenes/egypt.js').write_text(out3)
+print('wrote js/scenes/egypt.js', len(out3))

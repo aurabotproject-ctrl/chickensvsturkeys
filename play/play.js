@@ -3,29 +3,29 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, set, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261024102606';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261024102606';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261024102606';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261024102606';
-import { sfx } from '../js/core/sfx.js?v=20261024102606';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261024102606';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261024102606';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261024102606';
-import { PaintView } from '../js/modes/paint/view.js?v=20261024102606';
-import { FlagView } from '../js/modes/flag/view.js?v=20261024102606';
-import { GatesView } from '../js/modes/gates/view.js?v=20261024102606';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261024102606';
-import { CrossView } from '../js/modes/cross/view.js?v=20261024102606';
-import { howtoHTML } from '../js/core/howto.js?v=20261024102606';
-import { StackView } from '../js/modes/stack/view.js?v=20261024102606';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261024102606';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261024102606';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261024102606';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261024102606';
-import { TowerView } from '../js/modes/towers/view.js?v=20261024102606';
-import * as FE from '../js/modes/farm/economy.js?v=20261024102606';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261024102606';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261024102606';
+} from '../js/core/firebase.js?v=20261024103837';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261024103837';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261024103837';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261024103837';
+import { sfx } from '../js/core/sfx.js?v=20261024103837';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261024103837';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261024103837';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261024103837';
+import { PaintView } from '../js/modes/paint/view.js?v=20261024103837';
+import { FlagView } from '../js/modes/flag/view.js?v=20261024103837';
+import { GatesView } from '../js/modes/gates/view.js?v=20261024103837';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261024103837';
+import { CrossView } from '../js/modes/cross/view.js?v=20261024103837';
+import { howtoHTML } from '../js/core/howto.js?v=20261024103837';
+import { StackView } from '../js/modes/stack/view.js?v=20261024103837';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261024103837';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261024103837';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261024103837';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261024103837';
+import { TowerView } from '../js/modes/towers/view.js?v=20261024103837';
+import * as FE from '../js/modes/farm/economy.js?v=20261024103837';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261024103837';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261024103837';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -297,9 +297,9 @@ function render() {
         <button class="btn sm grey" id="re-av" style="justify-self:center">Change avatar</button></div>
       <div class="tokyo-card">
         <div class="tokyo-head"><span>While you wait…</span>
-          <div class="scene-tabs" role="tablist"><button type="button" role="tab" data-scene="tokyo">🚦 Tokyo</button><button type="button" role="tab" data-scene="nz">🥝 Auckland</button></div></div>
+          <div class="scene-tabs" role="tablist"><button type="button" role="tab" data-scene="tokyo">🚦 Tokyo</button><button type="button" role="tab" data-scene="nz">🥝 Auckland</button><button type="button" role="tab" data-scene="eg">🐪 Egypt</button></div></div>
         <canvas id="tokyo" width="1000" height="1000" aria-label="A mini game while you wait"></canvas>
-        <div class="tokyo-bar"><button class="btn sm" id="tk-walk" disabled>🚶 Press to cross</button><span id="tk-msg">Loading…</span></div>
+        <div class="tokyo-bar"><button class="btn sm" id="tk-walk" disabled>🚶 Press to cross</button><div class="dpad hidden" id="tk-pad"><button type="button" data-d="u" aria-label="Up">⬆</button><button type="button" data-d="l" aria-label="Left">⬅</button><button type="button" data-d="d" aria-label="Down">⬇</button><button type="button" data-d="r" aria-label="Right">➡</button></div><span id="tk-msg">Loading…</span></div>
       </div></div>`;
     $('#re-av').onclick = () => update(G(`players/${uid}`), { av: null });
     $$('#wait [data-scene]').forEach((b) => { b.onclick = () => { sfx.click(); startScene(b.dataset.scene); }; });
@@ -322,17 +322,29 @@ async function startScene(kind) {
   try { localStorage.setItem('cvt-scene', kind); } catch { /* ignore */ }
   $$('#wait [data-scene]').forEach((b) => { const on = b.dataset.scene === kind; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); });
   const btn = $('#tk-walk'); const msg = $('#tk-msg');
-  const onStatus = ({ msg: m, label, can = true }) => { if (seq !== sceneSeq) return; btn.textContent = label; btn.disabled = !can; msg.textContent = m; };
+  const onStatus = ({ msg: m, label, can = true }) => { if (seq !== sceneSeq) return; if (label) btn.textContent = label; btn.disabled = !can; msg.textContent = m; };
   btn.disabled = true; msg.textContent = 'Loading…';
+  const pad = $('#tk-pad'); btn.classList.toggle('hidden', kind === 'eg'); pad.classList.toggle('hidden', kind !== 'eg');
   try {
-    if (kind === 'nz') {
-      const { mountAuckland } = await import('../js/scenes/auckland.js?v=20261024102606');
+    if (kind === 'eg') {
+      const { mountEgypt } = await import('../js/scenes/egypt.js?v=20261024103837');
+      if (seq !== sceneSeq || !cv.isConnected) return;
+      tokyo = mountEgypt(cv, { team: D.me?.team, onStatus });
+      cv.onpointerdown = (e) => tokyo?.tap?.(e.clientX, e.clientY);
+      $$('#tk-pad [data-d]').forEach((b) => {
+        const d = b.dataset.d;
+        b.onpointerdown = (e) => { e.preventDefault(); b.setPointerCapture?.(e.pointerId); tokyo?.key?.(d, true); b.classList.add('on'); };
+        b.onpointerup = b.onpointercancel = b.onlostpointercapture = () => { tokyo?.key?.(d, false); b.classList.remove('on'); };
+        b.oncontextmenu = (e) => e.preventDefault();
+      });
+    } else if (kind === 'nz') {
+      const { mountAuckland } = await import('../js/scenes/auckland.js?v=20261024103837');
       if (seq !== sceneSeq || !cv.isConnected) return;
       tokyo = mountAuckland(cv, { team: D.me?.team, onStatus });
       btn.onpointerdown = (e) => { e.preventDefault(); tokyo?.hop(); }; btn.onclick = null;
       cv.onpointerdown = () => tokyo?.hop();
     } else {
-      const { mountTokyo } = await import('../js/scenes/tokyo.js?v=20261024102606');
+      const { mountTokyo } = await import('../js/scenes/tokyo.js?v=20261024103837');
       if (seq !== sceneSeq || !cv.isConnected) return;
       tokyo = mountTokyo(cv, { onStatus });
       btn.onpointerdown = null; btn.onclick = () => { tokyo?.press(); sfx.click(); };
@@ -342,10 +354,13 @@ async function startScene(kind) {
   } catch (e) { console.warn('waiting-screen scene did not load', e); cv.closest('.tokyo-card')?.remove(); }
 }
 // Auckland: space / arrow keys hop too (on a keyboard)
+const EG_KEYS = { ArrowUp: 'u', ArrowDown: 'd', ArrowLeft: 'l', ArrowRight: 'r', w: 'u', s: 'd', a: 'l', d: 'r' };
 window.addEventListener('keydown', (e) => {
+  if (tokyo?.kind === 'eg' && $('#tokyo') && EG_KEYS[e.key] && !document.activeElement?.matches?.('input, textarea')) { e.preventDefault(); tokyo.key(EG_KEYS[e.key], true); return; }
   if (tokyo?.kind !== 'nz' || !$('#tokyo') || document.activeElement?.matches?.('input, textarea')) return;
   if ([' ', 'ArrowUp', 'ArrowDown'].includes(e.key)) { e.preventDefault(); tokyo.hop(); }
 });
+window.addEventListener('keyup', (e) => { if (tokyo?.kind === 'eg' && EG_KEYS[e.key]) tokyo.key(EG_KEYS[e.key], false); });
 
 const waitHtml = (title, sub) => html`<div class="panel light wait-card"><img class="spin-img" src="${sprite('egg')}" alt=""><h2 style="margin:0">${title}</h2><p>${sub}</p></div>`;
 
