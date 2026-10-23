@@ -59,3 +59,50 @@ return {{
 '''
 (root / 'js/scenes/tokyo.js').write_text(out)
 print('wrote js/scenes/tokyo.js', len(out))
+
+# ---------------- Auckland Crossing (crossy-road mini game) ----------------
+nz = main[main.index('// =====================================================================\n//     AUCKLAND CROSSING'):main.index('// ---- switching between the birds and the city ----')]
+nz = nz.replace('nzUI();', 'report();')
+out2 = f"""// AUTO-BUILT by tools/build_tokyo.py from extras/code-characters.html — edit that page, then re-run the script.
+// Auckland Crossing: hop your chicken/turkey over the road and back (5 hops each way); each trip = level up, faster cars.
+// mountAuckland(canvas, {{ team, onStatus }}) → {{ hop(), destroy() }}
+
+export function mountAuckland(canvas, {{ team = 'chicken', onStatus = () => {{}} }} = {{}}) {{
+let ctx = canvas.getContext('2d');
+const who = team === 'turkey' ? 'turkey' : 'chicken';
+{helpers}
+{block('src-chicken')}
+
+{block('src-turkey')}
+
+{block('src-nz')}
+
+const good = {{ chicken: drawChicken, turkey: drawTurkey, nz: drawAuckland }};
+function drawBird(kind, t, bk) {{ good[kind](t, bk); }}
+
+{nz}
+function report() {{
+  const hops = NZ.dir > 0 ? NZ.row : 5 - NZ.row;
+  onStatus({{ label: NZ.dir > 0 ? '⬆ HOP!' : '⬇ HOP BACK!', msg: NZ.dir > 0 ? `Level ${{NZ.level}}: hop across (${{hops}}/5) — watch the cars!` : `Level ${{NZ.level}}: now hop back home (${{hops}}/5)!` }});
+}}
+
+let raf = 0; let lastT = 0; let dead = false;
+function frame(ms) {{
+  if (dead) return;
+  if (!canvas.isConnected) {{ dead = true; return; }}
+  const t = ms / 1000; const dt = lastT ? t - lastT : 0; lastT = t;
+  const k = canvas.width / 600; ctx.setTransform(k, 0, 0, k, 0, 0); ctx.globalAlpha = 1;
+  ctx.clearRect(0, 0, 600, 600);
+  if (canvas.offsetParent !== null) drawAucklandGame(t, dt);
+  raf = requestAnimationFrame(frame);
+}}
+raf = requestAnimationFrame(frame);
+report();
+return {{
+  hop() {{ nzHop(); }},
+  destroy() {{ dead = true; cancelAnimationFrame(raf); }},
+}};
+}}
+"""
+(root / 'js/scenes/auckland.js').write_text(out2)
+print('wrote js/scenes/auckland.js', len(out2))

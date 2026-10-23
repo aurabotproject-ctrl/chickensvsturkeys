@@ -509,3 +509,9 @@ body.mode-gates .tabs, body.mode-gates #ko, body.mode-gates .egg-bar, body.mode-
 .add-real.hidden { display: none; }
 @keyframes nudge { 0%, 100% { transform: none; } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 .nudge-x { animation: nudge .25s 2; }
+
+.tokyo-head { display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+.scene-tabs { display: flex; gap: 6px; }
+.scene-tabs button { all: unset; cursor: pointer; font-family: var(--font-comic); letter-spacing: .04em; font-size: 1.05rem; padding: .15em .7em; border: 3px solid var(--ink); border-radius: 999px; background: #2a3558; color: #cfe0ff; }
+.scene-tabs button.on { background: var(--yolk); color: var(--ink); box-shadow: 0 3px 0 var(--ink); }
+#tokyo { touch-action: manipulation; }
