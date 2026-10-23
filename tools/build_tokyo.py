@@ -61,7 +61,8 @@ return {{
 print('wrote js/scenes/tokyo.js', len(out))
 
 # ---------------- Auckland Crossing (crossy-road mini game) ----------------
-nz = main[main.index('// =====================================================================\n//     AUCKLAND CROSSING'):main.index('// ---- switching between the birds and the city ----')]
+_nz_end = main.index('// =====================================================================\n//    EGYPT CROSSING') if 'EGYPT CROSSING — walk anywhere' in main else main.index('// ---- switching between the birds and the city ----')
+nz = main[main.index('// =====================================================================\n//     AUCKLAND CROSSING'):_nz_end]
 nz = nz.replace('nzUI();', 'report();')
 out2 = f"""// AUTO-BUILT by tools/build_tokyo.py from extras/code-characters.html — edit that page, then re-run the script.
 // Auckland Crossing: hop your chicken/turkey over the road and back (5 hops each way); each trip = level up, faster cars.
