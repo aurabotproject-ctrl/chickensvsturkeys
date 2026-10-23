@@ -468,3 +468,15 @@ body.mode-gates .tabs, body.mode-gates #ko, body.mode-gates .egg-bar, body.mode-
 .gt-task.go { background: var(--yolk); animation: pop-in 300ms var(--ease-pop) both; }
 .gt-task.done { background: #8ef08a; }
 .gt-task.stay { background: #cfe3ff; }
+
+/* Lobby: Tokyo Crossing while you wait */
+.lobby-wrap { display: flex; flex-wrap: wrap; gap: 18px; justify-content: center; align-items: center; width: 100%; }
+.tokyo-card { width: min(460px, 100%); display: grid; gap: 8px; padding: 10px; background: #0b1430; border: 4px solid var(--ink); border-radius: 20px; box-shadow: var(--pop-shadow-sm); }
+.tokyo-head { font-weight: 900; color: #cfe0ff; text-align: left; }
+.tokyo-head b { font-family: var(--font-comic); font-weight: 400; letter-spacing: .05em; color: var(--yolk); font-size: 1.25rem; text-shadow: 2px 2px 0 var(--ink); }
+#tokyo { width: 100%; aspect-ratio: 1; border: 3px solid var(--ink); border-radius: 14px; display: block; background: #262a35; }
+.tokyo-bar { display: flex; gap: 10px; align-items: center; text-align: left; }
+.tokyo-bar .btn { flex: none; background: #1f9d55; }
+.tokyo-bar .btn:disabled { filter: grayscale(.6); opacity: .7; }
+#tk-msg { font-size: .85rem; font-weight: 800; color: #e5eeff; line-height: 1.25; }
+@media (orientation: landscape) and (max-height: 820px) { .tokyo-card { width: min(420px, 46vw, calc(100vh - 150px)); } }

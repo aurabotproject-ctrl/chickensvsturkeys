@@ -3,29 +3,29 @@
 // =========================================================
 import {
   isConfigured, db, ref, get, update, onValue, onDisconnect, ensureSignedIn, serverNow, explainError,
-} from '../js/core/firebase.js?v=20261022215221';
-import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261022215221';
-import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261022215221';
-import { lookupCode, cleanCode } from '../js/core/games.js?v=20261022215221';
-import { sfx } from '../js/core/sfx.js?v=20261022215221';
-import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261022215221';
-import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261022215221';
-import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261022215221';
-import { PaintView } from '../js/modes/paint/view.js?v=20261022215221';
-import { FlagView } from '../js/modes/flag/view.js?v=20261022215221';
-import { GatesView } from '../js/modes/gates/view.js?v=20261022215221';
-import { EtView } from '../js/modes/eggtoss/view.js?v=20261022215221';
-import { CrossView } from '../js/modes/cross/view.js?v=20261022215221';
-import { howtoHTML } from '../js/core/howto.js?v=20261022215221';
-import { StackView } from '../js/modes/stack/view.js?v=20261022215221';
-import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261022215221';
-import { dangerAhead } from '../js/modes/cross/rules.js?v=20261022215221';
-import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261022215221';
-import { SiegeView } from '../js/modes/siege/view.js?v=20261022215221';
-import { TowerView } from '../js/modes/towers/view.js?v=20261022215221';
-import * as FE from '../js/modes/farm/economy.js?v=20261022215221';
-import { FarmScene } from '../js/modes/farm/scene.js?v=20261022215221';
-import { CannonArena } from '../js/modes/cannon/arena.js?v=20261022215221';
+} from '../js/core/firebase.js?v=20261024092730';
+import { $, $$, html, raw, esc, params, showLoading } from '../js/core/ui.js?v=20261024092730';
+import { sprite, avatar, AVATARS, TEAM, teamIco } from '../js/core/assets.js?v=20261024092730';
+import { lookupCode, cleanCode } from '../js/core/games.js?v=20261024092730';
+import { sfx } from '../js/core/sfx.js?v=20261024092730';
+import { EVENTS, FARM_PHONE, TOWER_PHONE, SIEGE_PHONE } from '../js/events/events.js?v=20261024092730';
+import { drawBoard, hitSquare } from '../js/modes/advance/draw.js?v=20261024092730';
+import { PIECES, COLOURS, legalMoves, blockSpots, pushTargets, pieceSprite, ADV_ART, MAX_BLOCKS } from '../js/modes/advance/rules.js?v=20261024092730';
+import { PaintView } from '../js/modes/paint/view.js?v=20261024092730';
+import { FlagView } from '../js/modes/flag/view.js?v=20261024092730';
+import { GatesView } from '../js/modes/gates/view.js?v=20261024092730';
+import { EtView } from '../js/modes/eggtoss/view.js?v=20261024092730';
+import { CrossView } from '../js/modes/cross/view.js?v=20261024092730';
+import { howtoHTML } from '../js/core/howto.js?v=20261024092730';
+import { StackView } from '../js/modes/stack/view.js?v=20261024092730';
+import { SHAPES as SA_SHAPES } from '../js/modes/stack/rules.js?v=20261024092730';
+import { dangerAhead } from '../js/modes/cross/rules.js?v=20261024092730';
+import { targetCentre as TGT } from '../js/modes/eggtoss/rules.js?v=20261024092730';
+import { SiegeView } from '../js/modes/siege/view.js?v=20261024092730';
+import { TowerView } from '../js/modes/towers/view.js?v=20261024092730';
+import * as FE from '../js/modes/farm/economy.js?v=20261024092730';
+import { FarmScene } from '../js/modes/farm/scene.js?v=20261024092730';
+import { CannonArena } from '../js/modes/cannon/arena.js?v=20261024092730';
 const { fmt, BOOST_MULT } = FE;
 
 let uid; let gameId;
@@ -214,19 +214,43 @@ function render() {
   if (hasPiece() && !me.pc) { renderPiecePick(); return; }
   if (phase === 'lobby') {
     show('wait');
-    $('#wait').innerHTML = html`<div class="panel light wait-card stack center">
-      <img class="av" src="${avatar(me.av)}" alt="" style="margin:auto">
-      <h2 style="margin:0">${me.name}</h2>
-      <span class="tag ${me.team}" style="justify-self:center">TEAM ${TEAM[me.team].name.toUpperCase()}</span>
-      <p style="margin:0">You're in! Watch the big screen — the game starts soon.</p>
-      <button class="btn sm grey" id="re-av" style="justify-self:center">Change avatar</button></div>`;
+    // keep the waiting screen (and its Tokyo crossing) running — only rebuild if who you are changed
+    const key = `${me.name}|${me.av}|${me.team}`;
+    if ($('#wait .lobby-wrap')?.dataset.key === key) return;
+    $('#wait').innerHTML = html`<div class="lobby-wrap" data-key="${key}">
+      <div class="panel light wait-card stack center">
+        <img class="av" src="${avatar(me.av)}" alt="" style="margin:auto">
+        <h2 style="margin:0">${me.name}</h2>
+        <span class="tag ${me.team}" style="justify-self:center">TEAM ${TEAM[me.team].name.toUpperCase()}</span>
+        <p style="margin:0">You're in! Watch the big screen — the game starts soon.</p>
+        <button class="btn sm grey" id="re-av" style="justify-self:center">Change avatar</button></div>
+      <div class="tokyo-card">
+        <div class="tokyo-head">While you wait… <b>🚦 Tokyo Crossing</b></div>
+        <canvas id="tokyo" width="1000" height="1000" aria-label="A busy city crossing full of chickens and turkeys"></canvas>
+        <div class="tokyo-bar"><button class="btn sm" id="tk-walk" disabled>🚶 Press to cross</button><span id="tk-msg">Loading the city…</span></div>
+      </div></div>`;
     $('#re-av').onclick = () => update(G(`players/${uid}`), { av: null });
+    startTokyo();
     return;
   }
+  if ($('#wait .lobby-wrap')) { tokyo?.destroy(); tokyo = null; $('#wait').innerHTML = ''; } // game's on — stop the city
   show('play');
   $('#me-av').src = avatar(me.av);
   $('#me-name').textContent = me.name;
   $('#me-team').textContent = TEAM[me.team].name.toUpperCase();
+}
+
+/** The lobby's little Tokyo crossing (drawn in code, runs on this device only). */
+let tokyo = null;
+async function startTokyo() {
+  tokyo?.destroy(); tokyo = null;
+  const cv = $('#tokyo'); if (!cv) return;
+  try {
+    const { mountTokyo } = await import('../js/scenes/tokyo.js?v=20261024092730');
+    if (!cv.isConnected) return;
+    tokyo = mountTokyo(cv, { onStatus: ({ msg, label, can }) => { const b = $('#tk-walk'); const m = $('#tk-msg'); if (!b || !m) return; b.textContent = label; b.disabled = !can; m.textContent = msg; } });
+    $('#tk-walk').onclick = () => { tokyo?.press(); sfx.click(); };
+  } catch (e) { console.warn('Tokyo scene did not load', e); cv.closest('.tokyo-card')?.remove(); }
 }
 
 const waitHtml = (title, sub) => html`<div class="panel light wait-card"><img class="spin-img" src="${sprite('egg')}" alt=""><h2 style="margin:0">${title}</h2><p>${sub}</p></div>`;

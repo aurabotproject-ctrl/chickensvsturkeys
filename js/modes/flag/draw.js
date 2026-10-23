@@ -3,8 +3,8 @@
 // and the devices. Uses the cf_* art when it has been added (CF_ART);
 // until then everything is drawn in code.
 // =========================================================
-import { sprite, avatar } from '../../core/assets.js?v=20261022215221';
-import { FW, FH, MID, ZR, ZONE, PR } from './rules.js?v=20261022215221';
+import { sprite, avatar } from '../../core/assets.js?v=20261024092730';
+import { FW, FH, MID, ZR, ZONE, PR } from './rules.js?v=20261024092730';
 
 /** Art that has been added to assets/sprites (see CAPTURE_THE_FLAG_IMAGE_PROMPTS.md). */
 export const CF_ART = new Set(['cf_field', 'cf_flag_blue', 'cf_flag_red', 'cf_ice', 'cf_zone_blue', 'cf_zone_red']);

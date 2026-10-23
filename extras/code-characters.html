@@ -856,7 +856,8 @@ function drawDoors(t) {
 let warmed = false;
 function drawTokyo(t, dt) {
   if (!warmed) { warmed = true; warmUp(); }
-  citySim(Math.min(dt, 0.05));
+  // keep real time even if the screen is slow: catch up in small steps (up to half a second)
+  for (let left = Math.min(dt, 0.5); left > 0; left -= 0.05) citySim(Math.min(left, 0.05));
   drawBird('city', t, 0);                 // the editable city
   drawDoors(t);
   for (const c of CITY.cars) drawCar(c);
