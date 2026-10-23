@@ -11,7 +11,8 @@ def block(tag):
     return m.group(1).strip().replace('<\\/script', '</script')
 main = html.split('<script>\n', 1)[1].rsplit('</script>', 1)[0]
 helpers = main[main.index('const INK'):main.index('// =====================================================================\n//                        animation + the swap button')]
-sim = main[main.index('// =====================================================================\n//         TOKYO CROSSING — cars'):main.index('// ---- switching between the birds and the city ----')]
+_end = main.index('// =====================================================================\n//     AUCKLAND CROSSING') if 'AUCKLAND CROSSING — a crossy-road game' in main else main.index('// ---- switching between the birds and the city ----')
+sim = main[main.index('// =====================================================================\n//         TOKYO CROSSING — cars'):_end]
 sim = sim.replace("  updateWalkUI();\n", "  report();\n")
 status = main[main.index('function updateWalkUI() {'):]
 status = status[:status.index('\n}\n') + 3]

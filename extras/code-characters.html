@@ -28,7 +28,8 @@
   }
   button:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
   button.to-turkey { background: var(--turkey); } button.to-chicken { background: var(--chicken); }
-  button.to-city { background: #7b2ff7; }
+  button.to-city { background: #7b2ff7; } button.to-nz { background: #0f8b5f; }
+  h1.nz { color: #7ee0a8; } #code-title.nz { color: #7ee0a8; }
   .controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
   .walk-row { display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; width: min(560px, 92vw); }
   .walk-row.hidden { display: none; }
@@ -58,6 +59,11 @@
   <div class="controls">
     <button id="swap" class="to-turkey">Turn into a Turkey!</button>
     <button id="city" class="to-city">🚦 Cross the Road</button>
+    <button id="nz" class="to-nz">🥝 Auckland Crossing</button>
+  </div>
+  <div class="walk-row hidden" id="nz-row">
+    <button id="nz-hop" class="walk">⬆ HOP!</button>
+    <span id="nz-msg"></span>
   </div>
   <div class="walk-row hidden" id="walk-row">
     <button id="walk" class="walk">🚶 Press to cross</button>
@@ -228,6 +234,93 @@ function drawCity(t) {
     ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x, y, 55, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#ffe8b0'; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
   }
+}
+</script>
+<script type="text/plain" id="src-nz">
+// =====================================================================
+//   AUCKLAND CROSSING — edit me! This draws the scenery: sky, Sky Tower,
+//   harbour, pōhutukawa trees, footpaths and the road. (Cars + bird move by themselves.)
+//   x (0 = left, 600 = right) and y (0 = top, 600 = bottom). The road runs from y 245 to 485.
+// =====================================================================
+function drawAuckland(t) {
+  const COL = {
+    skyTop: '#4aa8ff', skyBottom: '#bfe6ff', sea: '#1f7fc4', seaDark: '#16639b', hills: '#5c9e3c',
+    tower: '#e9edf2', towerShade: '#b9c2cc', road: '#3b3f48', footpath: '#c9c3b6', kerb: '#8f897c', grass: '#62b041',
+  };
+  // ---- sky + sun ----
+  const sky = ctx.createLinearGradient(0, 0, 0, 190);
+  sky.addColorStop(0, COL.skyTop); sky.addColorStop(1, COL.skyBottom);
+  ctx.fillStyle = sky; ctx.fillRect(0, 0, 600, 190);
+  ctx.fillStyle = '#fff3a8'; ctx.beginPath(); ctx.arc(520, 46, 26, 0, Math.PI * 2); ctx.fill();
+  // fluffy clouds drifting
+  const cloud = (x, y, s) => { ctx.fillStyle = 'rgba(255,255,255,.92)'; for (const [dx, dy, r] of [[0, 0, 16], [18, -8, 20], [38, 0, 16], [20, 6, 16]]) { ctx.beginPath(); ctx.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2); ctx.fill(); } };
+  cloud(((t * 8) % 760) - 80, 40, 1); cloud(((t * 5 + 300) % 760) - 80, 78, 0.8); cloud(((t * 6 + 560) % 760) - 80, 30, 0.7);
+
+  // ---- harbour with sailboats (the City of Sails!) ----
+  ctx.fillStyle = COL.hills; ctx.beginPath(); ctx.moveTo(0, 150); ctx.quadraticCurveTo(90, 118, 190, 146); ctx.quadraticCurveTo(300, 126, 420, 148); ctx.quadraticCurveTo(520, 130, 600, 146); ctx.lineTo(600, 190); ctx.lineTo(0, 190); ctx.fill();
+  ctx.fillStyle = COL.sea; ctx.fillRect(0, 150, 600, 40);
+  ctx.strokeStyle = 'rgba(255,255,255,.45)'; ctx.lineWidth = 2;
+  for (let i = 0; i < 9; i++) { const x = (i * 73 + t * 12) % 620 - 10; ctx.beginPath(); ctx.moveTo(x, 162 + (i % 3) * 9); ctx.lineTo(x + 14, 162 + (i % 3) * 9); ctx.stroke(); }
+  const boat = (x, y, c) => {
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(x - 12, y); ctx.lineTo(x + 12, y); ctx.lineTo(x + 8, y + 5); ctx.lineTo(x - 8, y + 5); ctx.fill();
+    ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(x, y - 2); ctx.lineTo(x, y - 24); ctx.lineTo(x + 11, y - 2); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(x - 1, y - 2); ctx.lineTo(x - 1, y - 20); ctx.lineTo(x - 9, y - 2); ctx.fill();
+  };
+  boat((t * 14) % 680 - 40, 172, '#ff5d5d'); boat((t * 9 + 250) % 680 - 40, 166, '#ffd23f'); boat((t * 11 + 470) % 680 - 40, 180, '#2a9d8f');
+
+  // ---- city skyline ----
+  const towers = [[18, 120, 36], [58, 98, 30], [92, 112, 26], [122, 86, 34], [160, 104, 28], [380, 96, 30], [414, 110, 26], [444, 84, 36], [484, 104, 28], [516, 92, 32], [552, 112, 30]];
+  for (const [x, top, w] of towers) {
+    ctx.fillStyle = '#8fa3b8'; ctx.fillRect(x, top, w, 190 - top);
+    ctx.fillStyle = 'rgba(255,255,255,.45)';
+    for (let y = top + 6; y < 182; y += 10) for (let wx = x + 4; wx < x + w - 4; wx += 8) ctx.fillRect(wx, y, 4, 5);
+  }
+
+  // ---- the Sky Tower ----
+  const cx = 280;
+  ctx.fillStyle = COL.tower; ctx.beginPath(); ctx.moveTo(cx - 10, 190); ctx.lineTo(cx - 6, 60); ctx.lineTo(cx + 6, 60); ctx.lineTo(cx + 10, 190); ctx.fill(); // shaft
+  ctx.fillStyle = COL.towerShade; ctx.fillRect(cx + 1, 62, 4, 128);
+  ctx.fillStyle = COL.tower; ctx.beginPath(); ctx.ellipse(cx, 58, 26, 8, 0, 0, Math.PI * 2); ctx.fill();     // the pod
+  ctx.fillStyle = '#5b7fa3'; ctx.fillRect(cx - 24, 50, 48, 8);                                               // windows
+  ctx.fillStyle = COL.tower; ctx.beginPath(); ctx.ellipse(cx, 50, 22, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillRect(cx - 14, 36, 28, 10); ctx.beginPath(); ctx.ellipse(cx, 36, 14, 4, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#d7dde4'; ctx.beginPath(); ctx.moveTo(cx - 3, 34); ctx.lineTo(cx, 2); ctx.lineTo(cx + 3, 34); ctx.fill(); // spire
+  ctx.fillStyle = Math.sin(t * 3) > 0 ? '#ff3b3b' : '#7a1d1d'; ctx.beginPath(); ctx.arc(cx, 4, 2.5, 0, Math.PI * 2); ctx.fill(); // blinking light
+
+  // ---- far footpath (the other side) ----
+  ctx.fillStyle = COL.footpath; ctx.fillRect(0, 186, 600, 59);
+  ctx.strokeStyle = 'rgba(0,0,0,.08)'; ctx.lineWidth = 1;
+  for (let x = 0; x < 600; x += 30) { ctx.beginPath(); ctx.moveTo(x, 186); ctx.lineTo(x, 245); ctx.stroke(); }
+  ctx.fillStyle = COL.kerb; ctx.fillRect(0, 241, 600, 5);
+
+  // ---- the road: 4 lanes, two each way (we drive on the left!) ----
+  ctx.fillStyle = COL.road; ctx.fillRect(0, 245, 600, 240);
+  ctx.strokeStyle = '#f2f2f2'; ctx.lineWidth = 3;
+  ctx.setLineDash([26, 22]); for (const y of [305, 425]) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(600, y); ctx.stroke(); }
+  ctx.setLineDash([]); ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 3;
+  for (const y of [362, 368]) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(600, y); ctx.stroke(); } // no-passing lines in the middle
+
+  // ---- near footpath + grass ----
+  ctx.fillStyle = COL.kerb; ctx.fillRect(0, 485, 600, 5);
+  ctx.fillStyle = COL.footpath; ctx.fillRect(0, 490, 600, 62);
+  ctx.strokeStyle = 'rgba(0,0,0,.08)'; for (let x = 0; x < 600; x += 30) { ctx.beginPath(); ctx.moveTo(x, 490); ctx.lineTo(x, 552); ctx.stroke(); }
+  ctx.fillStyle = COL.grass; ctx.fillRect(0, 552, 600, 48);
+
+  // ---- pōhutukawa trees (NZ Christmas trees) with red flowers ----
+  const tree = (x, y, s) => {
+    ctx.fillStyle = '#6b4a2b'; ctx.fillRect(x - 5 * s, y - 10 * s, 10 * s, 26 * s);
+    ctx.fillStyle = '#2f6b2a'; for (const [dx, dy, r] of [[-22, -18, 20], [0, -30, 24], [22, -18, 20], [0, -12, 20]]) { ctx.beginPath(); ctx.arc(x + dx * s, y + dy * s, r * s, 0, Math.PI * 2); ctx.fill(); }
+    ctx.fillStyle = '#e0242c'; for (let i = 0; i < 14; i++) { const a = i * 2.4; ctx.beginPath(); ctx.arc(x + Math.cos(a) * 26 * s * ((i % 3) / 3 + 0.4), y - 22 * s + Math.sin(a) * 16 * s, 3.5 * s, 0, Math.PI * 2); ctx.fill(); }
+  };
+  tree(60, 212, 0.8); tree(545, 212, 0.8); tree(40, 575, 0.9); tree(560, 578, 0.9);
+
+  // ---- a kiwi crossing sign ----
+  ctx.save(); ctx.translate(150, 512);
+  ctx.fillStyle = '#666'; ctx.fillRect(-2, 0, 4, 34);
+  ctx.rotate(Math.PI / 4); ctx.fillStyle = '#ffd23f'; ctx.fillRect(-15, -15, 30, 30); ctx.strokeStyle = '#111'; ctx.lineWidth = 2.5; ctx.strokeRect(-12, -12, 24, 24);
+  ctx.rotate(-Math.PI / 4); ctx.fillStyle = '#111'; ctx.beginPath(); ctx.ellipse(-2, 1, 7, 5, 0, 0, Math.PI * 2); ctx.fill(); // a little kiwi
+  ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(10, 5); ctx.lineWidth = 1.5; ctx.stroke(); ctx.fillRect(-4, 5, 1.5, 4); ctx.fillRect(0, 5, 1.5, 4);
+  ctx.restore();
 }
 </script>
 <script type="text/plain" id="src-turkey">
@@ -435,6 +528,7 @@ function frame(ms) {
   const t = ms / 1000; const dt = lastT ? t - lastT : 0; lastT = t;
   ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.globalAlpha = 1;
   if (mode === 'city') { ctx.clearRect(0, 0, 600, 600); drawTokyo(t, dt); requestAnimationFrame(frame); return; }
+  if (mode === 'nz') { ctx.clearRect(0, 0, 600, 600); drawAucklandGame(t, dt); requestAnimationFrame(frame); return; }
   background(t);
 
   // blinking every few seconds
@@ -496,11 +590,11 @@ function drawPuffs() {
 // =====================================================================
 //              the LIVE CODE editor: type → the bird redraws
 // =====================================================================
-const ORIGINAL = { chicken: document.getElementById('src-chicken').textContent.trim(), turkey: document.getElementById('src-turkey').textContent.trim(), city: document.getElementById('src-city').textContent.trim() };
+const ORIGINAL = { chicken: document.getElementById('src-chicken').textContent.trim(), turkey: document.getElementById('src-turkey').textContent.trim(), city: document.getElementById('src-city').textContent.trim(), nz: document.getElementById('src-nz').textContent.trim() };
 const code = { ...ORIGINAL };          // what's in the editor for each bird
 const good = {};                       // the last version of each bird that worked
 const status = document.getElementById('status');
-const FN = { chicken: 'drawChicken', turkey: 'drawTurkey', city: 'drawCity' };
+const FN = { chicken: 'drawChicken', turkey: 'drawTurkey', city: 'drawCity', nz: 'drawAuckland' };
 
 /** Turn the text into a drawing function (or explain what's wrong with it). */
 function compile(bird, text) {
@@ -540,7 +634,7 @@ function drawBird(bird, t, bk) {
   }
   ctx.restore();
 }
-for (const b of ['chicken', 'turkey', 'city']) { good[b] = compile(b, ORIGINAL[b]).fn; }
+for (const b of ['chicken', 'turkey', 'city', 'nz']) { good[b] = compile(b, ORIGINAL[b]).fn; }
 
 // the editor: CodeMirror (colours + line numbers) if it loaded, otherwise a plain text box
 const box = document.getElementById('code');
@@ -559,11 +653,12 @@ function onEdit(text) {
 let editingBird = 'chicken';
 function showCode(bird) {
   editingBird = bird; clearTimeout(editT); setText(code[bird]);
-  document.getElementById('code-title').textContent = { chicken: '🐔 Chicken code', turkey: '🦃 Turkey code', city: '🗼 Tokyo city code' }[bird];
+  document.getElementById('code-title').textContent = { chicken: '🐔 Chicken code', turkey: '🦃 Turkey code', city: '🗼 Tokyo city code', nz: '🥝 Auckland code' }[bird];
   document.getElementById('code-title').className = bird;
   document.getElementById('tip').innerHTML = {
     chicken: "Edit the code — the bird changes as you type. Try changing <code>blue: '#2f7de1'</code> to <code>'#00c853'</code>, or the beak's <code>62</code> to <code>120</code>.",
     turkey: "Edit the code — the bird changes as you type. Try changing the tail colours in <code>RINGS</code>, or <code>band: '#d62828'</code> to <code>'#9b5de5'</code>.",
+    nz: "Edit the code — Auckland changes as you type. Try <code>skyTop: '#4aa8ff'</code> → <code>'#ff7b54'</code> for a sunset, or move the Sky Tower with <code>const cx = 280</code>.",
     city: "Edit the code — the city changes as you type. Try <code>road: '#262a35'</code> → <code>'#7a3cff'</code>, or change <code>'ラーメン'</code> to your own sign. (Your chicken and turkey edits show up on the little birds too!)",
   }[bird];
   tryCode(bird);
@@ -866,6 +961,133 @@ function drawTokyo(t, dt) {
   updateWalkUI();
 }
 
+// =====================================================================
+//     AUCKLAND CROSSING — a crossy-road game: hop over and back again
+// =====================================================================
+// Rows: 0 = near footpath, 1–4 = the four lanes, 5 = far footpath. 5 hops over, 5 hops back.
+const NZ_ROW_Y = [530, 469, 409, 349, 289, 228];        // where the bird's feet go on each row (lanes: centre + 14)
+const NZ_LANES = [null,                                  // (lane 1 is the nearest)
+  { d: -1, base: 95, kinds: ['car', 'ute', 'car', 'bus'] },   // ← (keep left: near side drives left)
+  { d: -1, base: 130, kinds: ['car', 'car', 'ute'] },
+  { d: 1, base: 120, kinds: ['car', 'ute', 'van'] },          // → far side drives right
+  { d: 1, base: 85, kinds: ['car', 'bus', 'camper'] }];
+const NZ_KIND = { car: [64, 30], ute: [76, 32], van: [80, 34], bus: [140, 38], camper: [96, 36] };
+const NZ_COLOURS = ['#e63946', '#1d70b8', '#2a9d8f', '#f4a261', '#ffffff', '#6a4c93', '#111111', '#8ab17d'];
+const NZ = { level: 1, best: 1, row: 0, dir: 1, hop: null, cars: [], spawn: [0, 0, 0, 0, 0], dead: 0, banner: { text: 'Tap HOP to cross the road!', t: 0 }, trips: 0, fx: [] };
+const nzSpeed = (lane) => NZ_LANES[lane].base * (1 + 0.2 * (NZ.level - 1));
+function nzBanner(text) { NZ.banner = { text, t: performance.now() / 1000 }; }
+
+function nzHop() {
+  if (NZ.hop || NZ.dead) return;
+  const to = NZ.row + NZ.dir; if (to < 0 || to > 5) return;
+  NZ.hop = { from: NZ.row, to, t0: performance.now() / 1000 };
+}
+function nzLand() {
+  NZ.row = NZ.hop.to; NZ.hop = null;
+  if (NZ.row === 5 && NZ.dir === 1) { NZ.dir = -1; nzBanner('Made it! Now hop back ⬇'); }
+  else if (NZ.row === 0 && NZ.dir === -1) {
+    NZ.level += 1; NZ.best = Math.max(NZ.best, NZ.level); NZ.dir = 1; NZ.trips += 1;
+    nzBanner(`LEVEL ${NZ.level}! The cars are faster 🚗💨`);
+    nzBurst(300, NZ_ROW_Y[0] - 20, ['#ffd23f', '#3dab2b', '#2f7de1', '#e0402a']);
+  }
+  nzUI();
+}
+function nzBurst(x, y, colours) {
+  const now = performance.now() / 1000;
+  for (let i = 0; i < 22; i++) { const a = Math.random() * Math.PI * 2; const v = 80 + Math.random() * 180; NZ.fx.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 100, c: colours[i % colours.length], t0: now, r: Math.random() * 6 }); }
+}
+
+function nzStep(dt) {
+  const now = performance.now() / 1000;
+  // spawn + drive cars
+  for (let lane = 1; lane <= 4; lane++) {
+    NZ.spawn[lane] -= dt;
+    if (NZ.spawn[lane] > 0) continue;
+    const L = NZ_LANES[lane]; const kind = L.kinds[Math.floor(Math.random() * L.kinds.length)]; const [len, wid] = NZ_KIND[kind];
+    const v = nzSpeed(lane);
+    // always leave gaps big enough to get through
+    NZ.spawn[lane] = (len + 150 + Math.random() * 230) / v;
+    NZ.cars.push({ lane, kind, len, wid, x: L.d > 0 ? -len - 10 : 610, colour: NZ_COLOURS[Math.floor(Math.random() * NZ_COLOURS.length)] });
+  }
+  for (const c of NZ.cars) c.x += NZ_LANES[c.lane].d * nzSpeed(c.lane) * dt;
+  NZ.cars = NZ.cars.filter((c) => c.x > -200 && c.x < 800);
+  // hopping
+  if (NZ.hop && now - NZ.hop.t0 > 0.16) nzLand();
+  // splat?
+  if (!NZ.dead) {
+    const r = NZ.hop ? (now - NZ.hop.t0 > 0.08 ? NZ.hop.to : NZ.hop.from) : NZ.row;
+    if (r >= 1 && r <= 4) {
+      const hit = NZ.cars.find((c) => c.lane === r && c.x < 300 + 15 && c.x + c.len > 300 - 15);
+      if (hit) {
+        NZ.dead = now; NZ.deadRow = r; NZ.hop = null;
+        nzBurst(300, NZ_ROW_Y[r] - 20, who === 'turkey' ? ['#d8402b', '#f08a24', '#f5c242', '#2a9d8f', '#8a5328'] : ['#fbf8f0', '#2f7de1', '#e53b2a', '#fbf8f0']);
+        nzBanner('💥 SPLAT! Back to the start of this level');
+      }
+    }
+  } else if (now - NZ.dead > 1.3) { NZ.dead = 0; NZ.row = 0; NZ.dir = 1; nzUI(); }
+  NZ.fx = NZ.fx.filter((f) => now - f.t0 < 1.2);
+}
+
+function nzCar(c) {
+  const y = NZ_ROW_Y[c.lane] - 14; const d = NZ_LANES[c.lane].d;
+  ctx.save(); ctx.translate(c.x + c.len / 2, y); if (d < 0) ctx.scale(-1, 1); // cars face the way they drive
+  const L = c.len; const W = c.wid;
+  ctx.fillStyle = 'rgba(0,0,0,.28)'; ctx.beginPath(); ctx.roundRect(-L / 2 + 4, -W / 2 + 5, L, W, 8); ctx.fill();
+  shape(() => ctx.roundRect(-L / 2, -W / 2, L, W, 8), c.kind === 'bus' ? '#ffd23f' : c.kind === 'camper' ? '#f1faee' : c.colour, 2.5);
+  if (c.kind === 'bus') { ctx.fillStyle = '#1d3557'; for (let x = -L / 2 + 10; x < L / 2 - 20; x += 18) ctx.fillRect(x, -W / 2 + 4, 12, W - 8); }
+  else if (c.kind === 'ute') { shape(() => ctx.roundRect(-L / 2 + 4, -W / 2 + 4, L * 0.42, W - 8, 3), 'rgba(0,0,0,.18)', 1.5); ctx.fillStyle = '#9fd3ff'; ctx.fillRect(L * 0.08, -W / 2 + 5, 6, W - 10); }
+  else if (c.kind === 'camper') { ctx.fillStyle = '#2a9d8f'; ctx.fillRect(-L / 2 + 2, -4, L - 4, 8); ctx.fillStyle = '#9fd3ff'; ctx.fillRect(L * 0.22, -W / 2 + 5, 7, W - 10); }
+  else { shape(() => ctx.roundRect(-L * 0.25, -W / 2 + 4, L * 0.45, W - 8, 5), 'rgba(0,0,0,.25)', 0); ctx.fillStyle = '#9fd3ff'; ctx.fillRect(L * 0.16, -W / 2 + 5, 6, W - 10); ctx.fillRect(-L * 0.3, -W / 2 + 5, 4, W - 10); }
+  ctx.fillStyle = '#fff6c8'; ctx.fillRect(L / 2 - 3, -W / 2 + 3, 3, 6); ctx.fillRect(L / 2 - 3, W / 2 - 9, 3, 6);
+  ctx.fillStyle = '#c1121f'; ctx.fillRect(-L / 2, -W / 2 + 3, 3, 6); ctx.fillRect(-L / 2, W / 2 - 9, 3, 6);
+  ctx.restore();
+}
+
+// a sharper bird picture for this bigger scene
+const nzPics = {};
+function nzBirdPic(kind, t) {
+  let p = nzPics[kind];
+  if (!p) { const cv = document.createElement('canvas'); cv.width = 300; cv.height = 300; p = nzPics[kind] = { cv, at: -1 }; }
+  if (t - p.at > 0.1 && good[kind]) {
+    p.at = t; const keep = ctx; const c2 = p.cv.getContext('2d');
+    c2.setTransform(1, 0, 0, 1, 0, 0); c2.clearRect(0, 0, 300, 300); c2.setTransform(0.5, 0, 0, 0.5, 0, 0);
+    ctx = c2; try { good[kind](t, 0); } catch (e) { /* editor shows the problem */ } ctx = keep;
+  }
+  return p.cv;
+}
+
+function drawAucklandGame(t, dt) {
+  for (let left = Math.min(dt, 0.5); left > 0; left -= 0.05) nzStep(Math.min(left, 0.05));
+  drawBird('nz', t, 0);
+  const now = performance.now() / 1000;
+  // far lanes first, so nearer cars overlap them
+  for (let lane = 4; lane >= 1; lane--) for (const c of NZ.cars) if (c.lane === lane) nzCar(c);
+
+  // the bird (hopping, or squashed flat)
+  let y = NZ_ROW_Y[NZ.row]; let lift = 0;
+  if (NZ.hop) { const k = Math.min(1, (now - NZ.hop.t0) / 0.16); y = NZ_ROW_Y[NZ.hop.from] + (NZ_ROW_Y[NZ.hop.to] - NZ_ROW_Y[NZ.hop.from]) * k; lift = Math.sin(k * Math.PI) * 18; }
+  if (NZ.dead) y = NZ_ROW_Y[NZ.deadRow];
+  ctx.fillStyle = 'rgba(0,0,0,.3)'; ctx.beginPath(); ctx.ellipse(300, y, 20, 6, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.save(); ctx.translate(300, y - lift);
+  if (NZ.dead) ctx.scale(1.5, 0.25); else ctx.scale(NZ.dir > 0 ? 1 : -1, 1);
+  ctx.drawImage(nzBirdPic(who, t), -300 * 0.5 * 0.4, -495 * 0.5 * 0.4, 300 * 0.4, 300 * 0.4); // ~70 units tall
+  ctx.restore();
+  if (NZ.dead) { ctx.font = '40px Bangers, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.lineWidth = 7; ctx.strokeStyle = INK; ctx.strokeText('SPLAT!', 300, y - 40); ctx.fillStyle = '#ffd23f'; ctx.fillText('SPLAT!', 300, y - 40); }
+
+  // confetti / feathers
+  for (const f of NZ.fx) { const a = now - f.t0; ctx.save(); ctx.globalAlpha = Math.max(0, 1 - a / 1.2); ctx.translate(f.x + f.vx * a, f.y + f.vy * a + 220 * a * a); ctx.rotate(f.r + a * 6); ctx.fillStyle = f.c; ctx.fillRect(-6, -3, 12, 6); ctx.restore(); }
+
+  // HUD: level, best, and a message banner
+  const pill = (x, text, bg) => { ctx.font = '22px Bangers, Impact, sans-serif'; const w = ctx.measureText(text).width + 26; ctx.textAlign = 'left'; shape(() => ctx.roundRect(x === 'r' ? 586 - w : 14, 12, w, 34, 17), bg, 3); ctx.fillStyle = '#fff'; ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.strokeText(text, (x === 'r' ? 586 - w : 14) + 13, 37); ctx.fillText(text, (x === 'r' ? 586 - w : 14) + 13, 37); };
+  pill('l', `LEVEL ${NZ.level}`, '#2f7de1'); pill('r', `BEST ${NZ.best}`, '#3dab2b');
+  const age = now - NZ.banner.t;
+  if (age < 2.6) {
+    ctx.save(); ctx.globalAlpha = Math.min(1, (2.6 - age) * 2); ctx.font = '30px Bangers, Impact, sans-serif'; ctx.textAlign = 'center';
+    const w = ctx.measureText(NZ.banner.text).width + 40; shape(() => ctx.roundRect(300 - w / 2, 74, w, 46, 16), 'rgba(6,18,46,.85)', 3);
+    ctx.fillStyle = '#ffd23f'; ctx.fillText(NZ.banner.text, 300, 107); ctx.restore();
+  }
+}
+
 // ---- switching between the birds and the city ----
 let mode = 'bird';
 const walkBtn = document.getElementById('walk'); const walkMsg = document.getElementById('walk-msg');
@@ -884,13 +1106,15 @@ function updateWalkUI() {
 const cityBtn = document.getElementById('city');
 function setMode(m) {
   mode = m;
-  const inCity = m === 'city';
-  document.getElementById('walk-row').classList.toggle('hidden', !inCity);
-  cityBtn.style.display = inCity ? 'none' : '';
-  if (inCity) {
-    title.textContent = 'Tokyo Crossing'; title.className = 'city';
+  document.getElementById('walk-row').classList.toggle('hidden', m !== 'city');
+  document.getElementById('nz-row').classList.toggle('hidden', m !== 'nz');
+  cityBtn.style.display = m === 'city' ? 'none' : '';
+  nzBtn.style.display = m === 'nz' ? 'none' : '';
+  if (m === 'city' || m === 'nz') {
+    title.textContent = m === 'city' ? 'Tokyo Crossing' : 'Auckland Crossing'; title.className = m;
     btn.textContent = '🐔 Back to the birds'; btn.className = 'to-chicken';
-    showCode('city');
+    showCode(m);
+    if (m === 'nz') nzUI();
   } else {
     title.textContent = who === 'turkey' ? 'Team Turkeys' : 'Team Chickens'; title.className = who;
     btn.textContent = who === 'turkey' ? 'Turn into a Chicken!' : 'Turn into a Turkey!';
@@ -899,8 +1123,23 @@ function setMode(m) {
   }
 }
 cityBtn.addEventListener('click', () => setMode('city'));
+const nzBtn = document.getElementById('nz');
+nzBtn.addEventListener('click', () => setMode('nz'));
+// Auckland: hop with the button, a tap on the scene, or the keyboard
+function nzUI() {
+  const b = document.getElementById('nz-hop'); const m = document.getElementById('nz-msg');
+  const hops = NZ.dir > 0 ? NZ.row : 5 - NZ.row;
+  b.textContent = NZ.dir > 0 ? '⬆ HOP!' : '⬇ HOP BACK!';
+  m.textContent = NZ.dir > 0 ? `Level ${NZ.level}: hop across (${hops}/5) — watch the cars!` : `Level ${NZ.level}: now hop back home (${hops}/5)!`;
+}
+document.getElementById('nz-hop').addEventListener('pointerdown', (e) => { e.preventDefault(); nzHop(); });
+canvas.addEventListener('pointerdown', () => { if (mode === 'nz') nzHop(); });
+window.addEventListener('keydown', (e) => {
+  if (mode !== 'nz' || document.activeElement?.closest?.('.editor')) return;
+  if ([' ', 'ArrowUp', 'ArrowDown', 'w', 's'].includes(e.key)) { e.preventDefault(); nzHop(); }
+});
 btn.addEventListener('click', () => {
-  if (mode === 'city') { setMode('bird'); return; }
+  if (mode === 'city' || mode === 'nz') { setMode('bird'); return; }
   if (morph) return;
   const to = (morph?.to || who) === 'chicken' ? 'turkey' : 'chicken';
   morph = { t0: performance.now() / 1000, to };
