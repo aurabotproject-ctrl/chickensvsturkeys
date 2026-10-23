@@ -28,6 +28,15 @@
   }
   button:active { transform: translateY(5px); box-shadow: 0 1px 0 var(--ink); }
   button.to-turkey { background: var(--turkey); } button.to-chicken { background: var(--chicken); }
+  button.to-city { background: #7b2ff7; }
+  .controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .walk-row { display: flex; gap: 14px; align-items: center; justify-content: center; flex-wrap: wrap; width: min(560px, 92vw); }
+  .walk-row.hidden { display: none; }
+  button.walk { background: #1f9d55; font-size: 1.6rem; }
+  button.walk:disabled { background: #5b6477; cursor: not-allowed; transform: none; box-shadow: 0 6px 0 var(--ink); }
+  #walk-msg { font-weight: 900; font-size: 1rem; flex: 1; min-width: 220px; text-align: left; }
+  h1.city { color: var(--yolk); }
+  #code-title.city { color: #c9a7ff; }
   p { margin: 0; opacity: .8; font-weight: 800; text-align: center; }
   /* live code editor */
   .editor { width: min(900px, 100%); margin-top: 10px; border: 5px solid var(--ink); border-radius: 22px; box-shadow: 8px 8px 0 var(--ink); overflow: hidden; background: #282a36; }
@@ -46,13 +55,20 @@
 <body>
   <h1 id="title" class="chicken">Team Chickens</h1>
   <div class="stage"><canvas id="c" width="1200" height="1200"></canvas></div>
-  <button id="swap" class="to-turkey">Turn into a Turkey!</button>
+  <div class="controls">
+    <button id="swap" class="to-turkey">Turn into a Turkey!</button>
+    <button id="city" class="to-city">🚦 Cross the Road</button>
+  </div>
+  <div class="walk-row hidden" id="walk-row">
+    <button id="walk" class="walk">🚶 Press to cross</button>
+    <span id="walk-msg"></span>
+  </div>
   <p>Every line, colour and feather here is drawn with JavaScript on a canvas — no images.</p>
   <div class="editor">
     <div class="ed-head">
       <span id="code-title" class="chicken">🐔 Chicken code</span>
       <button id="reset" type="button">↺ Reset this bird</button>
-      <span class="tip">Edit the code — the bird changes as you type. Try changing <code>blue: '#2f7de1'</code> to <code>'#00c853'</code>, or the beak's <code>62</code> to <code>120</code>.</span>
+      <span class="tip" id="tip">Edit the code — the bird changes as you type. Try changing <code>blue: '#2f7de1'</code> to <code>'#00c853'</code>, or the beak's <code>62</code> to <code>120</code>.</span>
     </div>
     <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off"></textarea>
     <div id="status" class="ok">✓ Running the original code</div>
@@ -98,6 +114,120 @@ function drawChicken(t, blink) {
   for (const [x, y] of [[-30, 14], [0, 24], [30, 22]]) { ctx.beginPath(); ctx.arc(x, y, 16, 0.2, 2.8); ctx.lineWidth = 4; ctx.strokeStyle = C.shade; ctx.stroke(); }
   wristband(44, 8, -0.9, C.blue);
   ctx.restore();
+}
+</script>
+<script type="text/plain" id="src-city">
+// =====================================================================
+//   TOKYO CROSSING — edit me! This draws the city: roads, crossings,
+//   buildings and neon signs. (The cars, lights and birds move by themselves.)
+//   x (0 = left, 600 = right) and y (0 = top, 600 = bottom). Roads run from 225 to 375.
+// =====================================================================
+function drawCity(t) {
+  const COL = {
+    sidewalk: '#585e70', tile: '#4e5466', road: '#262a35', paint: '#e8ecf4', kerb: '#9aa0b2',
+    roofs: ['#2c3350', '#3a2f4d', '#273f4a', '#45354a', '#30384f', '#3d4459'],
+  };
+  const A = 225, B = 375; // the edges of the roads
+
+  // ---- pavement with tiles ----
+  ctx.fillStyle = COL.sidewalk; ctx.fillRect(0, 0, 600, 600);
+  ctx.strokeStyle = COL.tile; ctx.lineWidth = 1;
+  for (let i = 0; i <= 600; i += 18) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 600); ctx.moveTo(0, i); ctx.lineTo(600, i); ctx.stroke(); }
+
+  // ---- the two roads ----
+  ctx.fillStyle = COL.road; ctx.fillRect(0, A, 600, B - A); ctx.fillRect(A, 0, B - A, 600);
+  // kerbs
+  ctx.strokeStyle = COL.kerb; ctx.lineWidth = 3;
+  for (const [x1, y1, x2, y2] of [[0, A, A, A], [B, A, 600, A], [0, B, A, B], [B, B, 600, B], [A, 0, A, A], [B, 0, B, A], [A, B, A, 600], [B, B, B, 600]]) {
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+  // lane lines: dashed between lanes, solid in the middle
+  ctx.strokeStyle = COL.paint; ctx.lineWidth = 2;
+  for (const [x1, y1, x2, y2] of [[0, 300, 180, 300], [420, 300, 600, 300], [300, 0, 300, 180], [300, 420, 300, 600]]) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+  ctx.setLineDash([14, 12]);
+  for (const v of [265, 335]) {
+    for (const [x1, y1, x2, y2] of [[0, v, 180, v], [420, v, 600, v], [v, 0, v, 180], [v, 420, v, 600]]) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+  }
+  ctx.setLineDash([]);
+  // stop lines (cars wait behind these)
+  ctx.fillStyle = COL.paint;
+  ctx.fillRect(176, A, 5, 75); ctx.fillRect(419, 300, 5, 75); ctx.fillRect(300, 176, 75, 5); ctx.fillRect(A, 419, 75, 5);
+
+  // ---- zebra crossings on all four sides ----
+  for (let i = A + 4; i < B - 4; i += 14) {
+    ctx.fillRect(i, 188, 8, 32); ctx.fillRect(i, 380, 8, 32);   // north + south
+    ctx.fillRect(188, i, 32, 8); ctx.fillRect(380, i, 32, 8);   // west + east
+  }
+  // ---- the famous diagonal "scramble" stripes across the middle ----
+  for (const ang of [Math.PI / 4, -Math.PI / 4]) {
+    ctx.save(); ctx.translate(300, 300); ctx.rotate(ang);
+    ctx.fillStyle = 'rgba(232,236,244,.85)';
+    for (let i = -96; i < 96; i += 14) ctx.fillRect(i, -14, 8, 28);
+    ctx.restore();
+  }
+
+  // ---- buildings: 2 in each corner block (mirrored) ----
+  const blocks = [[1, 1], [-1, 1], [-1, -1], [1, -1]]; // which way to mirror each block
+  const mx = (sx, x) => (sx > 0 ? x : 600 - x);
+  blocks.forEach(([sx, sy], k) => {
+    const rects = [[6, 6, 134, 210], [142, 6, 210, 136]];
+    rects.forEach(([x0, y0, x1, y1], j) => {
+      const X0 = Math.min(mx(sx, x0), mx(sx, x1)); const X1 = Math.max(mx(sx, x0), mx(sx, x1));
+      const Y0 = Math.min(mx(sy, y0), mx(sy, y1)); const Y1 = Math.max(mx(sy, y0), mx(sy, y1));
+      const roof = COL.roofs[(k * 2 + j) % COL.roofs.length];
+      ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(X0 + 6, Y0 + 6, X1 - X0, Y1 - Y0); // shadow
+      ctx.fillStyle = roof; ctx.fillRect(X0, Y0, X1 - X0, Y1 - Y0);
+      ctx.strokeStyle = '#11131c'; ctx.lineWidth = 3; ctx.strokeRect(X0, Y0, X1 - X0, Y1 - Y0);
+      ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 6; ctx.strokeRect(X0 + 8, Y0 + 8, X1 - X0 - 16, Y1 - Y0 - 16);
+      // rooftop air-conditioning boxes
+      for (let n = 0; n < 3; n++) {
+        const ax = X0 + 18 + ((k * 37 + j * 53 + n * 29) % Math.max(10, X1 - X0 - 44));
+        const ay = Y0 + 18 + ((k * 23 + j * 41 + n * 47) % Math.max(10, Y1 - Y0 - 44));
+        ctx.fillStyle = '#8a90a3'; ctx.fillRect(ax, ay, 16, 12);
+        ctx.fillStyle = '#5c6274'; ctx.beginPath(); ctx.arc(ax + 8, ay + 6, 4, 0, Math.PI * 2); ctx.fill();
+      }
+    });
+  });
+
+  // ---- neon signs on the rooftops ----
+  const neon = (x, y, w, h, color, text, size, flick = 0) => {
+    const on = flick ? (Math.sin(t * 9 + flick) > -0.85 ? 1 : 0.35) : 1;
+    ctx.save(); ctx.globalAlpha = on;
+    ctx.shadowColor = color; ctx.shadowBlur = 18;
+    ctx.fillStyle = '#0b0d16'; ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.strokeRect(x + 2, y + 2, w - 4, h - 4);
+    ctx.fillStyle = color; ctx.font = `bold ${size}px "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, x + w / 2, y + h / 2 + 1);
+    ctx.restore();
+  };
+  neon(400, 40, 140, 40, '#ff4d6d', 'ラーメン', 24, 1);     // ramen
+  neon(30, 420, 120, 36, '#c77dff', 'カラオケ', 22, 2);     // karaoke
+  neon(400, 470, 150, 36, '#4cc9f0', 'コーヒー', 22);       // coffee
+  neon(470, 110, 34, 90, '#ffd60a', '', 1); ctx.save(); ctx.fillStyle = '#ffd60a'; ctx.shadowColor = '#ffd60a'; ctx.shadowBlur = 12;
+  ctx.font = 'bold 22px "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif'; ctx.textAlign = 'center';
+  ['寿', '司'].forEach((ch, i) => ctx.fillText(ch, 487, 145 + i * 30)); ctx.restore(); // sushi (written top to bottom)
+
+  // ---- the giant video screen ----
+  const sx0 = 22; const sy0 = 24; const sw = 104; const sh = 70;
+  ctx.fillStyle = '#05060b'; ctx.fillRect(sx0 - 4, sy0 - 4, sw + 8, sh + 8);
+  const slide = Math.floor(t / 1.6) % 3;
+  const g = ctx.createLinearGradient(sx0, sy0, sx0 + sw, sy0 + sh);
+  g.addColorStop(0, ['#2f7de1', '#ffc72c', '#e0402a'][slide]); g.addColorStop(1, ['#174f9e', '#e29a00', '#8e1414'][slide]);
+  ctx.fillStyle = g; ctx.fillRect(sx0, sy0, sw, sh);
+  ctx.fillStyle = '#fff'; ctx.font = 'bold 19px Bangers, Impact, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 4; ctx.strokeStyle = '#111';
+  const word = ['CHICKENS', 'VS', 'TURKEYS'][slide];
+  ctx.strokeText(word, sx0 + sw / 2, sy0 + sh / 2); ctx.fillText(word, sx0 + sw / 2, sy0 + sh / 2);
+  // scan lines
+  ctx.fillStyle = 'rgba(0,0,0,.18)'; for (let y = sy0; y < sy0 + sh; y += 4) ctx.fillRect(sx0, y, sw, 1);
+
+  // ---- street lamps glowing at the corners ----
+  for (const [x, y] of [[160, 160], [440, 160], [440, 440], [160, 440]]) {
+    const glow = ctx.createRadialGradient(x, y, 2, x, y, 70);
+    glow.addColorStop(0, 'rgba(255,220,150,.35)'); glow.addColorStop(1, 'rgba(255,220,150,0)');
+    ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(x, y, 70, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffe8b0'; ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+  }
 }
 </script>
 <script type="text/plain" id="src-turkey">
@@ -173,7 +303,7 @@ function drawTurkey(t, blink) {
 // The drawing area is 600 × 600 "units"; the canvas is 2× for sharpness.
 // =====================================================================
 const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
+let ctx = canvas.getContext('2d'); // (let: the city borrows it for a moment to draw little birds)
 ctx.scale(2, 2);
 
 const INK = '#141414';
@@ -300,9 +430,11 @@ function background(t) {
   ctx.fillStyle = 'rgba(0,0,0,.18)'; ctx.beginPath(); ctx.ellipse(300, 498, 150, 22, 0, 0, Math.PI * 2); ctx.fill();
 }
 
+let lastT = 0;
 function frame(ms) {
-  const t = ms / 1000;
+  const t = ms / 1000; const dt = lastT ? t - lastT : 0; lastT = t;
   ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.globalAlpha = 1;
+  if (mode === 'city') { ctx.clearRect(0, 0, 600, 600); drawTokyo(t, dt); requestAnimationFrame(frame); return; }
   background(t);
 
   // blinking every few seconds
@@ -364,11 +496,11 @@ function drawPuffs() {
 // =====================================================================
 //              the LIVE CODE editor: type → the bird redraws
 // =====================================================================
-const ORIGINAL = { chicken: document.getElementById('src-chicken').textContent.trim(), turkey: document.getElementById('src-turkey').textContent.trim() };
+const ORIGINAL = { chicken: document.getElementById('src-chicken').textContent.trim(), turkey: document.getElementById('src-turkey').textContent.trim(), city: document.getElementById('src-city').textContent.trim() };
 const code = { ...ORIGINAL };          // what's in the editor for each bird
 const good = {};                       // the last version of each bird that worked
 const status = document.getElementById('status');
-const FN = { chicken: 'drawChicken', turkey: 'drawTurkey' };
+const FN = { chicken: 'drawChicken', turkey: 'drawTurkey', city: 'drawCity' };
 
 /** Turn the text into a drawing function (or explain what's wrong with it). */
 function compile(bird, text) {
@@ -399,7 +531,7 @@ function drawBird(bird, t, bk) {
   ctx.save();
   try {
     fn(t, bk);
-    if (trial) { good[bird] = trial; pendingCheck = null; setStatus(true, code[bird] === ORIGINAL[bird] ? 'Running the original code' : 'Running your code!'); }
+    if (trial) { good[bird] = trial; pendingCheck = null; if (bird === editingBird) setStatus(true, code[bird] === ORIGINAL[bird] ? 'Running the original code' : 'Running your code!'); }
   } catch (e) {
     for (let i = 0; i < 40; i++) ctx.restore(); // tidy up anything the broken code left half-done
     ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.globalAlpha = 1;
@@ -408,7 +540,7 @@ function drawBird(bird, t, bk) {
   }
   ctx.restore();
 }
-for (const b of ['chicken', 'turkey']) { good[b] = compile(b, ORIGINAL[b]).fn; }
+for (const b of ['chicken', 'turkey', 'city']) { good[b] = compile(b, ORIGINAL[b]).fn; }
 
 // the editor: CodeMirror (colours + line numbers) if it loaded, otherwise a plain text box
 const box = document.getElementById('code');
@@ -427,15 +559,265 @@ function onEdit(text) {
 let editingBird = 'chicken';
 function showCode(bird) {
   editingBird = bird; clearTimeout(editT); setText(code[bird]);
-  document.getElementById('code-title').textContent = bird === 'chicken' ? '🐔 Chicken code' : '🦃 Turkey code';
+  document.getElementById('code-title').textContent = { chicken: '🐔 Chicken code', turkey: '🦃 Turkey code', city: '🗼 Tokyo city code' }[bird];
   document.getElementById('code-title').className = bird;
+  document.getElementById('tip').innerHTML = {
+    chicken: "Edit the code — the bird changes as you type. Try changing <code>blue: '#2f7de1'</code> to <code>'#00c853'</code>, or the beak's <code>62</code> to <code>120</code>.",
+    turkey: "Edit the code — the bird changes as you type. Try changing the tail colours in <code>RINGS</code>, or <code>band: '#d62828'</code> to <code>'#9b5de5'</code>.",
+    city: "Edit the code — the city changes as you type. Try <code>road: '#262a35'</code> → <code>'#7a3cff'</code>, or change <code>'ラーメン'</code> to your own sign. (Your chicken and turkey edits show up on the little birds too!)",
+  }[bird];
   tryCode(bird);
 }
 document.getElementById('reset').addEventListener('click', () => { code[editingBird] = ORIGINAL[editingBird]; setText(ORIGINAL[editingBird]); tryCode(editingBird); });
+document.getElementById('reset').textContent = '↺ Reset this code';
 showCode('chicken');
 
 const btn = document.getElementById('swap'); const title = document.getElementById('title');
+// =====================================================================
+//         TOKYO CROSSING — cars, traffic lights and the birds
+// =====================================================================
+// Japan drives on the LEFT. Each lane: which way it goes, where it sits, and its stop line.
+// s = how far along the lane a car's FRONT is (always counts up the way the car drives).
+const STOP = 178;                  // every lane's stop line is at s = 178
+const CLEAR_END = 428;             // past here a car has left the crossing
+const LANES = [
+  { axis: 'h', d: 1, at: 247 }, { axis: 'h', d: 1, at: 282 },   // eastbound →
+  { axis: 'h', d: -1, at: 318 }, { axis: 'h', d: -1, at: 353 }, // westbound ←
+  { axis: 'v', d: 1, at: 318 }, { axis: 'v', d: 1, at: 353 },   // southbound ↓
+  { axis: 'v', d: -1, at: 247 }, { axis: 'v', d: -1, at: 282 }, // northbound ↑
+];
+const CAR_COLOURS = ['#e63946', '#f1faee', '#457b9d', '#2a9d8f', '#e9c46a', '#8d99ae', '#111111', '#ff7f11', '#6a4c93'];
+const CITY = { cars: [], birds: [], phase: 'H', phaseT: 0, lastGreen: 'H', walkReq: false, spawnT: LANES.map(() => Math.random() * 2) };
+
+// the four corners: NW, NE, SE, SW (+ which way each is from the middle)
+const CORNERS = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+const spotXY = (c, i) => { const [sx, sy] = CORNERS[c]; const col = i % 4; const row = Math.floor(i / 4); return [300 + sx * (88 + col * 21 + (row % 2) * 6), 300 + sy * (90 + row * 19)]; };
+function setupBirds() {
+  CITY.birds = [];
+  for (let i = 0; i < 16; i++) {
+    const c = i % 4; const spot = Math.floor(i / 4);
+    const [x, y] = spotXY(c, spot);
+    CITY.birds.push({ kind: i % 2 ? 'turkey' : 'chicken', corner: c, spot, x, y, face: CORNERS[c][0] > 0 ? -1 : 1, state: 'wait', path: [], speed: 0, delay: 0, ph: Math.random() * 6 });
+  }
+}
+setupBirds();
+
+const carLight = (axis) => {
+  const p = CITY.phase;
+  if (p === (axis === 'h' ? 'H' : 'V')) return 'green';
+  if (p === (axis === 'h' ? 'Hy' : 'Vy')) return 'yellow';
+  return 'red';
+};
+const walkLight = () => (CITY.phase === 'WALK' ? 'green' : 'red');
+const carXY = (lane, s) => (lane.axis === 'h' ? [lane.d > 0 ? s : 600 - s, lane.at] : [lane.at, lane.d > 0 ? s : 600 - s]);
+
+function citySim(dt) {
+  const C = CITY; C.phaseT += dt;
+  // ---- the traffic-light cycle ----
+  const next = (p) => { C.phase = p; C.phaseT = 0; };
+  if (C.phase === 'H' || C.phase === 'V') {
+    if (C.phaseT > 7 || (C.walkReq && C.phaseT > 1)) { C.lastGreen = C.phase; next(C.phase + 'y'); }
+  } else if (C.phase === 'Hy' || C.phase === 'Vy') {
+    if (C.phaseT > 1.6) next('R');
+  } else if (C.phase === 'R') {
+    if (C.phaseT > 0.8) next(C.walkReq ? 'CLEAR' : C.lastGreen === 'H' ? 'V' : 'H');
+  } else if (C.phase === 'CLEAR') {
+    // wait until no car is still out in the middle of the crossing
+    if (!C.cars.some((c) => c.s > STOP + 2 && c.s - c.len < CLEAR_END)) { next('WALK'); startCrossing(); }
+  } else if (C.phase === 'WALK') {
+    if (C.birds.every((b) => b.state === 'wait')) { C.walkReq = false; next('R2'); }
+  } else if (C.phase === 'R2') {
+    if (C.phaseT > 1) next(C.lastGreen === 'H' ? 'V' : 'H');
+  }
+
+  // ---- spawn cars at the edges ----
+  LANES.forEach((lane, i) => {
+    C.spawnT[i] -= dt;
+    if (C.spawnT[i] > 0) return;
+    C.spawnT[i] = 1.4 + Math.random() * 2.8;
+    const last = C.cars.filter((c) => c.lane === lane).sort((a, b) => a.s - b.s)[0];
+    if (last && last.s - last.len < 30) return; // no room yet
+    const bus = Math.random() < 0.1; const taxi = !bus && Math.random() < 0.25;
+    C.cars.push({ lane, s: -10, v: 60 + Math.random() * 20, vmax: bus ? 62 : 75 + Math.random() * 25, len: bus ? 76 : 44, wid: bus ? 26 : 22,
+      colour: bus ? '#2a9d8f' : taxi ? '#ffd166' : CAR_COLOURS[Math.floor(Math.random() * CAR_COLOURS.length)], bus, taxi });
+  });
+
+  // ---- drive: follow the car in front, stop at red lights ----
+  for (const lane of LANES) {
+    const cars = C.cars.filter((c) => c.lane === lane).sort((a, b) => b.s - a.s); // front-most first
+    cars.forEach((car, i) => {
+      let limit = Infinity;
+      const ahead = cars[i - 1]; if (ahead) limit = ahead.s - ahead.len - 12;
+      if (car.s <= STOP + 1) {
+        const light = carLight(lane.axis);
+        const mayGo = light === 'green' || (light === 'yellow' && car.s > STOP - 22 && car.v > 30);
+        if (!mayGo) limit = Math.min(limit, STOP);
+      }
+      const gap = limit - car.s;
+      const want = gap <= 0 ? 0 : Math.min(car.vmax, gap * 2.4);
+      car.v += Math.max(-320 * dt, Math.min(150 * dt, want - car.v));
+      car.v = Math.max(0, car.v); car.s += car.v * dt;
+    });
+  }
+  C.cars = C.cars.filter((c) => c.s - c.len < 640);
+
+  // ---- birds walking across ----
+  for (const b of C.birds) {
+    if (b.state !== 'walk') continue;
+    if (b.delay > 0) { b.delay -= dt; continue; }
+    let step = b.speed * dt;
+    while (step > 0 && b.path.length) {
+      const [tx, ty] = b.path[0]; const dx = tx - b.x; const dy = ty - b.y; const d = Math.hypot(dx, dy);
+      if (Math.abs(dx) > 0.5) b.face = dx > 0 ? 1 : -1;
+      if (d <= step) { b.x = tx; b.y = ty; b.path.shift(); step -= d; } else { b.x += (dx / d) * step; b.y += (dy / d) * step; step = 0; }
+    }
+    if (!b.path.length) { b.state = 'wait'; b.face = CORNERS[b.corner][0] > 0 ? -1 : 1; }
+  }
+}
+
+/** WALK! Every bird heads for a different corner — straight across, or diagonally over the scramble. */
+function startCrossing() {
+  const taken = CORNERS.map(() => new Set());
+  const order = [...CITY.birds].sort(() => Math.random() - 0.5);
+  for (const b of order) {
+    const from = b.corner;
+    const to = [0, 1, 2, 3].filter((c) => c !== from)[Math.floor(Math.random() * 3)];
+    let spot = 0; while (taken[to].has(spot)) spot += 1; taken[to].add(spot);
+    const [fx, fy] = CORNERS[from]; const [tx, ty] = CORNERS[to];
+    const j = () => (Math.random() - 0.5) * 22;
+    let a; let z;
+    if (fy === ty) { const y = 300 + fy * 96 + j(); a = [300 + fx * 82, y]; z = [300 + tx * 82, y]; }        // across the north/south crossing
+    else if (fx === tx) { const x = 300 + fx * 96 + j(); a = [x, 300 + fy * 82]; z = [x, 300 + ty * 82]; }  // across the east/west crossing
+    else { const o = j(); a = [300 + fx * 80 + o, 300 + fy * 80 - o]; z = [300 + tx * 80 + o, 300 + ty * 80 - o]; } // diagonal!
+    b.corner = to; b.spot = spot;
+    b.path = [a, z, spotXY(to, spot)];
+    b.state = 'walk'; b.speed = 42 + Math.random() * 26; b.delay = Math.random() * 1.1;
+  }
+}
+
+// ---- drawing the moving things ----
+function drawCar(car) {
+  const [x, y] = carXY(car.lane, car.s);
+  const ang = car.lane.axis === 'h' ? (car.lane.d > 0 ? 0 : Math.PI) : (car.lane.d > 0 ? Math.PI / 2 : -Math.PI / 2);
+  ctx.save(); ctx.translate(x, y); ctx.rotate(ang); // car faces +x, front at 0
+  const L = car.len; const W = car.wid;
+  // headlight beams
+  const beam = ctx.createLinearGradient(0, 0, 60, 0); beam.addColorStop(0, 'rgba(255,240,180,.35)'); beam.addColorStop(1, 'rgba(255,240,180,0)');
+  ctx.fillStyle = beam; ctx.beginPath(); ctx.moveTo(0, -W / 2 + 2); ctx.lineTo(60, -W / 2 - 12); ctx.lineTo(60, W / 2 + 12); ctx.lineTo(0, W / 2 - 2); ctx.fill();
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.roundRect(-L + 3, -W / 2 + 3, L, W, 7); ctx.fill(); // shadow
+  shape(() => ctx.roundRect(-L, -W / 2, L, W, 7), car.colour, 2.5);
+  if (car.bus) {
+    ctx.fillStyle = '#bde0fe'; for (let i = -L + 8; i < -10; i += 12) ctx.fillRect(i, -W / 2 + 3, 8, 4), ctx.fillRect(i, W / 2 - 7, 8, 4);
+    ctx.fillStyle = '#1d6f66'; ctx.fillRect(-L + 6, -3, L - 16, 6);
+  } else {
+    shape(() => ctx.roundRect(-L * 0.68, -W / 2 + 3, L * 0.42, W - 6, 4), 'rgba(0,0,0,.28)', 0); // roof
+    ctx.fillStyle = '#9fd3ff'; ctx.fillRect(-L * 0.26, -W / 2 + 4, 6, W - 8); ctx.fillRect(-L * 0.78, -W / 2 + 4, 4, W - 8); // windows
+    if (car.taxi) { shape(() => ctx.roundRect(-L * 0.52, -4, 10, 8, 2), '#fff', 1.5); }
+  }
+  ctx.fillStyle = '#fff6c8'; ctx.fillRect(-3, -W / 2 + 2, 3, 5); ctx.fillRect(-3, W / 2 - 7, 3, 5);       // headlights
+  ctx.fillStyle = car.v < 15 ? '#ff2b2b' : '#a3161a'; ctx.fillRect(-L, -W / 2 + 2, 3, 5); ctx.fillRect(-L, W / 2 - 7, 3, 5); // brake lights
+  ctx.restore();
+}
+
+function drawSignals(t) {
+  // car lights — Japanese style: a sideways row of green, yellow, red
+  const lamp = (x, y, vertical, axis) => {
+    const on = carLight(axis);
+    ctx.save(); ctx.translate(x, y); if (vertical) ctx.rotate(Math.PI / 2);
+    shape(() => ctx.roundRect(-20, -7, 40, 14, 5), '#1b1e27', 2);
+    [['green', '#2dff7a'], ['yellow', '#ffd23f'], ['red', '#ff3b3b']].forEach(([n, c], i) => {
+      ctx.fillStyle = on === n ? c : '#3b3f4c'; if (on === n) { ctx.shadowColor = c; ctx.shadowBlur = 12; }
+      ctx.beginPath(); ctx.arc(-12 + i * 12, 0, 4.2, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+    });
+    ctx.restore();
+  };
+  lamp(160, 216, false, 'h'); lamp(440, 384, false, 'h'); lamp(384, 160, true, 'v'); lamp(216, 440, true, 'v');
+  // walk lights on each corner: red standing bird / green walking bird
+  const go = walkLight() === 'green';
+  for (const [x, y] of [[214, 214], [386, 214], [386, 386], [214, 386]]) {
+    ctx.save(); ctx.translate(x, y);
+    shape(() => ctx.roundRect(-8, -11, 16, 22, 3), '#1b1e27', 2);
+    const c = go ? '#2dff7a' : '#ff3b3b'; ctx.fillStyle = c; ctx.shadowColor = c; ctx.shadowBlur = 10;
+    ctx.beginPath(); ctx.arc(0, -5, 2.6, 0, Math.PI * 2); ctx.fill(); // head
+    ctx.lineWidth = 2; ctx.strokeStyle = c; ctx.lineCap = 'round'; ctx.beginPath();
+    if (go) { const w = Math.sin(t * 10) * 3; ctx.moveTo(0, -2); ctx.lineTo(0, 3); ctx.lineTo(-3 + w, 8); ctx.moveTo(0, 3); ctx.lineTo(3 - w, 8); ctx.moveTo(-3, 0); ctx.lineTo(3, 1); }
+    else { ctx.moveTo(0, -2); ctx.lineTo(0, 3); ctx.lineTo(-2, 8); ctx.moveTo(0, 3); ctx.lineTo(2, 8); ctx.moveTo(-3, 0); ctx.lineTo(3, 0); }
+    ctx.stroke(); ctx.restore();
+  }
+}
+
+// little birds: each kind is drawn once into a small picture (redrawn a few times a second, so code edits show up)
+const birdPics = {};
+function birdPic(kind, t) {
+  let p = birdPics[kind];
+  if (!p) { const cv = document.createElement('canvas'); cv.width = 132; cv.height = 132; p = birdPics[kind] = { cv, at: -1 }; }
+  if (t - p.at > 0.15 && good[kind]) {
+    p.at = t;
+    const keep = ctx; const c2 = p.cv.getContext('2d');
+    c2.setTransform(1, 0, 0, 1, 0, 0); c2.clearRect(0, 0, 132, 132); c2.setTransform(0.22, 0, 0, 0.22, 0, 0); c2.translate(0, 0);
+    ctx = c2;
+    try { good[kind](t, 0); } catch (e) { /* the editor already shows the problem */ }
+    ctx = keep;
+  }
+  return p.cv;
+}
+function drawCityBirds(t) {
+  const list = [...CITY.birds].sort((a, b) => a.y - b.y);
+  for (const b of list) {
+    const walking = b.state === 'walk' && b.delay <= 0;
+    const hop = walking ? Math.abs(Math.sin(t * 13 + b.ph)) * 4 : Math.abs(Math.sin(t * 2 + b.ph)) * 0.8;
+    ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.beginPath(); ctx.ellipse(b.x, b.y, 11, 4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.translate(b.x, b.y - hop); ctx.scale(b.face, 1);
+    // the picture is 600 units × 0.22; feet are at (300, 495) → draw it ~42 units tall with the feet on the spot
+    const S = 0.075 / 0.22; ctx.drawImage(birdPic(b.kind, t), -300 * 0.22 * S, -495 * 0.22 * S, 132 * S, 132 * S);
+    ctx.restore();
+  }
+}
+
+function drawTokyo(t, dt) {
+  citySim(Math.min(dt, 0.05));
+  drawBird('city', t, 0);                 // the editable city
+  for (const c of CITY.cars) drawCar(c);
+  drawSignals(t);
+  drawCityBirds(t);
+  updateWalkUI();
+}
+
+// ---- switching between the birds and the city ----
+let mode = 'bird';
+const walkBtn = document.getElementById('walk'); const walkMsg = document.getElementById('walk-msg');
+walkBtn.addEventListener('click', () => { if (CITY.phase !== 'WALK' && !CITY.walkReq) CITY.walkReq = true; });
+function updateWalkUI() {
+  const C = CITY; const left = C.birds.filter((b) => b.state === 'walk').length;
+  let msg; let can = false; let label = '🚶 Press to cross';
+  if (C.phase === 'WALK') { msg = `🟢 WALK! The cars are waiting until everyone is across — ${left} still crossing.`; label = '🚶 Crossing…'; }
+  else if (C.walkReq) { msg = C.phase === 'CLEAR' ? '⏳ Waiting for the last cars to get through…' : '🟡 Lights changing — cars are stopping…'; label = '⏳ Wait…'; }
+  else if (C.phase === 'R2') msg = '✅ Everyone made it! Cars can go again.';
+  else { msg = `🚗 Cars going ${C.phase.startsWith('H') ? 'left and right' : 'up and down'} have a green light. Press the button to let the birds cross.`; can = true; }
+  if (walkMsg.textContent !== msg) walkMsg.textContent = msg;
+  if (walkBtn.textContent !== label) walkBtn.textContent = label;
+  walkBtn.disabled = !can;
+}
+const cityBtn = document.getElementById('city');
+function setMode(m) {
+  mode = m;
+  const inCity = m === 'city';
+  document.getElementById('walk-row').classList.toggle('hidden', !inCity);
+  cityBtn.style.display = inCity ? 'none' : '';
+  if (inCity) {
+    title.textContent = 'Tokyo Crossing'; title.className = 'city';
+    btn.textContent = '🐔 Back to the birds'; btn.className = 'to-chicken';
+    showCode('city');
+  } else {
+    title.textContent = who === 'turkey' ? 'Team Turkeys' : 'Team Chickens'; title.className = who;
+    btn.textContent = who === 'turkey' ? 'Turn into a Chicken!' : 'Turn into a Turkey!';
+    btn.className = who === 'turkey' ? 'to-chicken' : 'to-turkey';
+    showCode(who);
+  }
+}
+cityBtn.addEventListener('click', () => setMode('city'));
 btn.addEventListener('click', () => {
+  if (mode === 'city') { setMode('bird'); return; }
   if (morph) return;
   const to = (morph?.to || who) === 'chicken' ? 'turkey' : 'chicken';
   morph = { t0: performance.now() / 1000, to };
